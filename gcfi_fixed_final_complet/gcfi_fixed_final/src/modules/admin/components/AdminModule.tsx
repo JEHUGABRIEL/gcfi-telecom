@@ -435,7 +435,7 @@ const AdminModule = () => {
                   activeTab === 'overview' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 )}
               >
-                <BarChart3 className="w-4 h-4" /> Vue d'ensemble
+                <BarChart3 className="w-4 h-4" /> <span>Vue d&apos;ensemble</span>
               </button>
               <button 
                 onClick={() => setActiveTab('users')}
