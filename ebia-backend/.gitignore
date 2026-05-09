@@ -1,9 +1,0 @@
-.env
-node_modules/
-__pycache__/
-*.pyc
-*.pyo
-dist/
-*.log
-infra/nginx/certs/
-.env
