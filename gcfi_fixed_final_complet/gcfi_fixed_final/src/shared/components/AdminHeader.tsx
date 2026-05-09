@@ -21,6 +21,16 @@ function AdminSearch({ onClose }: { onClose: () => void }) {
   const [results, setResults] = React.useState<SearchResult[]>([]);
   const [loading, setLoading] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+
+  // ✅ Mapping type → onglet admin
+  const TAB_MAP: Record<SearchResult['type'], string> = {
+    user:     'users',
+    order:    'orders',
+    product:  'produits',
+    training: 'formations',
+    quote:    'devis',
+  };
 
   React.useEffect(() => { inputRef.current?.focus(); }, []);
 
@@ -94,6 +104,10 @@ function AdminSearch({ onClose }: { onClose: () => void }) {
             <div className="py-2">
               {results.map(r => (
                 <div key={`${r.type}-${r.id}`}
+                  onClick={() => {
+                    navigate(`/admin?tab=${TAB_MAP[r.type]}`);
+                    onClose();
+                  }}
                   className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors">
                   <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
                     {icons[r.type]}

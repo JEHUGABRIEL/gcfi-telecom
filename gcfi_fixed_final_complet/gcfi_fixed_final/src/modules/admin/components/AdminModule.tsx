@@ -41,11 +41,20 @@ import UsersTab from './tabs/UsersTab';
 import ProductsTab from './tabs/ProductsTab';
 import TrainingsTab from './tabs/TrainingsTab';
 import NotificationsTab from './tabs/NotificationsTab';
+import { useSearchParams } from 'react-router-dom';
+
+const VALID_TABS = ['overview','notifications','orders','users','formations','produits','stock','commentaires','devis','temoignages','realisations','partenaires','actualites'] as const;
+type AdminTab = typeof VALID_TABS[number];
 
 const AdminModule = () => {
   const { addNotification } = useNotifications();
   const { user: adminUser, isAdmin: isAuthorized, loading: authLoading } = useAuth();
-  const [activeTab, setActiveTab] = React.useState<'overview' | 'notifications' | 'orders' | 'users' | 'formations' | 'produits' | 'stock' | 'commentaires' | 'devis' | 'temoignages' | 'realisations' | 'partenaires' | 'actualites'>('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = React.useState<AdminTab>(() => {
+    // ✅ Lire le param ?tab= depuis la recherche admin
+    const param = searchParams.get('tab') as AdminTab;
+    return VALID_TABS.includes(param) ? param : 'overview';
+  });
   const [msgTitle, setMsgTitle] = React.useState('');
   const [msgContent, setMsgContent] = React.useState('');
   const [category, setCategory] = React.useState('info');

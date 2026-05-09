@@ -112,9 +112,25 @@ export default function ContentTab({ type }: ContentTabProps) {
                     <option value="telecom">Télécom</option>
                     <option value="it">IT</option>
                   </select>
+                ) : field === 'rating' ? (
+                  // ✅ Sélecteur étoiles — bloqué à 5 max
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button key={star} type="button"
+                        onClick={() => setForm((f: any) => ({ ...f, rating: star }))}
+                        className="transition-transform hover:scale-110">
+                        <Star className={`w-7 h-7 transition-colors ${
+                          star <= (form['rating'] || 0)
+                            ? 'text-amber-400 fill-amber-400'
+                            : 'text-slate-300 dark:text-slate-600'
+                        }`} />
+                      </button>
+                    ))}
+                    <span className="ml-2 text-sm font-bold text-slate-500">{form['rating'] || 0}/5</span>
+                  </div>
                 ) : (
-                  <input type={field === 'rating' ? 'number' : 'text'} min={1} max={5}
-                    value={form[field] || ''} onChange={e => setForm((f: any) => ({ ...f, [field]: field === 'rating' ? Number(e.target.value) : e.target.value }))}
+                  <input type="text"
+                    value={form[field] || ''} onChange={e => setForm((f: any) => ({ ...f, [field]: e.target.value }))}
                     className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#2563B0]" />
                 )}
               </div>

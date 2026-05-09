@@ -82,7 +82,9 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
 
   const handleSelect = (result: SearchResult) => {
     if (result.module) {
-      navigate(MODULE_ROUTES[result.module] ?? "/");
+      // ✅ Passer l'ID pour permettre le scroll/highlight côté destination
+      const base = MODULE_ROUTES[result.module] ?? '/';
+      navigate(`${base}?item=${result.id}`);
     } else if (result.url) {
       window.open(result.url, '_blank');
     }
