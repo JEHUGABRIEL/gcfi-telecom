@@ -20,6 +20,8 @@ const TrainingModule = lazy(() => import('@/modules/training').then(m => ({ defa
 const ProfileModule  = lazy(() => import('@/modules/profile').then(m => ({ default: m.ProfileModule })));
 const AdminModule    = lazy(() => import('@/modules/admin').then(m => ({ default: m.AdminModule })));
 const HomeView       = lazy(() => import('./HomeView'));
+const ProductDetail  = lazy(() => import('@/modules/store/components/ProductDetail'));
+const CourseDetail   = lazy(() => import('@/modules/training/components/CourseDetail'));
 
 function ModuleLoader() {
   return (
@@ -79,6 +81,8 @@ function AnimatedRoutes({ onContactOpen }: { onContactOpen: () => void }) {
           <Route path="/" element={<ClientRoute><Suspense fallback={<ModuleLoader />}><HomeView onContactOpen={onContactOpen} /></Suspense></ClientRoute>} />
           <Route path="/boutique" element={<ClientRoute><Suspense fallback={<ModuleLoader />}><StoreModule /></Suspense></ClientRoute>} />
           <Route path="/formation" element={<ClientRoute><Suspense fallback={<ModuleLoader />}><TrainingModule onContactOpen={onContactOpen} /></Suspense></ClientRoute>} />
+          <Route path="/boutique/:id" element={<ClientRoute><Suspense fallback={<ModuleLoader />}><ProductDetail /></Suspense></ClientRoute>} />
+          <Route path="/formation/:id" element={<ClientRoute><Suspense fallback={<ModuleLoader />}><CourseDetail /></Suspense></ClientRoute>} />
           <Route path="/profil" element={<ProtectedClientRoute><Suspense fallback={<ModuleLoader />}><ProfileModule /></Suspense></ProtectedClientRoute>} />
           <Route path="/admin" element={<AdminRoute><Suspense fallback={<ModuleLoader />}><AdminModule /></Suspense></AdminRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -97,7 +101,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 bg-white dark:bg-[var(--bg-primary)] font-sans transition-colors">
-      <ScrollProgress hideButton={isAdmin} />
+      <ScrollProgress />
       {isAdmin ? <AdminHeader /> : <Header onContactOpen={() => setIsContactOpen(true)} />}
       <AdminRedirect />
       <main>

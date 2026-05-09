@@ -170,3 +170,6 @@ export function useOrders(userId: string | undefined) {
     staleTime: 2 * 60 * 1000,
   });
 }
+
+// ── Alias useCourses → useTrainings (pour CourseDetail) ───────
+export const useCourses = useTrainings;
