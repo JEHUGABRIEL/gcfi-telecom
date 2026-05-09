@@ -71,10 +71,11 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { path: '/formation', icon: '🎓', title: 'Formation',    desc: 'Programmes intensifs en télécom et cybersécurité.', cta: 'Découvrir' },
-              { path: '/boutique', icon: '🛍️',  title: 'Boutique',    desc: 'Équipements réseaux et terminaux mobiles certifiés.', cta: 'Acheter' },
+              { path: '/formation', icon: '🎓', title: 'Formation',    desc: 'Programmes intensifs en télécom et cybersécurité.', cta: 'Découvrir', onClick: null },
+              { path: '/boutique', icon: '🛍️',  title: 'Boutique',    desc: 'Équipements réseaux et terminaux mobiles certifiés.', cta: 'Acheter', onClick: null },
+              { path: null, icon: '🔧', title: 'Services', desc: 'Déploiement réseau, fibre optique, vidéosurveillance et cybersécurité.', cta: 'Demander un devis', onClick: onContactOpen },
             ].map(item => (
-              <div key={item.path} onClick={() => navigate(item.path)}
+              <div key={item.title} onClick={() => item.onClick ? item.onClick() : navigate(item.path!)}
                 className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 hover:border-[#2563B0] transition-all cursor-pointer group">
                 <div className="text-4xl mb-6">{item.icon}</div>
                 <h3 className="text-2xl font-bold mb-4 dark:text-white">{item.title}</h3>
