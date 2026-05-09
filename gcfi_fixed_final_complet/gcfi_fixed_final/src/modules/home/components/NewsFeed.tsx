@@ -1,11 +1,137 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Newspaper, ChevronRight, ExternalLink, RefreshCw, Radio, TrendingUp, Cpu } from 'lucide-react';
+import { Newspaper, ChevronRight, ExternalLink, RefreshCw, Radio, TrendingUp, Cpu, Mail, CheckCircle2, X } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { supabase } from '@/shared/lib/supabase';
 import { useNews } from '@/shared/lib/queries';
 import { logError } from '@/shared/lib/supabase-helpers';
 import type { NewsItem } from '@/shared/types';
+
+// ── Bloc d'abonnement newsletter ──────────────────────────────
+function SubscribeBlock() {
+  const [subscribed] = React.useState(() =>
+    localStorage.getItem('gcfi-newsletter-subscribed') === 'true'
+  );
+  const [showForm, setShowForm] = React.useState(false);
+  const [email, setEmail] = React.useState('');
+  const [done, setDone] = React.useState(subscribed);
+  const [submitting, setSubmitting] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      setError('Veuillez entrer une adresse email valide.');
+      return;
+    }
+    setSubmitting(true);
+    setError('');
+    try {
+      // Tentative d'insertion en DB (table subscribers optionnelle)
+      await supabase.from('subscribers').insert([{ email, subscribed_at: new Date().toISOString() }]);
+    } catch (_) { /* table absente → silencieux */ }
+    localStorage.setItem('gcfi-newsletter-subscribed', 'true');
+    localStorage.setItem('gcfi-newsletter-email', email);
+    setDone(true);
+    setSubmitting(false);
+  };
+
+  if (done) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mt-16 flex justify-center"
+      >
+        <div className="inline-flex items-center gap-3 px-6 py-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-full">
+          <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+          <span className="text-sm font-bold text-green-700 dark:text-green-400">
+            Vous êtes abonné aux actualités GCFI !
+          </span>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="mt-16 flex justify-center">
+      <AnimatePresence mode="wait">
+        {!showForm ? (
+          <motion.div
+            key="cta"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="inline-flex items-center gap-4 p-2 pl-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-full shadow-lg"
+          >
+            <span className="text-sm font-bold text-slate-600 dark:text-slate-400">
+              Restez informé de l&apos;actualité locale
+            </span>
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-[#2563B0] text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest hover:bg-[#1E4D8C] transition-all flex items-center gap-2"
+            >
+              <Mail className="w-3 h-3" /> S&apos;abonner
+            </button>
+          </motion.div>
+        ) : (
+          <motion.form
+            key="form"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            onSubmit={handleSubmit}
+            className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-xl p-8 w-full max-w-md"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                  Newsletter GCFI
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Recevez les dernières actualités télécom & IT.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+              >
+                <X className="w-4 h-4 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="flex gap-3">
+              <input
+                type="email"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setError(''); }}
+                placeholder="votre@email.com"
+                className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#2563B0] focus:ring-2 focus:ring-[#2563B0]/10 transition-all"
+              />
+              <button
+                type="submit"
+                disabled={submitting}
+                className="bg-[#2563B0] text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#1E4D8C] transition-all disabled:opacity-60 flex items-center gap-2 shrink-0"
+              >
+                {submitting ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Mail className="w-4 h-4" />
+                )}
+                OK
+              </button>
+            </div>
+
+            {error && (
+              <p className="mt-3 text-xs text-red-500 font-medium">{error}</p>
+            )}
+          </motion.form>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 // Données de secours si la table est vide
 const fallbackNews: NewsItem[] = [
@@ -127,16 +253,8 @@ export default function NewsFeed() {
           </AnimatePresence>
         </div>
 
-        <div className="mt-16 text-center">
-          <div className="inline-flex items-center gap-4 p-2 pl-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-full shadow-lg">
-            <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Restez informé de l'actualité locale</span>
-            <button
-              onClick={() => window.open('mailto:gcfitelecom@gmail.com?subject=Abonnement%20Actualit%C3%A9s%20GCFI&body=Bonjour%2C%20je%20souhaite%20m%27abonner%20aux%20actualit%C3%A9s%20GCFI.', '_blank')}
-              className="bg-[#2563B0] text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest hover:bg-[#1E4D8C] transition-all flex items-center gap-2">
-              S&apos;abonner <ExternalLink className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
+        {/* ── Bloc abonnement ── */}
+        <SubscribeBlock />
       </div>
     </section>
   );

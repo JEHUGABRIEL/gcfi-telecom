@@ -97,7 +97,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 bg-white dark:bg-[var(--bg-primary)] font-sans transition-colors">
-      <ScrollProgress />
+      <ScrollProgress hideButton={isAdmin} />
       {isAdmin ? <AdminHeader /> : <Header onContactOpen={() => setIsContactOpen(true)} />}
       <AdminRedirect />
       <main>
