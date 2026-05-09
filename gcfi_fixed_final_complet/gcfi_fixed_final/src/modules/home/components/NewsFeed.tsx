@@ -130,8 +130,10 @@ export default function NewsFeed() {
         <div className="mt-16 text-center">
           <div className="inline-flex items-center gap-4 p-2 pl-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-full shadow-lg">
             <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Restez informé de l'actualité locale</span>
-            <button className="bg-[#2563B0] text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest hover:bg-[#1E4D8C] transition-all flex items-center gap-2">
-              S'abonner <ExternalLink className="w-3 h-3" />
+            <button
+              onClick={() => window.open('mailto:gcfitelecom@gmail.com?subject=Abonnement%20Actualit%C3%A9s%20GCFI&body=Bonjour%2C%20je%20souhaite%20m%27abonner%20aux%20actualit%C3%A9s%20GCFI.', '_blank')}
+              className="bg-[#2563B0] text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest hover:bg-[#1E4D8C] transition-all flex items-center gap-2">
+              S&apos;abonner <ExternalLink className="w-3 h-3" />
             </button>
           </div>
         </div>

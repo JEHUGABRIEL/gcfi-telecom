@@ -4,34 +4,70 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ═══════════════════════════════════════════════════
-   GCFI — Palette Anthracite + Bleu Profond
-   CTA principal : #2563B0 (bleu)
-   Logo / alerte : #2563B0 (rouge GCFI)
+   GCFI — Light Mode Clean (ref. screenshots)
+   Fond : blanc pur, cartes légèrement ombrées
+   Accent : #2563B0 (bleu GCFI)
 ═══════════════════════════════════════════════════ */
 
 :root {
   --accent:        #2563B0;
   --accent-hover:  #1E4D8C;
-  --accent-light:  rgba(37,99,176,0.10);
+  --accent-light:  rgba(37,99,176,0.08);
   --accent-brand:  #2563B0;
 
   --bg-primary:    #ffffff;
-  --bg-secondary:  #f8f8f8;
-  --bg-tertiary:   #f0f0f5;
+  --bg-secondary:  #f5f7fa;
+  --bg-tertiary:   #eef1f6;
 
-  --text-primary:  #111118;
-  --text-secondary:#6B6B80;
-  --text-muted:    #9999A8;
+  --text-primary:  #0f1523;
+  --text-secondary:#4a5568;
+  --text-muted:    #8a94a6;
 
-  --border:        rgba(0,0,0,0.08);
-  --border-strong: rgba(0,0,0,0.16);
+  --border:        rgba(0,0,0,0.07);
+  --border-strong: rgba(0,0,0,0.13);
 
   --card-bg:       #ffffff;
+  --card-shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+  --card-shadow-hover: 0 4px 12px rgba(0,0,0,0.10), 0 12px 32px rgba(0,0,0,0.06);
+  --card-radius:   1.25rem;
+}
+
+/* ── Light mode explicit overrides ── */
+body:not(.dark) {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Cards en light mode */
+body:not(.dark) .bg-white {
+  box-shadow: var(--card-shadow);
+}
+
+/* Header sticky light */
+body:not(.dark) header {
+  background: rgba(255,255,255,0.97);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Inputs light mode */
+body:not(.dark) input,
+body:not(.dark) textarea,
+body:not(.dark) select {
+  background: #ffffff;
+  border-color: rgba(0,0,0,0.12);
+  color: var(--text-primary);
+}
+
+body:not(.dark) input:focus,
+body:not(.dark) textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+  outline: none;
 }
 
 /* ── Transitions globales ── */
 *, *::before, *::after {
-  transition-property: background-color, border-color, color;
+  transition-property: background-color, border-color, color, box-shadow;
   transition-duration: 200ms;
   transition-timing-function: ease;
 }
@@ -43,3 +79,4 @@
 
 /* ── Sélection de texte ── */
 ::selection { background: var(--accent-light); color: var(--accent); }
+

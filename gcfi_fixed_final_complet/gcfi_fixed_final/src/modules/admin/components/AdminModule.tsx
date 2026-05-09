@@ -553,6 +553,24 @@ const AdminModule = () => {
             {activeTab === 'orders' && <OrdersTab />}
             {activeTab === 'formations' && <TrainingsTab />}
             {activeTab === 'produits' && <ProductsTab />}
+            {activeTab === 'stock' && (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="relative mb-8">
+                  <div className="w-24 h-24 bg-gradient-to-br from-[#2563B0]/10 to-[#2563B0]/5 rounded-3xl flex items-center justify-center mx-auto">
+                    <Package className="w-12 h-12 text-[#2563B0]" />
+                  </div>
+                  <span className="absolute -top-2 -right-2 bg-amber-400 text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full">Bientôt</span>
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3">Coming Soon...</h3>
+                <p className="text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed">
+                  Le module de gestion de stock est en cours de développement. Il sera disponible très prochainement.
+                </p>
+                <div className="mt-8 flex items-center gap-2 text-xs text-[#2563B0] font-bold bg-[#2563B0]/5 px-6 py-3 rounded-full">
+                  <span className="w-2 h-2 bg-[#2563B0] rounded-full animate-pulse" />
+                  En développement actif
+                </div>
+              </div>
+            )}
             {activeTab === 'devis' && (
               <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6">
                 <QuotesTab />
