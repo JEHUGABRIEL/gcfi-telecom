@@ -17,21 +17,40 @@ function SubscribeBlock() {
   const [done, setDone] = React.useState(subscribed);
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState('');
+  // ✅ Honeypot anti-bot
+  const [honeypot, setHoneypot] = React.useState('');
+
+  // ✅ Rate limiting newsletter — 2 tentatives max par heure
+  function checkNewsletterRate(): boolean {
+    const KEY = 'gcfi-nl-ts';
+    const now = Date.now();
+    const stored: number[] = JSON.parse(localStorage.getItem(KEY) || '[]');
+    const recent = stored.filter(t => now - t < 3600000);
+    if (recent.length >= 2) return false;
+    recent.push(now);
+    localStorage.setItem(KEY, JSON.stringify(recent));
+    return true;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // ✅ Honeypot check
+    if (honeypot) { setDone(true); return; }
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
       setError('Veuillez entrer une adresse email valide.');
+      return;
+    }
+    if (!checkNewsletterRate()) {
+      setError('Trop de tentatives. Réessayez dans une heure.');
       return;
     }
     setSubmitting(true);
     setError('');
     try {
-      // Tentative d'insertion en DB (table subscribers optionnelle)
-      await supabase.from('subscribers').insert([{ email, subscribed_at: new Date().toISOString() }]);
+      await supabase.from('subscribers').insert([{ email: email.trim().toLowerCase(), subscribed_at: new Date().toISOString() }]);
     } catch (_) { /* table absente → silencieux */ }
+    // ✅ Seulement le flag, jamais l'email en clair
     localStorage.setItem('gcfi-newsletter-subscribed', 'true');
-    localStorage.setItem('gcfi-newsletter-email', email);
     setDone(true);
     setSubmitting(false);
   };
@@ -83,6 +102,10 @@ function SubscribeBlock() {
             onSubmit={handleSubmit}
             className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-xl p-8 w-full max-w-md"
           >
+            {/* ✅ Honeypot anti-bot */}
+            <div style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
+              <input type="text" name="url" value={honeypot} onChange={e => setHoneypot(e.target.value)} tabIndex={-1} autoComplete="off" />
+            </div>
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">

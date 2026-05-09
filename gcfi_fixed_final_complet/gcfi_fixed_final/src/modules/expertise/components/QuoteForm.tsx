@@ -13,6 +13,23 @@ const SERVICE_TYPES: QuoteServiceType[] = [
 
 const BUDGETS = ['< 500 000 FCFA', '500 000 – 2M FCFA', '2M – 10M FCFA', '10M – 50M FCFA', '> 50M FCFA', 'À définir'];
 
+// ✅ Rate limiting côté client — 3 devis max par heure
+function checkRateLimit(): { allowed: boolean; remainingMs: number } {
+  const KEY = 'gcfi-quote-ts';
+  const MAX = 3;
+  const WINDOW = 60 * 60 * 1000; // 1h
+  const now = Date.now();
+  const stored: number[] = JSON.parse(localStorage.getItem(KEY) || '[]');
+  const recent = stored.filter(t => now - t < WINDOW);
+  if (recent.length >= MAX) {
+    const oldest = Math.min(...recent);
+    return { allowed: false, remainingMs: WINDOW - (now - oldest) };
+  }
+  recent.push(now);
+  localStorage.setItem(KEY, JSON.stringify(recent));
+  return { allowed: true, remainingMs: 0 };
+}
+
 interface QuoteFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -23,6 +40,8 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
   const [step, setStep] = React.useState<'form' | 'success'>('form');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  // ✅ Honeypot — champ invisible que les bots remplissent
+  const [honeypot, setHoneypot] = React.useState('');
 
   const [form, setForm] = React.useState({
     full_name: '', email: '', phone: '', company: '',
@@ -35,20 +54,36 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // ✅ Honeypot check — si rempli c'est un bot, on rejette silencieusement
+    if (honeypot) {
+      setStep('success');
+      return;
+    }
+
     if (!form.full_name || !form.email || !form.service_type || !form.message) {
       setError('Veuillez remplir tous les champs obligatoires (*).');
       return;
     }
+
+    // ✅ Rate limiting
+    const { allowed, remainingMs } = checkRateLimit();
+    if (!allowed) {
+      const mins = Math.ceil(remainingMs / 60000);
+      setError(`Trop de demandes. Veuillez réessayer dans ${mins} minute${mins > 1 ? 's' : ''}.`);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const { error: err } = await supabase.from('quotes').insert([{
-        full_name:    form.full_name,
-        email:        form.email,
+        full_name:    form.full_name.trim().slice(0, 100),
+        email:        form.email.trim().toLowerCase().slice(0, 150),
         phone:        form.phone || null,
         company:      form.company || null,
         service_type: form.service_type,
-        message:      form.message,
+        message:      form.message.trim().slice(0, 2000),
         budget:       form.budget || null,
         status:       'nouveau',
       }]);
@@ -64,7 +99,12 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
 
   const handleClose = () => {
     onClose();
-    setTimeout(() => { setStep('form'); setForm({ full_name: '', email: '', phone: '', company: '', service_type: defaultService ?? '', message: '', budget: '' }); setError(null); }, 300);
+    setTimeout(() => {
+      setStep('form');
+      setForm({ full_name: '', email: '', phone: '', company: '', service_type: defaultService ?? '', message: '', budget: '' });
+      setHoneypot('');
+      setError(null);
+    }, 300);
   };
 
   return (
@@ -96,6 +136,10 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="p-8 md:p-12">
+                {/* ✅ Honeypot anti-bot — invisible pour les humains */}
+                <div style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
+                  <input type="text" name="website" value={honeypot} onChange={e => setHoneypot(e.target.value)} tabIndex={-1} autoComplete="off" />
+                </div>
                 <div className="mb-8">
                   <div className="flex items-center gap-3 text-[#2563B0] font-black uppercase tracking-widest text-xs mb-3">
                     <FileText className="w-4 h-4" /> Demande de devis
