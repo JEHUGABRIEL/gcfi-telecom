@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/* ✅ Tailwind v4 — dark mode basé sur la classe .dark */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ═══════════════════════════════════════════════════
+   GCFI — Palette Anthracite + Bleu Profond
+   CTA principal : #2563B0 (bleu)
+   Logo / alerte : #2563B0 (rouge GCFI)
+═══════════════════════════════════════════════════ */
+
+:root {
+  --accent:        #2563B0;
+  --accent-hover:  #1E4D8C;
+  --accent-light:  rgba(37,99,176,0.10);
+  --accent-brand:  #2563B0;
+
+  --bg-primary:    #ffffff;
+  --bg-secondary:  #f8f8f8;
+  --bg-tertiary:   #f0f0f5;
+
+  --text-primary:  #111118;
+  --text-secondary:#6B6B80;
+  --text-muted:    #9999A8;
+
+  --border:        rgba(0,0,0,0.08);
+  --border-strong: rgba(0,0,0,0.16);
+
+  --card-bg:       #ffffff;
+}
+
+/* ── Transitions globales ── */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+/* ── Sélection de texte ── */
+::selection { background: var(--accent-light); color: var(--accent); }
