@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://sitemaps.org">
+  <url>
+    <loc>https://gcfi-rca.com</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://gcfi-rca.comformation</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gcfi-rca.comboutique</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gcfi-rca.comcontact</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gcfi-rca.comconnexion</loc>
+    <priority>0.5</priority>
+  </url>
+</urlset>
