@@ -5,15 +5,15 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://gcfi-rca.comformation</loc>
+    <loc>https://gcfi-rca.com/formation</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://gcfi-rca.comboutique</loc>
+    <loc>https://gcfi-rca.com/boutique</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://gcfi-rca.comcontact</loc>
+    <loc>https://gcfi-rca.com/contact</loc>
     <priority>0.8</priority>
   </url>
 </urlset>
