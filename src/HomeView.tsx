@@ -42,18 +42,24 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
   React.useEffect(() => {
     // Témoignages approuvés
     supabase.from('testimonials').select('*').eq('status', 'approved').order('created_at', { ascending: false })
-      .then(({ data }) => { if (data && data.length > 0) setTestimonials(data as Testimonial[]); })
-      .catch(err => logError('HomeView/testimonials', err));
+      .then(
+        ({ data }) => { if (data && data.length > 0) setTestimonials(data as Testimonial[]); },
+        err => logError('HomeView/testimonials', err)
+      );
 
     // Réalisations
     supabase.from('achievements').select('*').order('year', { ascending: false })
-      .then(({ data }) => { if (data && data.length > 0) setAchievements(data as Achievement[]); })
-      .catch(err => logError('HomeView/achievements', err));
+      .then(
+        ({ data }) => { if (data && data.length > 0) setAchievements(data as Achievement[]); },
+        err => logError('HomeView/achievements', err)
+      );
 
     // Partenaires
     supabase.from('partners').select('*').order('order_index', { ascending: true })
-      .then(({ data }) => { if (data && data.length > 0) setPartners(data as Partner[]); })
-      .catch(err => logError('HomeView/partners', err));
+      .then(
+        ({ data }) => { if (data && data.length > 0) setPartners(data as Partner[]); },
+        err => logError('HomeView/partners', err)
+      );
   }, []);
 
   return (

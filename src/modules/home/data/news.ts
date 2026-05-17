@@ -24,7 +24,7 @@ export const mockNews: NewsItem[] = [
     source: 'Agence Centrafrique Presse',
     date: '18 Avril 2025',
     url: '#',
-  }
+  },
   {
     id: '3',
     title: 'Cybersécurité : l\'Afrique centrale face à la montée des cyberattaques',
@@ -34,5 +34,5 @@ export const mockNews: NewsItem[] = [
     source: 'IT News Africa',
     date: '12 Avril 2025',
     url: '#',
-  },
+  }
 ];

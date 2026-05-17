@@ -12,11 +12,10 @@ import { useProducts } from '@/shared/lib/queries';
 
 type ProfileTab = 'dashboard' | 'settings' | 'orders' | 'investments' | 'wishlist';
 
-
 export default function ProfileModule() {
   const navigate = useNavigate();
   const { user, profile, signOut, loading: authLoading, setShowSignOutModal } = useAuth();
-  const { data: storeProducts = [] } = useProducts(); // ✅ fix "products is not defined"
+  const { data: storeProducts = [] } = useProducts();
   const [activeTab, setActiveTab] = React.useState<ProfileTab>('dashboard');
   const [wishlistVersion, setWishlistVersion] = React.useState(0);
   const [authMode, setAuthMode] = React.useState<'login' | 'signup'>('login');
@@ -35,6 +34,7 @@ export default function ProfileModule() {
   }, [user, activeTab]);
 
   const fetchOrders = async () => {
+    if (!user) return;  // ✅ Garde ajoutée
     setOrdersLoading(true);
     try {
       const { data } = await supabase
@@ -114,7 +114,6 @@ export default function ProfileModule() {
     }
   };
 
-  // Only show the full screen loader if we are still initializing and don't know the auth state yet
   if (authLoading && !user) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center bg-white dark:bg-slate-900 transition-colors">
@@ -233,7 +232,7 @@ export default function ProfileModule() {
           <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-lg border border-slate-100 dark:border-slate-700">
             <div className="text-center mb-8">
               <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-[#2563B0]/10 bg-slate-100">
-                <img src={profile?.avatar_url || user.photoURL || `https://ui-avatars.com/api/?name=${profile?.full_name || user.email}`} alt={profile?.full_name || ''} className="w-full h-full object-cover" />
+                <img src={profile?.avatar_url || (user as any).photoURL || `https://ui-avatars.com/api/?name=${profile?.full_name || user.email}`} alt={profile?.full_name || ''} className="w-full h-full object-cover" />
               </div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">{profile?.full_name || user.email?.split('@')[0]}</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
@@ -278,6 +277,7 @@ export default function ProfileModule() {
                 )}
               >
                 <CreditCard className="w-5 h-5 mr-3" />
+                Investissements
               </button>
               <button 
                 onClick={() => setActiveTab('settings')}

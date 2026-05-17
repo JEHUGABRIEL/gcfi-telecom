@@ -20,8 +20,10 @@ export default function NotificationsTab({ onDelete }: NotificationsTabProps) {
 
   React.useEffect(() => {
     supabase.from('global_notifications').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => { if (data) setAllNotifications(data as Notification[]); })
-      .catch(err => logError('NotificationsTab', err));
+      .then(
+        ({ data }) => { if (data) setAllNotifications(data as Notification[]); },
+        err => logError('NotificationsTab', err)
+      );
   }, []);
 
   const handleSend = async (e: React.FormEvent) => {

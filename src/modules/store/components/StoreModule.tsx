@@ -92,8 +92,10 @@ export default function StoreModule() {
   React.useEffect(() => {
     if (!user) return;
     supabase.from('carts').select('items').eq('user_id', user.id).maybeSingle()
-      .then(({ data }) => { if (data?.items?.length) setCart(data.items as CartItem[]); })
-      .catch(() => {});
+      .then(
+        ({ data }) => { if (data?.items?.length) setCart(data.items as CartItem[]); },
+        () => {}
+      );
   }, [user?.id]);
 
   // ✅ Sauvegarder le panier dans Supabase (upsert direct sur la table carts)

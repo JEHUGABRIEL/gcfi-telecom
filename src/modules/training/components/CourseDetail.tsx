@@ -126,11 +126,11 @@ export default function CourseDetail() {
                 </div>
               </div>
 
-              {/* Tags */}
+              {/* Tags - Correction ici : typage de tag */}
               {course.tags && course.tags.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
                   <Tag className="w-4 h-4 text-slate-400" />
-                  {course.tags.map(tag => (
+                  {course.tags.map((tag: string) => (
                     <span key={tag} className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold px-3 py-1.5 rounded-full">
                       {tag}
                     </span>

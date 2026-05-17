@@ -51,7 +51,6 @@ const AdminModule = () => {
   const { user: adminUser, isAdmin: isAuthorized, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = React.useState<AdminTab>(() => {
-    // ✅ Lire le param ?tab= depuis la recherche admin
     const param = searchParams.get('tab') as AdminTab;
     return VALID_TABS.includes(param) ? param : 'overview';
   });
@@ -108,7 +107,7 @@ const AdminModule = () => {
       setComments(commentsData || []);
       setAllNotifications(globalNotifsData || []);
     } catch (error) {
-      logError("AdminModule", "Error fetching data:", error)
+      logError("AdminModule: Error fetching data", error)
     } finally {
       setLoading(false);
     }
@@ -169,7 +168,7 @@ const AdminModule = () => {
       setIsModalOpen(false);
       fetchData();
     } catch (err) {
-      logError("AdminModule", "Error saving item:", err)
+      logError("AdminModule: Error saving item", err)
     }
   };
 
@@ -182,7 +181,7 @@ const AdminModule = () => {
       setDeleteConfirmation(null);
       fetchData();
     } catch (err) {
-      logError("AdminModule", "Error deleting item:", err)
+      logError("AdminModule: Error deleting item", err)
     }
   };
 
@@ -192,7 +191,7 @@ const AdminModule = () => {
       if (error) throw error;
       fetchData();
     } catch (err) {
-      logError("AdminModule", "Error approving comment:", err)
+      logError("AdminModule: Error approving comment", err)
     }
   };
 
@@ -202,7 +201,7 @@ const AdminModule = () => {
       if (error) throw error;
       fetchData();
     } catch (err) {
-      logError("AdminModule", "Error rejecting comment:", err)
+      logError("AdminModule: Error rejecting comment", err)
     }
   };
 
@@ -232,12 +231,12 @@ const AdminModule = () => {
       addNotification({
         title: "Commande Clôturée",
         message: `La commande #${order.id.slice(0, 8)} a été marquée comme terminée.`,
-        type: 'success'
+        type: 'info'
       });
 
       fetchData();
     } catch (err) {
-      logError("AdminModule", "Error completing order:", err)
+      logError("AdminModule: Error completing order", err)
     }
   };
 
@@ -378,7 +377,7 @@ const AdminModule = () => {
       fetchData();
       setTimeout(() => setSendSuccess(false), 3000);
     } catch (error) {
-      logError("AdminModule", "Error sending notification:", error)
+      logError("AdminModule: Error sending notification", error)
     } finally {
       setIsSending(false);
     }
@@ -556,7 +555,7 @@ const AdminModule = () => {
 
           {/* Tab Content */}
           <div className="lg:col-span-9">
-            {activeTab === 'overview' && <OverviewTab onNavigate={setActiveTab} />}
+            {activeTab === 'overview' && <OverviewTab onNavigate={(tab) => setActiveTab(tab as any)} />}
             {activeTab === 'users' && <UsersTab />}
             {activeTab === 'notifications' && <NotificationsTab onDelete={(id, table) => setDeleteConfirmation({ id, table })} />}
             {activeTab === 'orders' && <OrdersTab />}
