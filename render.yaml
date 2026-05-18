@@ -69,5 +69,5 @@ services:
     routes:
       # SPA fallback — toutes les routes vers index.html
       - type: rewrite
-        source: /*
+        source: /.*
         destination: /index.html
