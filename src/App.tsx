@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'; // ← HashRouter
 import { motion, AnimatePresence } from 'motion/react';
 import { ThemeProvider } from '@/shared/context/ThemeContext';
 import { AuthProvider } from '@/shared/context/AuthContext';
@@ -40,7 +40,6 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 function ClientRoute({ children }: { children: React.ReactNode }) {
   const { isAdmin, loading } = useAuth();
-  // Ne pas bloquer — afficher le contenu pendant que l'auth se résout
   if (loading) return <>{children}</>;
   if (isAdmin) return <Navigate to="/admin" replace />;
   return <>{children}</>;
@@ -96,9 +95,6 @@ function AppContent() {
   const { loading: authLoading, isAdmin } = useAuth();
   const [isContactOpen, setIsContactOpen] = React.useState(false);
 
-  // ✅ Ne plus bloquer le rendu — l'auth se résout en arrière-plan
-  // if (authLoading) { return <spinner> }
-
   return (
     <div className="min-h-screen pb-20 md:pb-0 bg-white dark:bg-[var(--bg-primary)] font-sans transition-colors">
       <ScrollProgress />
@@ -124,12 +120,7 @@ function AppContent() {
 
 export default function App() {
   return (
-    <BrowserRouter
-      future={{
-        v7_startTransition: true,      // ✅ supprime le warning startTransition
-        v7_relativeSplatPath: true,    // ✅ supprime le warning relativeSplatPath
-      }}
-    >
+    <HashRouter>
       <ThemeProvider>
         <AuthProvider>
           <NotificationProvider>
@@ -138,6 +129,6 @@ export default function App() {
           </NotificationProvider>
         </AuthProvider>
       </ThemeProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
