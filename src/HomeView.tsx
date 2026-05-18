@@ -82,11 +82,11 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
               { path: null, icon: '🔧', title: 'Services', desc: 'Déploiement réseau, fibre optique, vidéosurveillance et cybersécurité.', cta: 'Demander un devis', onClick: onContactOpen },
             ].map(item => (
               <div key={item.title} onClick={() => item.onClick ? item.onClick() : navigate(item.path!)}
-                className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 hover:border-[#2563B0] transition-all cursor-pointer group">
+                className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 hover:border-[#C1272D] transition-all cursor-pointer group">
                 <div className="text-4xl mb-6">{item.icon}</div>
                 <h3 className="text-2xl font-bold mb-4 dark:text-white">{item.title}</h3>
                 <p className="text-slate-500 dark:text-slate-400 mb-6">{item.desc}</p>
-                <span className="text-[#2563B0] font-bold flex items-center gap-2">{item.cta} <ChevronRight className="w-4 h-4" /></span>
+                <span className="text-[#C1272D] font-bold flex items-center gap-2">{item.cta} <ChevronRight className="w-4 h-4" /></span>
               </div>
             ))}
           </div>
@@ -98,7 +98,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
                 <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Nos Réalisations</h2>
                 <p className="text-slate-600 dark:text-slate-400">Des projets d'envergure qui façonnent l'avenir de la RCA.</p>
               </div>
-              <Award className="w-12 h-12 text-[#2563B0] opacity-20" />
+              <Award className="w-12 h-12 text-[#C1272D] opacity-20" />
             </div>
             <div className="grid md:grid-cols-3 gap-8">
               {achievements.map(item => (
@@ -108,9 +108,9 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
                     <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <div className="bg-white/20 backdrop-blur-md p-4 rounded-full border border-white/30"><ExternalLink className="w-6 h-6 text-white" /></div>
                     </div>
-                    <div className="absolute top-4 right-4 bg-white/90 dark:bg-slate-800/90 px-3 py-1 rounded-full text-xs font-bold text-[#2563B0]">{item.year}</div>
+                    <div className="absolute top-4 right-4 bg-white/90 dark:bg-slate-800/90 px-3 py-1 rounded-full text-xs font-bold text-[#C1272D]">{item.year}</div>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-[#2563B0] transition-colors">{item.title}</h3>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-[#C1272D] transition-colors">{item.title}</h3>
                   <p className="text-slate-500 dark:text-slate-400 text-sm line-clamp-2">{item.description}</p>
                 </div>
               ))}
@@ -137,15 +137,15 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
           <div className="mt-32">
             <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-16">
               <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white">
-                Avis de nos <span className="text-[#2563B0]">Clients</span>
+                Avis de nos <span className="text-[#C1272D]">Clients</span>
               </h2>
               <div className="flex gap-4">
                 <button onClick={() => setTestimonialIndex(p => (p - 1 + testimonials.length) % testimonials.length)}
-                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#2563B0] hover:border-[#2563B0] hover:text-white transition-all">
+                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#C1272D] hover:border-[#C1272D] hover:text-white transition-all">
                   <ChevronLeft className="w-6 h-6" />
                 </button>
                 <button onClick={() => setTestimonialIndex(p => (p + 1) % testimonials.length)}
-                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#2563B0] hover:border-[#2563B0] hover:text-white transition-all">
+                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#C1272D] hover:border-[#C1272D] hover:text-white transition-all">
                   <ChevronRight className="w-6 h-6" />
                 </button>
               </div>
@@ -165,10 +165,10 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
                     </div>
                     <p className="text-slate-700 dark:text-slate-300 italic mb-8 leading-relaxed h-24 line-clamp-4">"{t.content}"</p>
                     <div className="mt-auto flex items-center">
-                      <img src={avatarSrc} alt={t.name} loading="lazy" className="w-12 h-12 rounded-full mr-4 border-2 border-[#2563B0]/20" referrerPolicy="no-referrer" />
+                      <img src={avatarSrc} alt={t.name} loading="lazy" className="w-12 h-12 rounded-full mr-4 border-2 border-[#C1272D]/20" referrerPolicy="no-referrer" />
                       <div>
                         <p className="font-bold text-slate-900 dark:text-white text-sm">{t.name}</p>
-                        <p className="text-xs text-[#2563B0] font-medium tracking-wide uppercase">{t.role}</p>
+                        <p className="text-xs text-[#C1272D] font-medium tracking-wide uppercase">{t.role}</p>
                       </div>
                     </div>
                   </motion.div>
@@ -186,7 +186,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedAchievement(null)} className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" />
             <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl overflow-y-auto max-h-[90vh]">
-              <button onClick={() => setSelectedAchievement(null)} className="absolute top-8 right-8 z-10 bg-slate-100 dark:bg-slate-800 p-3 rounded-full hover:text-[#2563B0] transition-all">
+              <button onClick={() => setSelectedAchievement(null)} className="absolute top-8 right-8 z-10 bg-slate-100 dark:bg-slate-800 p-3 rounded-full hover:text-[#C1272D] transition-all">
                 <X className="w-6 h-6" />
               </button>
               <div className="flex flex-col md:flex-row">
@@ -194,7 +194,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
                   <img src={selectedAchievement.image} alt={selectedAchievement.title} loading="lazy" className="w-full h-full object-cover" />
                 </div>
                 <div className="md:w-1/2 p-12">
-                  <div className="flex items-center gap-3 text-[#2563B0] font-black uppercase tracking-widest text-xs mb-6">
+                  <div className="flex items-center gap-3 text-[#C1272D] font-black uppercase tracking-widest text-xs mb-6">
                     <Calendar className="w-4 h-4" />{selectedAchievement.year}
                   </div>
                   <h3 className="text-4xl font-black text-slate-900 dark:text-white mb-8">{selectedAchievement.title}</h3>

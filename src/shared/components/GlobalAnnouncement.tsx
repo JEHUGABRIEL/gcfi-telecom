@@ -25,7 +25,7 @@ export default function GlobalAnnouncement() {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: -100, opacity: 0 }}
-        className="fixed top-0 left-0 right-0 z-[60] bg-[#2563B0] text-white py-3 px-4 shadow-lg border-b border-white/10"
+        className="fixed top-0 left-0 right-0 z-[60] bg-[#C1272D] text-white py-3 px-4 shadow-lg border-b border-white/10"
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 overflow-hidden">
@@ -33,7 +33,7 @@ export default function GlobalAnnouncement() {
               <Megaphone className="w-4 h-4 text-white animate-pulse" />
             </div>
             <div className="flex items-center gap-2 whitespace-nowrap overflow-hidden">
-              <span className="font-black uppercase tracking-widest text-[10px] bg-white text-[#2563B0] px-2 py-0.5 rounded">
+              <span className="font-black uppercase tracking-widest text-[10px] bg-white text-[#C1272D] px-2 py-0.5 rounded">
                 Info
               </span>
               <p className="text-sm font-bold truncate">

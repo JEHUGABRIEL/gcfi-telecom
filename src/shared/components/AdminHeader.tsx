@@ -85,7 +85,7 @@ function AdminSearch({ onClose }: { onClose: () => void }) {
           <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)}
             placeholder="Rechercher utilisateurs, commandes, produits..."
             className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none text-sm font-medium" />
-          {loading && <div className="w-4 h-4 border-2 border-slate-200 border-t-[#2563B0] rounded-full animate-spin shrink-0" />}
+          {loading && <div className="w-4 h-4 border-2 border-slate-200 border-t-[#C1272D] rounded-full animate-spin shrink-0" />}
           <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
             <X className="w-4 h-4 text-slate-400" />
           </button>

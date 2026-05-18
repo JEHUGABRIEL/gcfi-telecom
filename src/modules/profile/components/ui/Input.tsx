@@ -24,7 +24,7 @@ const Input = React.forwardRef<HTMLInputElement & HTMLTextAreaElement, InputProp
             "placeholder:text-slate-400 dark:placeholder:text-slate-500",
             error 
               ? "border-red-500 focus:ring-2 focus:ring-blue-500/20" 
-              : "border-slate-200 dark:border-slate-700 focus:border-[#2563B0] focus:ring-2 focus:ring-[#2563B0]/10",
+              : "border-slate-200 dark:border-slate-700 focus:border-[#C1272D] focus:ring-2 focus:ring-[#C1272D]/10",
             isTextArea && "min-h-[120px] resize-none",
             className
           )}

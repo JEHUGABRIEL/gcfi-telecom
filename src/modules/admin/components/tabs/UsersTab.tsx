@@ -26,13 +26,13 @@ export default function UsersTab() {
     setUsers(u => u.map(x => x.id === id ? { ...x, role } : x));
   };
 
-  if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-slate-200 border-t-[#2563B0] rounded-full animate-spin" /></div>;
+  if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-slate-200 border-t-[#C1272D] rounded-full animate-spin" /></div>;
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
       <div className="p-8 border-b border-slate-50 dark:border-slate-700 flex items-center justify-between">
         <h3 className="text-xl font-black text-slate-900 dark:text-white">Utilisateurs <span className="text-sm font-normal text-slate-400">({users.length})</span></h3>
-        <button onClick={fetch} className="p-2 text-slate-400 hover:text-[#2563B0] transition-colors"><RefreshCw className="w-4 h-4" /></button>
+        <button onClick={fetch} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className="w-4 h-4" /></button>
       </div>
       <div className="divide-y divide-slate-50 dark:divide-slate-700">
         {users.map(u => (
@@ -40,7 +40,7 @@ export default function UsersTab() {
             <div className="flex items-center gap-3">
               <div className={cn('w-9 h-9 rounded-full flex items-center justify-center text-sm font-black',
                 u.role === 'superadmin' ? 'bg-purple-100 text-purple-700' :
-                u.role === 'admin' ? 'bg-red-100 text-[#2563B0]' : 'bg-slate-100 text-slate-600')}>
+                u.role === 'admin' ? 'bg-red-100 text-[#C1272D]' : 'bg-slate-100 text-slate-600')}>
                 {u.full_name?.charAt(0) ?? u.email?.charAt(0) ?? '?'}
               </div>
               <div>

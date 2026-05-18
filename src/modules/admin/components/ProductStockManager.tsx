@@ -167,7 +167,7 @@ export default function ProductStockManager() {
             placeholder="Rechercher par nom, catégorie ou statut (En stock, Faible, Rupture)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl pl-12 pr-6 py-4 outline-none focus:ring-2 focus:ring-[#2563B0] text-sm"
+            className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl pl-12 pr-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D] text-sm"
           />
         </div>
       </div>
@@ -187,7 +187,7 @@ export default function ProductStockManager() {
               <tr>
                 <td colSpan={4} className="px-8 py-20 text-center">
                   <div className="flex flex-col items-center gap-3">
-                    <RefreshCw className="w-8 h-8 text-[#2563B0] animate-spin" />
+                    <RefreshCw className="w-8 h-8 text-[#C1272D] animate-spin" />
                     <span className="text-sm font-bold text-slate-400">Chargement de l'inventaire...</span>
                   </div>
                 </td>
@@ -212,7 +212,7 @@ export default function ProductStockManager() {
                           <img src={product.image} alt="" className="w-full h-full object-cover" />
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900 dark:text-white group-hover:text-[#2563B0] transition-colors">{product.name}</p>
+                          <p className="font-bold text-slate-900 dark:text-white group-hover:text-[#C1272D] transition-colors">{product.name}</p>
                           <p className="text-[10px] text-slate-400 uppercase tracking-widest">{product.category}</p>
                         </div>
                       </div>
@@ -277,7 +277,7 @@ export default function ProductStockManager() {
                               ? "bg-slate-100 text-slate-400" 
                               : parseInt(stockInputs[product.id]) === product.stock
                                 ? "bg-slate-50 text-slate-200"
-                                : "bg-[#2563B0] text-white hover:bg-opacity-90 shadow-red-500/10"
+                                : "bg-[#C1272D] text-white hover:bg-opacity-90 shadow-red-500/10"
                           )}
                         >
                           {isUpdating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}

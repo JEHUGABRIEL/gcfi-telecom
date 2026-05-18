@@ -144,7 +144,7 @@ export default function ContactModal({ isOpen, onClose }: ContactModalProps) {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-[#2563B0] text-white py-4 rounded-xl font-bold hover:bg-[#1E4D8C] transition-all disabled:opacity-50 flex items-center justify-center group"
+                    className="w-full bg-[#C1272D] text-white py-4 rounded-xl font-bold hover:bg-[#1E4D8C] transition-all disabled:opacity-50 flex items-center justify-center group"
                   >
                     {isSubmitting ? (
                       <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin transition-all" />

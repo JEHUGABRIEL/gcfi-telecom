@@ -97,9 +97,9 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
       {externalIsOpen === undefined && (
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 hover:border-[#2563B0]/50 transition-all group lg:min-w-[300px] shadow-sm"
+          className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 hover:border-[#C1272D]/50 transition-all group lg:min-w-[300px] shadow-sm"
         >
-          <Search className="w-4 h-4 text-slate-400 group-hover:text-[#2563B0] transition-colors" />
+          <Search className="w-4 h-4 text-slate-400 group-hover:text-[#C1272D] transition-colors" />
           <span className="text-xs text-slate-400 font-medium">Rechercher...</span>
           <kbd className="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded ml-auto uppercase">
             Ctrl K
@@ -125,7 +125,7 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
             >
               <div className="p-6 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-4">
-                  <Search className="w-6 h-6 text-[#2563B0]" />
+                  <Search className="w-6 h-6 text-[#C1272D]" />
                   <input
                     autoFocus
                     type="text"
@@ -164,7 +164,7 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
                           <div className="flex items-center gap-2 mb-0.5">
                             {result.type === 'product' && <ShoppingBag className="w-3 h-3 text-blue-500" />}
                             {result.type === 'course' && <GraduationCap className="w-3 h-3 text-green-500" />}
-                            {result.type === 'news' && <Newspaper className="w-3 h-3 text-[#2563B0]" />}
+                            {result.type === 'news' && <Newspaper className="w-3 h-3 text-[#C1272D]" />}
                             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                               {result.type === 'product' ? 'Boutique' : result.type === 'course' ? 'Formation' : 'Actualité'}
                             </span>
@@ -173,7 +173,7 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
                             {result.title}
                           </h4>
                         </div>
-                        <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-[#2563B0] group-hover:translate-x-1 transition-all" />
+                        <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-[#C1272D] group-hover:translate-x-1 transition-all" />
                       </button>
                     ))}
                   </div>
@@ -192,7 +192,7 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
                         <button
                           key={tag}
                           onClick={() => setQuery(tag)}
-                          className="px-4 py-3 bg-white dark:bg-slate-800 text-left rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-[#2563B0]/10 hover:text-[#2563B0] border border-slate-100 dark:border-transparent hover:border-[#2563B0]/20 transition-all shadow-sm"
+                          className="px-4 py-3 bg-white dark:bg-slate-800 text-left rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-[#C1272D]/10 hover:text-[#C1272D] border border-slate-100 dark:border-transparent hover:border-[#C1272D]/20 transition-all shadow-sm"
                         >
                           {tag}
                         </button>

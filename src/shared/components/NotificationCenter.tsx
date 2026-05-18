@@ -52,13 +52,13 @@ export default function NotificationCenter({
             {/* En-tête */}
             <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-[#2563B0]/10 rounded-xl flex items-center justify-center">
-                  <Bell className="w-5 h-5 text-[#2563B0]" />
+                <div className="w-9 h-9 bg-[#C1272D]/10 rounded-xl flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-[#C1272D]" />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 dark:text-white text-base">Notifications</h3>
                   {unreadCount > 0 && (
-                    <p className="text-xs text-[#2563B0] font-semibold">{unreadCount} non lue{unreadCount > 1 ? 's' : ''}</p>
+                    <p className="text-xs text-[#C1272D] font-semibold">{unreadCount} non lue{unreadCount > 1 ? 's' : ''}</p>
                   )}
                 </div>
               </div>
@@ -92,11 +92,11 @@ export default function NotificationCenter({
                       "p-4 rounded-2xl border transition-all cursor-pointer relative bg-white dark:bg-slate-800",
                       notification.read
                         ? "border-slate-100 dark:border-slate-700"
-                        : "border-[#2563B0]/20 dark:border-[#2563B0]/30 shadow-sm"
+                        : "border-[#C1272D]/20 dark:border-[#C1272D]/30 shadow-sm"
                     )}
                   >
                     {!notification.read && (
-                      <span className="absolute top-4 right-4 w-2 h-2 bg-[#2563B0] rounded-full" />
+                      <span className="absolute top-4 right-4 w-2 h-2 bg-[#C1272D] rounded-full" />
                     )}
                     <div className="flex gap-3">
                       <div className={cn(

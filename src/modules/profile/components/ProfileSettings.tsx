@@ -89,7 +89,7 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
     <div className="space-y-8">
       <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-lg border border-slate-100 dark:border-slate-700 transition-colors">
         <div className="flex items-center mb-8">
-          <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-2xl mr-4 text-[#2563B0]">
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-2xl mr-4 text-[#C1272D]">
             <User className="w-6 h-6" />
           </div>
           <div>
@@ -140,7 +140,7 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-[#2563B0] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#1E4D8C] transition-all disabled:opacity-50 flex items-center group"
+              className="bg-[#C1272D] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#1E4D8C] transition-all disabled:opacity-50 flex items-center group"
             >
               {isSubmitting ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
@@ -164,7 +164,7 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Gérez vos préférences de notifications et activez les alertes push pour vos commandes.</p>
           <button 
             onClick={handlePushActivation}
-            className="text-sm font-bold text-[#2563B0] hover:underline"
+            className="text-sm font-bold text-[#C1272D] hover:underline"
           >
             Activer les notifications push
           </button>
@@ -178,12 +178,12 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">Sécurité</h3>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Changez votre mot de passe ou gérez votre sécurité.</p>
-          <button className="text-sm font-bold text-[#2563B0] hover:underline">Gérer la sécurité</button>
+          <button className="text-sm font-bold text-[#C1272D] hover:underline">Gérer la sécurité</button>
         </div>
       </div>
 
       <div className="bg-slate-900 dark:bg-slate-800 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#2563B0]/10 rounded-full blur-3xl -mr-32 -mt-32 transition-transform group-hover:scale-110" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#C1272D]/10 rounded-full blur-3xl -mr-32 -mt-32 transition-transform group-hover:scale-110" />
         <div className="relative z-10">
           <h3 className="text-xl font-bold text-white mb-2">Centre de Test Notifications</h3>
           <p className="text-slate-400 text-sm mb-8">Utilisez ces boutons pour simuler des événements réels et vérifier vos notifications push.</p>
@@ -205,7 +205,7 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
                 message: 'Votre commande #GCFI-882 est maintenant expédiée.',
                 type: 'order'
               })}
-              className="bg-[#2563B0] hover:bg-[#1E4D8C] text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-500/20"
+              className="bg-[#C1272D] hover:bg-[#1E4D8C] text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-500/20"
             >
               Simuler Statut Commande
             </button>

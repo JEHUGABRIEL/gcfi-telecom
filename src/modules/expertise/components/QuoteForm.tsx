@@ -116,7 +116,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
           <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
 
-            <button onClick={handleClose} className="absolute top-6 right-6 z-10 p-3 bg-slate-100 dark:bg-slate-800 rounded-full hover:text-[#2563B0] transition-colors">
+            <button onClick={handleClose} className="absolute top-6 right-6 z-10 p-3 bg-slate-100 dark:bg-slate-800 rounded-full hover:text-[#C1272D] transition-colors">
               <X className="w-5 h-5" />
             </button>
 
@@ -130,7 +130,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                 <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4">Demande envoyée !</h3>
                 <p className="text-slate-500 dark:text-slate-400 mb-2">Notre équipe analysera votre demande et vous contactera sous <strong>24–48h ouvrables</strong>.</p>
                 <p className="text-slate-400 dark:text-slate-500 text-sm mb-8">Un récapitulatif a été enregistré dans notre système.</p>
-                <button onClick={handleClose} className="bg-[#2563B0] text-white px-8 py-4 rounded-full font-bold hover:bg-[#1E4D8C] transition-all">
+                <button onClick={handleClose} className="bg-[#C1272D] text-white px-8 py-4 rounded-full font-bold hover:bg-[#1E4D8C] transition-all">
                   Fermer
                 </button>
               </div>
@@ -141,7 +141,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                   <input type="text" name="website" value={honeypot} onChange={e => setHoneypot(e.target.value)} tabIndex={-1} autoComplete="off" />
                 </div>
                 <div className="mb-8">
-                  <div className="flex items-center gap-3 text-[#2563B0] font-black uppercase tracking-widest text-xs mb-3">
+                  <div className="flex items-center gap-3 text-[#C1272D] font-black uppercase tracking-widest text-xs mb-3">
                     <FileText className="w-4 h-4" /> Demande de devis
                   </div>
                   <h2 className="text-3xl font-black text-slate-900 dark:text-white">Décrivez votre projet</h2>
@@ -161,7 +161,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                       <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">Nom complet *</label>
                       <div className="relative">
                         <input value={form.full_name} onChange={set('full_name')} placeholder="Jean Dupont" required
-                          className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#2563B0] transition-colors" />
+                          className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors" />
                         <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
                     </div>
@@ -169,7 +169,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                       <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">Email *</label>
                       <div className="relative">
                         <input type="email" value={form.email} onChange={set('email')} placeholder="vous@email.com" required
-                          className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#2563B0] transition-colors" />
+                          className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors" />
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
                     </div>
@@ -181,7 +181,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                       <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">Téléphone</label>
                       <div className="relative">
                         <input value={form.phone} onChange={set('phone')} placeholder="+236 72 00 00 00"
-                          className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#2563B0] transition-colors" />
+                          className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors" />
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
                     </div>
@@ -189,7 +189,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                       <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">Société / Organisation</label>
                       <div className="relative">
                         <input value={form.company} onChange={set('company')} placeholder="Nom de l'entreprise"
-                          className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#2563B0] transition-colors" />
+                          className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors" />
                         <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
                     </div>
@@ -200,7 +200,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                     <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">Type de service *</label>
                     <div className="relative">
                       <select value={form.service_type} onChange={set('service_type')} required
-                        className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#2563B0] transition-colors appearance-none">
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors appearance-none">
                         <option value="">Sélectionner un service...</option>
                         {SERVICE_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
@@ -213,7 +213,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                     <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">Budget estimé</label>
                     <div className="relative">
                       <select value={form.budget} onChange={set('budget')}
-                        className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#2563B0] transition-colors appearance-none">
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors appearance-none">
                         <option value="">Sélectionner une tranche...</option>
                         {BUDGETS.map(b => <option key={b} value={b}>{b}</option>)}
                       </select>
@@ -227,14 +227,14 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                     <div className="relative">
                       <textarea value={form.message} onChange={set('message')} required rows={4}
                         placeholder="Décrivez votre besoin, le contexte, les contraintes particulières..."
-                        className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#2563B0] transition-colors resize-none" />
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors resize-none" />
                       <MessageSquare className="absolute left-3 top-4 w-4 h-4 text-slate-400" />
                     </div>
                   </div>
                 </div>
 
                 <button type="submit" disabled={loading}
-                  className="w-full mt-8 bg-[#2563B0] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-[#1E4D8C] transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-xl shadow-blue-500/20">
+                  className="w-full mt-8 bg-[#C1272D] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-[#1E4D8C] transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-xl shadow-blue-500/20">
                   {loading ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (

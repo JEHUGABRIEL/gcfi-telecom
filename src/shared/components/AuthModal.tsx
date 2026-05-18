@@ -92,7 +92,7 @@ export default function AuthModal() {
 
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                {authMode === 'login' ? <LogIn className="w-8 h-8 text-[#2563B0]" /> : <UserPlus className="w-8 h-8 text-[#2563B0]" />}
+                {authMode === 'login' ? <LogIn className="w-8 h-8 text-[#C1272D]" /> : <UserPlus className="w-8 h-8 text-[#C1272D]" />}
               </div>
               <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">
                 {authMode === 'login' ? 'Connexion requise' : 'Créer un compte'}
@@ -121,7 +121,7 @@ export default function AuthModal() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
-                    className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#2563B0] text-slate-900 dark:text-white transition-all shadow-sm"
+                    className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#C1272D] text-slate-900 dark:text-white transition-all shadow-sm"
                   />
                 </div>
               )}
@@ -133,7 +133,7 @@ export default function AuthModal() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#2563B0] text-slate-900 dark:text-white transition-all shadow-sm"
+                  className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#C1272D] text-slate-900 dark:text-white transition-all shadow-sm"
                 />
               </div>
               <div className="relative">
@@ -144,7 +144,7 @@ export default function AuthModal() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#2563B0] text-slate-900 dark:text-white transition-all shadow-sm"
+                  className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#C1272D] text-slate-900 dark:text-white transition-all shadow-sm"
                 />
               </div>
               <button
@@ -173,7 +173,7 @@ export default function AuthModal() {
               {authMode === 'login' ? "Pas encore de compte ?" : "Déjà inscrit ?"}
               <button 
                 onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                className="ml-2 font-bold text-[#2563B0] hover:underline"
+                className="ml-2 font-bold text-[#C1272D] hover:underline"
               >
                 {authMode === 'login' ? "S'inscrire" : "Se connecter"}
               </button>

@@ -21,7 +21,7 @@ export default function FloatingContact() {
               {/* Demander un devis */}
               <button
                 onClick={() => { setIsQuoteOpen(true); setIsOpen(false); }}
-                className="flex items-center gap-3 bg-[#2563B0] text-white px-6 py-3 rounded-full shadow-xl hover:bg-[#1E4D8C] transition-all font-bold group"
+                className="flex items-center gap-3 bg-[#C1272D] text-white px-6 py-3 rounded-full shadow-xl hover:bg-[#1E4D8C] transition-all font-bold group"
               >
                 <FileText className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 <span className="text-sm">Demander un devis</span>
@@ -55,7 +55,7 @@ export default function FloatingContact() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(v => !v)}
-          className="w-16 h-16 bg-[#2563B0] rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/30 text-white hover:bg-[#1E4D8C] transition-colors"
+          className="w-16 h-16 bg-[#C1272D] rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/30 text-white hover:bg-[#1E4D8C] transition-colors"
           aria-label="Contact"
         >
           <AnimatePresence mode="wait">

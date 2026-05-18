@@ -31,7 +31,7 @@ export default function CourseDetail() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-slate-100 border-t-[#2563B0] rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-slate-100 border-t-[#C1272D] rounded-full animate-spin" />
       </div>
     );
   }
@@ -55,7 +55,7 @@ export default function CourseDetail() {
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#2563B0] transition-colors mb-8"
+          className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#C1272D] transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" /> Retour aux formations
         </motion.button>
@@ -70,13 +70,13 @@ export default function CourseDetail() {
                 {course.image ? (
                   <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#2563B0] to-[#1E3A8A] flex items-center justify-center">
+                  <div className="w-full h-full bg-gradient-to-br from-[#C1272D] to-[#1E3A8A] flex items-center justify-center">
                     <GraduationCap className="w-24 h-24 text-white/30" />
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-6 left-6">
-                  <span className="bg-[#2563B0] text-white text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
+                  <span className="bg-[#C1272D] text-white text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
                     {course.category}
                   </span>
                 </div>
@@ -91,16 +91,16 @@ export default function CourseDetail() {
               <div className="flex flex-wrap gap-4 mb-8">
                 {course.duration && (
                   <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <Clock className="w-4 h-4 text-[#2563B0]" />
+                    <Clock className="w-4 h-4 text-[#C1272D]" />
                     <span className="font-medium">{course.duration}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <Users className="w-4 h-4 text-[#2563B0]" />
+                  <Users className="w-4 h-4 text-[#C1272D]" />
                   <span className="font-medium">Toutes niveaux</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <Award className="w-4 h-4 text-[#2563B0]" />
+                  <Award className="w-4 h-4 text-[#C1272D]" />
                   <span className="font-medium">Certificat inclus</span>
                 </div>
               </div>
@@ -119,7 +119,7 @@ export default function CourseDetail() {
                 <div className="space-y-3">
                   {inclus.map(item => (
                     <div key={item} className="flex items-center gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-[#2563B0] shrink-0" />
+                      <CheckCircle2 className="w-5 h-5 text-[#C1272D] shrink-0" />
                       <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{item}</span>
                     </div>
                   ))}
@@ -151,7 +151,7 @@ export default function CourseDetail() {
               <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl p-8">
                 {/* Prix */}
                 <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-4xl font-black text-[#2563B0]">
+                  <span className="text-4xl font-black text-[#C1272D]">
                     {course.price === 0 ? 'Gratuit' : course.price.toLocaleString('fr-FR')}
                   </span>
                   {course.price > 0 && (
@@ -164,7 +164,7 @@ export default function CourseDetail() {
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={handleContact}
-                  className="w-full flex items-center justify-center gap-3 py-4 bg-[#2563B0] hover:bg-[#1E4D8C] text-white font-black text-sm uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-[#2563B0]/20 mb-4"
+                  className="w-full flex items-center justify-center gap-3 py-4 bg-[#C1272D] hover:bg-[#1E4D8C] text-white font-black text-sm uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-[#C1272D]/20 mb-4"
                 >
                   <Phone className="w-4 h-4" />
                   S&apos;inscrire via WhatsApp
@@ -172,7 +172,7 @@ export default function CourseDetail() {
 
                 <button
                   onClick={handleShare}
-                  className="w-full flex items-center justify-center gap-2 py-3 border-2 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-[#2563B0] hover:text-[#2563B0] rounded-2xl text-sm font-bold transition-all"
+                  className="w-full flex items-center justify-center gap-2 py-3 border-2 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-[#C1272D] hover:text-[#C1272D] rounded-2xl text-sm font-bold transition-all"
                 >
                   <Share2 className="w-4 h-4" /> Partager
                 </button>

@@ -36,7 +36,7 @@ export default function ProductDetail() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-slate-100 border-t-[#2563B0] rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-slate-100 border-t-[#C1272D] rounded-full animate-spin" />
       </div>
     );
   }
@@ -52,7 +52,7 @@ export default function ProductDetail() {
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#2563B0] transition-colors mb-8"
+          className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#C1272D] transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" /> Retour à la boutique
         </motion.button>
@@ -76,7 +76,7 @@ export default function ProductDetail() {
               )}
             </div>
             {/* Badge catégorie */}
-            <span className="absolute top-4 left-4 bg-[#2563B0] text-white text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
+            <span className="absolute top-4 left-4 bg-[#C1272D] text-white text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
               {product.category}
             </span>
           </motion.div>
@@ -109,7 +109,7 @@ export default function ProductDetail() {
 
             {/* Prix */}
             <div className="flex items-baseline gap-3 mb-6">
-              <span className="text-4xl font-black text-[#2563B0]">
+              <span className="text-4xl font-black text-[#C1272D]">
                 {product.price.toLocaleString('fr-FR')}
               </span>
               <span className="text-lg font-bold text-slate-500">FCFA</span>
@@ -141,7 +141,7 @@ export default function ProductDetail() {
                     ? 'bg-green-500 text-white'
                     : product.stock === 0
                     ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                    : 'bg-[#2563B0] hover:bg-[#1E4D8C] text-white shadow-lg shadow-[#2563B0]/20'
+                    : 'bg-[#C1272D] hover:bg-[#1E4D8C] text-white shadow-lg shadow-[#C1272D]/20'
                 }`}
               >
                 <ShoppingCart className="w-4 h-4" />
@@ -161,7 +161,7 @@ export default function ProductDetail() {
 
               <button
                 onClick={handleShare}
-                className="p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-[#2563B0] hover:text-[#2563B0] transition-all"
+                className="p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-[#C1272D] hover:text-[#C1272D] transition-all"
               >
                 <Share2 className="w-5 h-5" />
               </button>
@@ -175,7 +175,7 @@ export default function ProductDetail() {
                 { icon: RefreshCw, label: 'Retour', sub: '7 jours' },
               ].map(({ icon: Icon, label, sub }) => (
                 <div key={label} className="flex flex-col items-center text-center p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  <Icon className="w-5 h-5 text-[#2563B0] mb-2" />
+                  <Icon className="w-5 h-5 text-[#C1272D] mb-2" />
                   <span className="text-xs font-black text-slate-900 dark:text-white">{label}</span>
                   <span className="text-[10px] text-slate-500 mt-0.5">{sub}</span>
                 </div>

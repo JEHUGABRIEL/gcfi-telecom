@@ -27,7 +27,7 @@ export default function ScrollProgress({ hideButton = false }: { hideButton?: bo
     <>
       {/* Barre de progression en haut — toujours visible */}
       <motion.div
-        className="fixed top-0 left-0 right-0 h-1 bg-[#2563B0] origin-left z-[100]"
+        className="fixed top-0 left-0 right-0 h-1 bg-[#C1272D] origin-left z-[100]"
         style={{ scaleX }}
       />
 
@@ -45,9 +45,9 @@ export default function ScrollProgress({ hideButton = false }: { hideButton?: bo
         >
           <svg className="absolute inset-0 w-full h-full -rotate-90">
             <circle cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-100 dark:text-slate-700" />
-            <motion.circle cx="28" cy="28" r="24" fill="none" stroke="#2563B0" strokeWidth="2" strokeDasharray="150" style={{ pathLength: scrollYProgress }} />
+            <motion.circle cx="28" cy="28" r="24" fill="none" stroke="#C1272D" strokeWidth="2" strokeDasharray="150" style={{ pathLength: scrollYProgress }} />
           </svg>
-          <ArrowUp className="w-6 h-6 text-[#2563B0] group-hover:-translate-y-1 transition-transform" />
+          <ArrowUp className="w-6 h-6 text-[#C1272D] group-hover:-translate-y-1 transition-transform" />
         </motion.button>
       )}
     </>

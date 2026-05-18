@@ -24,7 +24,7 @@ export default function OverviewTab({ onNavigate }: OverviewTabProps) {
               </div>
               <button
                 onClick={() => onNavigate(i === 1 ? 'orders' : 'users')}
-                className="text-xs font-black uppercase tracking-widest text-[#2563B0] hover:underline"
+                className="text-xs font-black uppercase tracking-widest text-[#C1272D] hover:underline"
               >
                 Voir
               </button>

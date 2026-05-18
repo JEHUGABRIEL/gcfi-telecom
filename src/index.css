@@ -1,19 +1,18 @@
 @import "tailwindcss";
 
-/* ✅ Tailwind v4 — dark mode basé sur la classe .dark */
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ═══════════════════════════════════════════════════
-   GCFI — Light Mode Clean (ref. screenshots)
-   Fond : blanc pur, cartes légèrement ombrées
-   Accent : #2563B0 (bleu GCFI)
+   GCFI — Thème officiel (rouge / blanc / noir)
+   Logo : rouge (#C1272D), blanc, noir
 ═══════════════════════════════════════════════════ */
 
 :root {
-  --accent:        #2563B0;
-  --accent-hover:  #1E4D8C;
-  --accent-light:  rgba(37,99,176,0.08);
-  --accent-brand:  #2563B0;
+  /* Couleur principale — rouge GCFI */
+  --accent:        #C1272D;
+  --accent-hover:  #9E1E24;
+  --accent-light:  rgba(193,39,45,0.08);
+  --accent-brand:  #C1272D;
 
   --bg-primary:    #ffffff;
   --bg-secondary:  #f5f7fa;
@@ -32,24 +31,21 @@
   --card-radius:   1.25rem;
 }
 
-/* ── Light mode explicit overrides ── */
+/* Light mode */
 body:not(.dark) {
   background-color: var(--bg-secondary);
   color: var(--text-primary);
 }
 
-/* Cards en light mode */
 body:not(.dark) .bg-white {
   box-shadow: var(--card-shadow);
 }
 
-/* Header sticky light */
 body:not(.dark) header {
   background: rgba(255,255,255,0.97);
   border-bottom: 1px solid var(--border);
 }
 
-/* Inputs light mode */
 body:not(.dark) input,
 body:not(.dark) textarea,
 body:not(.dark) select {
@@ -65,18 +61,16 @@ body:not(.dark) textarea:focus {
   outline: none;
 }
 
-/* ── Transitions globales ── */
+/* Transitions globales */
 *, *::before, *::after {
   transition-property: background-color, border-color, color, box-shadow;
   transition-duration: 200ms;
   transition-timing-function: ease;
 }
 
-/* ── Scrollbar ── */
+/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-secondary); }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
 
-/* ── Sélection de texte ── */
 ::selection { background: var(--accent-light); color: var(--accent); }
-

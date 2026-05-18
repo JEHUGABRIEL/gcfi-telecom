@@ -46,7 +46,7 @@ export default function NotificationsTab({ onDelete }: NotificationsTabProps) {
     <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
       <div className="flex items-center gap-3 mb-6">
         <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-2xl">
-          <Megaphone className="w-6 h-6 text-[#2563B0]" />
+          <Megaphone className="w-6 h-6 text-[#C1272D]" />
         </div>
         <div>
           <h3 className="text-xl font-black text-slate-900 dark:text-white">Envoyer une Annonce</h3>
@@ -60,12 +60,12 @@ export default function NotificationsTab({ onDelete }: NotificationsTabProps) {
             <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Titre</label>
             <input type="text" value={msgTitle} onChange={e => setMsgTitle(e.target.value)}
               placeholder="Ex: Promotion de fin d'année..." required
-              className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#2563B0] outline-none dark:text-white" />
+              className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#C1272D] outline-none dark:text-white" />
           </div>
           <div>
             <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Catégorie</label>
             <select value={category} onChange={e => setCategory(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#2563B0] outline-none dark:text-white appearance-none">
+              className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#C1272D] outline-none dark:text-white appearance-none">
               <option value="info">Info</option>
               <option value="success">Offre / Promotion</option>
               <option value="warning">Important</option>
@@ -77,11 +77,11 @@ export default function NotificationsTab({ onDelete }: NotificationsTabProps) {
           <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Message</label>
           <textarea rows={4} value={msgContent} onChange={e => setMsgContent(e.target.value)}
             placeholder="Détails de votre annonce..." required
-            className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#2563B0] outline-none dark:text-white resize-none" />
+            className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#C1272D] outline-none dark:text-white resize-none" />
         </div>
         <button type="submit" disabled={isSending}
           className={cn("w-full flex items-center justify-center gap-3 py-4 rounded-full font-black uppercase tracking-widest transition-all",
-            isSending ? "bg-slate-100 text-slate-400" : "bg-[#2563B0] text-white hover:bg-opacity-90 shadow-xl shadow-blue-500/20")}>
+            isSending ? "bg-slate-100 text-slate-400" : "bg-[#C1272D] text-white hover:bg-opacity-90 shadow-xl shadow-blue-500/20")}>
           {isSending ? "Envoi..." : sendSuccess ? "Annonce Envoyée !" : "Diffuser l'annonce"}
           {!isSending && !sendSuccess && <Send className="w-4 h-4" />}
           {sendSuccess && <CheckCircle className="w-4 h-4" />}

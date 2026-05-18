@@ -63,19 +63,19 @@ export default function Header({ onContactOpen }: HeaderProps) {
                     cn(
                       'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all',
                       isActive
-                        ? 'text-[#2563B0] font-bold'
+                        ? 'text-[#C1272D] font-bold'
                         : 'text-slate-600 hover:bg-slate-100'
                     )
                   }
                 >
                   {({ isActive }) => (
                     <>
-                      <item.icon className={cn("w-4 h-4", isActive && "text-[#2563B0]")} />
-                      <span className={isActive ? "text-[#2563B0]" : ""}>{item.label}</span>
+                      <item.icon className={cn("w-4 h-4", isActive && "text-[#C1272D]")} />
+                      <span className={isActive ? "text-[#C1272D]" : ""}>{item.label}</span>
                       {isActive && (
                         <motion.div
                           layoutId="nav-indicator"
-                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563B0] rounded-full"
+                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#C1272D] rounded-full"
                         />
                       )}
                     </>
@@ -86,7 +86,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
               {/* Bouton Contact — blanc avec bordure bleue */}
               <button
                 onClick={onContactOpen}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-[#2563B0] bg-white border-2 border-[#2563B0] hover:bg-blue-50 transition-all ml-1"
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-[#C1272D] bg-white border-2 border-[#C1272D] hover:bg-blue-50 transition-all ml-1"
               >
                 <Phone className="w-4 h-4" />
                 Contact
@@ -125,7 +125,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
                   >
                     <Bell className="w-5 h-5" />
                     {unreadCount > 0 && (
-                      <span className="absolute top-0 right-0 w-4 h-4 bg-[#2563B0] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      <span className="absolute top-0 right-0 w-4 h-4 bg-[#C1272D] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                         {unreadCount > 9 ? '9+' : unreadCount}
                       </span>
                     )}
@@ -152,10 +152,10 @@ export default function Header({ onContactOpen }: HeaderProps) {
                       src={profile.avatar_url}
                       alt={displayName ?? ''}
                       referrerPolicy="no-referrer"
-                      className="w-7 h-7 rounded-full object-cover ring-2 ring-[#2563B0]/30"
+                      className="w-7 h-7 rounded-full object-cover ring-2 ring-[#C1272D]/30"
                     />
                   ) : (
-                    <div className="w-7 h-7 bg-[#2563B0] rounded-full flex items-center justify-center shrink-0">
+                    <div className="w-7 h-7 bg-[#C1272D] rounded-full flex items-center justify-center shrink-0">
                       <span className="text-white text-xs font-black">
                         {displayName?.charAt(0).toUpperCase()}
                       </span>
@@ -166,7 +166,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
               ) : (
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white bg-[#2563B0] hover:bg-[#1d4f9a] transition-all shadow-md shadow-blue-900/20"
+                  className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white bg-[#C1272D] hover:bg-[#1d4f9a] transition-all shadow-md shadow-blue-900/20"
                 >
                   <User className="w-4 h-4" />
                   Connexion
@@ -204,7 +204,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
                       cn(
                         'flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all',
                         isActive
-                          ? 'text-[#2563B0] bg-blue-50'
+                          ? 'text-[#C1272D] bg-blue-50'
                           : 'text-slate-600 hover:bg-slate-50'
                       )
                     }
@@ -215,7 +215,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
                 ))}
                 <button
                   onClick={() => { onContactOpen(); closeMenu(); }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-[#2563B0] border-2 border-[#2563B0] w-full transition-all hover:bg-blue-50"
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-[#C1272D] border-2 border-[#C1272D] w-full transition-all hover:bg-blue-50"
                 >
                   <Phone className="w-5 h-5" />
                   Contact
@@ -233,10 +233,10 @@ export default function Header({ onContactOpen }: HeaderProps) {
                           src={profile.avatar_url}
                           alt={displayName ?? ''}
                           referrerPolicy="no-referrer"
-                          className="w-8 h-8 rounded-full object-cover ring-2 ring-[#2563B0]/30 shrink-0"
+                          className="w-8 h-8 rounded-full object-cover ring-2 ring-[#C1272D]/30 shrink-0"
                         />
                       ) : (
-                        <div className="w-8 h-8 bg-[#2563B0] rounded-full flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 bg-[#C1272D] rounded-full flex items-center justify-center shrink-0">
                           <span className="text-white text-xs font-black">
                             {displayName?.charAt(0).toUpperCase()}
                           </span>
@@ -248,7 +248,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
                 ) : (
                   <button
                     onClick={() => { setShowAuthModal(true); closeMenu(); }}
-                    className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-white bg-[#2563B0] hover:bg-[#1d4f9a] w-full transition-all"
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-white bg-[#C1272D] hover:bg-[#1d4f9a] w-full transition-all"
                   >
                     <User className="w-5 h-5" />
                     Se connecter

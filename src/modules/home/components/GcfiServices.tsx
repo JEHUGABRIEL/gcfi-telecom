@@ -255,7 +255,7 @@ export default function GcfiServices() {
                   "Solution sur mesure adaptée à votre budget"
                 ].map((item, idx) => (
                   <li key={idx} className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-slate-300">
-                    <CheckCircle className="w-4 h-4 text-[#2563B0]" />
+                    <CheckCircle className="w-4 h-4 text-[#C1272D]" />
                     {item}
                   </li>
                 ))}
@@ -264,7 +264,7 @@ export default function GcfiServices() {
 
             <button 
               onClick={() => setSelectedService(null)}
-              className="w-full bg-[#2563B0] text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+              className="w-full bg-[#C1272D] text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
             >
               Demander un devis
             </button>
@@ -359,9 +359,9 @@ export default function GcfiServices() {
       <GalleryModal />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <span className="text-[#2563B0] font-black uppercase tracking-[0.3em] text-xs mb-4 block">Expertise GCFI</span>
+          <span className="text-[#C1272D] font-black uppercase tracking-[0.3em] text-xs mb-4 block">Expertise GCFI</span>
           <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-6">
-            Un Large Éventail de <span className="text-[#2563B0]">Services</span>
+            Un Large Éventail de <span className="text-[#C1272D]">Services</span>
           </h2>
           <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-lg">
             Nous combinons technologie de pointe et savoir-faire local pour répondre aux défis informatiques les plus complexes.
@@ -377,7 +377,7 @@ export default function GcfiServices() {
               viewport={{ once: true }}
               transition={{ delay: index * 0.05 }}
               whileHover={{ y: -5 }}
-              className="bg-white dark:bg-slate-800/50 p-8 rounded-[2.5rem] border border-slate-50 dark:border-transparent hover:border-[#2563B0]/20 hover:shadow-2xl hover:shadow-red-500/5 transition-all group shadow-sm"
+              className="bg-white dark:bg-slate-800/50 p-8 rounded-[2.5rem] border border-slate-50 dark:border-transparent hover:border-[#C1272D]/20 hover:shadow-2xl hover:shadow-red-500/5 transition-all group shadow-sm"
             >
               <div className={cn(
                 "w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-all group-hover:scale-110",
@@ -390,7 +390,7 @@ export default function GcfiServices() {
                   <service.icon className="w-7 h-7" />
                 </motion.div>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-[#2563B0] transition-colors line-clamp-1">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-[#C1272D] transition-colors line-clamp-1">
                 {service.title}
               </h3>
               <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6 line-clamp-2 italic">
@@ -400,14 +400,14 @@ export default function GcfiServices() {
               <div className="flex items-center justify-between">
                 <button 
                   onClick={() => setSelectedService(service)}
-                  className="flex items-center text-[10px] font-black uppercase tracking-widest text-[#2563B0] hover:gap-2 transition-all"
+                  className="flex items-center text-[10px] font-black uppercase tracking-widest text-[#C1272D] hover:gap-2 transition-all"
                 >
                   En savoir plus <ChevronRight className="w-4 h-4 ml-1" />
                 </button>
                 {service.gallery && (
                   <button 
                     onClick={() => setSelectedGallery(service.gallery || null)}
-                    className="p-3 bg-slate-50 dark:bg-slate-700 rounded-xl text-slate-400 hover:text-[#2563B0] hover:bg-red-50 transition-colors flex items-center gap-2 group/btn"
+                    className="p-3 bg-slate-50 dark:bg-slate-700 rounded-xl text-slate-400 hover:text-[#C1272D] hover:bg-red-50 transition-colors flex items-center gap-2 group/btn"
                     title="Voir la galerie"
                   >
                     <Maximize2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
@@ -483,7 +483,7 @@ export default function GcfiServices() {
           <div className="text-center mb-16">
             <span className="text-red-500 font-black uppercase tracking-[0.3em] text-xs mb-4 block">GCFI Studios</span>
             <h3 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-6">
-              Services <span className="text-[#2563B0]">Vidéo</span> & Contenu
+              Services <span className="text-[#C1272D]">Vidéo</span> & Contenu
             </h3>
             <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-lg">
               De la captation à la diffusion, nous donnons vie à vos projets audiovisuels avec une expertise technique inégalée.

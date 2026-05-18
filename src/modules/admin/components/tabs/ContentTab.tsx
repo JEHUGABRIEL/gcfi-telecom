@@ -76,15 +76,15 @@ export default function ContentTab({ type }: ContentTabProps) {
     setItems(i => i.map(x => x.id === id ? { ...x, status } : x));
   };
 
-  if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-slate-200 border-t-[#2563B0] rounded-full animate-spin" /></div>;
+  if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-slate-200 border-t-[#C1272D] rounded-full animate-spin" /></div>;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">{cfg.label} ({items.length})</h3>
         <div className="flex gap-2">
-          <button onClick={fetch} className="p-2 text-slate-400 hover:text-[#2563B0] transition-colors"><RefreshCw className="w-4 h-4" /></button>
-          <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-2 bg-[#2563B0] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#1E4D8C] transition-all">
+          <button onClick={fetch} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className="w-4 h-4" /></button>
+          <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-2 bg-[#C1272D] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#1E4D8C] transition-all">
             <Plus className="w-4 h-4" /> Ajouter
           </button>
         </div>
@@ -99,7 +99,7 @@ export default function ContentTab({ type }: ContentTabProps) {
                 <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">{cfg.labels[field as keyof typeof cfg.labels]}</label>
                 {field === 'content' || field === 'excerpt' || field === 'description' ? (
                   <textarea rows={3} value={form[field] || ''} onChange={e => setForm((f: any) => ({ ...f, [field]: e.target.value }))}
-                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#2563B0]" />
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D]" />
                 ) : field === 'image' || field === 'logo' || field === 'avatar_url' ? (
                   <ImageUpload
                     value={form[field] || ''}
@@ -108,7 +108,7 @@ export default function ContentTab({ type }: ContentTabProps) {
                   />
                 ) : field === 'category' ? (
                   <select value={form[field] || 'telecom'} onChange={e => setForm((f: any) => ({ ...f, [field]: e.target.value }))}
-                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#2563B0]">
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D]">
                     <option value="telecom">Télécom</option>
                     <option value="it">IT</option>
                   </select>
@@ -131,16 +131,16 @@ export default function ContentTab({ type }: ContentTabProps) {
                 ) : (
                   <input type="text"
                     value={form[field] || ''} onChange={e => setForm((f: any) => ({ ...f, [field]: e.target.value }))}
-                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#2563B0]" />
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D]" />
                 )}
               </div>
             ))}
           </div>
           <div className="flex gap-3">
-            <button onClick={save} disabled={saving} className="bg-[#2563B0] text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-[#1E4D8C] transition-all disabled:opacity-50">
+            <button onClick={save} disabled={saving} className="bg-[#C1272D] text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-[#1E4D8C] transition-all disabled:opacity-50">
               {saving ? 'Enregistrement...' : 'Enregistrer'}
             </button>
-            <button onClick={() => setShowForm(false)} className="px-6 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:border-[#2563B0] transition-all">
+            <button onClick={() => setShowForm(false)} className="px-6 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:border-[#C1272D] transition-all">
               Annuler
             </button>
           </div>
@@ -158,7 +158,7 @@ export default function ContentTab({ type }: ContentTabProps) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <p className="font-bold text-slate-900 dark:text-white text-sm">{item.title || item.name || item.full_name}</p>
-                {item.year && <span className="text-[10px] font-bold text-[#2563B0] bg-red-50 dark:bg-red-900/10 px-2 py-0.5 rounded-full">{item.year}</span>}
+                {item.year && <span className="text-[10px] font-bold text-[#C1272D] bg-red-50 dark:bg-red-900/10 px-2 py-0.5 rounded-full">{item.year}</span>}
                 {item.category && <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">{item.category}</span>}
                 {item.status && (
                   <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full',
@@ -169,7 +169,7 @@ export default function ContentTab({ type }: ContentTabProps) {
                 {item.rating && <span className="flex items-center gap-0.5 text-yellow-400"><Star className="w-3 h-3 fill-current" /><span className="text-xs text-slate-600 dark:text-slate-400">{item.rating}/5</span></span>}
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{item.role || item.excerpt || item.content || item.logo || item.description || ''}</p>
-              {item.website && <a href={item.website} target="_blank" rel="noopener noreferrer" className="text-xs text-[#2563B0] flex items-center gap-1 mt-1"><Globe className="w-3 h-3" />{item.website}</a>}
+              {item.website && <a href={item.website} target="_blank" rel="noopener noreferrer" className="text-xs text-[#C1272D] flex items-center gap-1 mt-1"><Globe className="w-3 h-3" />{item.website}</a>}
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {/* Modération témoignages */}

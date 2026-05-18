@@ -88,7 +88,7 @@ function SubscribeBlock() {
             </span>
             <button
               onClick={() => setShowForm(true)}
-              className="bg-[#2563B0] text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest hover:bg-[#1E4D8C] transition-all flex items-center gap-2"
+              className="bg-[#C1272D] text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest hover:bg-[#1E4D8C] transition-all flex items-center gap-2"
             >
               <Mail className="w-3 h-3" /> S&apos;abonner
             </button>
@@ -130,12 +130,12 @@ function SubscribeBlock() {
                 value={email}
                 onChange={e => { setEmail(e.target.value); setError(''); }}
                 placeholder="votre@email.com"
-                className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#2563B0] focus:ring-2 focus:ring-[#2563B0]/10 transition-all"
+                className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D] focus:ring-2 focus:ring-[#C1272D]/10 transition-all"
               />
               <button
                 type="submit"
                 disabled={submitting}
-                className="bg-[#2563B0] text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#1E4D8C] transition-all disabled:opacity-60 flex items-center gap-2 shrink-0"
+                className="bg-[#C1272D] text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#1E4D8C] transition-all disabled:opacity-60 flex items-center gap-2 shrink-0"
               >
                 {submitting ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -199,17 +199,17 @@ export default function NewsFeed() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
           <div className="max-w-2xl">
-            <div className="flex items-center gap-3 text-[#2563B0] font-black uppercase tracking-[0.3em] text-xs mb-4">
+            <div className="flex items-center gap-3 text-[#C1272D] font-black uppercase tracking-[0.3em] text-xs mb-4">
               <Newspaper className="w-4 h-4" />
               Actualités du Secteur
             </div>
             <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white">
-              Veille <span className="text-[#2563B0]">Stratégique</span>
+              Veille <span className="text-[#C1272D]">Stratégique</span>
             </h2>
           </div>
           <button
             onClick={fetchNews} disabled={loading}
-            className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-[#2563B0] transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-[#C1272D] transition-colors disabled:opacity-50"
           >
             <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
             Actualiser
@@ -242,12 +242,12 @@ export default function NewsFeed() {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border border-slate-100 dark:border-slate-800 group hover:border-[#2563B0]/30 hover:shadow-2xl transition-all"
+                      className="bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border border-slate-100 dark:border-slate-800 group hover:border-[#C1272D]/30 hover:shadow-2xl transition-all"
                     >
                       <div className="relative h-56 overflow-hidden m-4 rounded-[2rem]">
                         <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
                         <div className="absolute top-4 left-4">
-                          <span className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-[#2563B0] flex items-center gap-2 shadow-lg">
+                          <span className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-[#C1272D] flex items-center gap-2 shadow-lg">
                             <Icon className="w-3 h-3" />
                             {item.category}
                           </span>
@@ -259,14 +259,14 @@ export default function NewsFeed() {
                           <span className="w-1 h-1 bg-slate-300 rounded-full" />
                           <span>{formatDate(item.published_at)}</span>
                         </div>
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4 line-clamp-2 group-hover:text-[#2563B0] transition-colors leading-snug">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4 line-clamp-2 group-hover:text-[#C1272D] transition-colors leading-snug">
                           {item.title}
                         </h3>
                         <p className="text-slate-500 dark:text-slate-400 text-sm mb-8 line-clamp-2 leading-relaxed italic">
                           {item.excerpt}
                         </p>
                         <a href={item.url} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#2563B0] hover:gap-3 transition-all">
+                          className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#C1272D] hover:gap-3 transition-all">
                           Lire la suite <ChevronRight className="w-4 h-4" />
                         </a>
                       </div>

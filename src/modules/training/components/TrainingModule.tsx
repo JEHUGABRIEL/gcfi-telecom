@@ -56,7 +56,7 @@ export default function TrainingModule({ onContactOpen }: TrainingModuleProps) {
   if (coursesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-slate-100 dark:border-slate-800 border-t-[#2563B0] rounded-full animate-spin" />
+        <div className="w-12 h-12 border-4 border-slate-100 dark:border-slate-800 border-t-[#C1272D] rounded-full animate-spin" />
       </div>
     );
   }
@@ -79,13 +79,13 @@ export default function TrainingModule({ onContactOpen }: TrainingModuleProps) {
               </div>
               <div className="p-8 md:w-7/12 overflow-y-auto max-h-[80vh]">
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-[#2563B0] text-[10px] font-black uppercase tracking-widest rounded-full">{selectedCourse.category}</span>
+                  <span className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-[#C1272D] text-[10px] font-black uppercase tracking-widest rounded-full">{selectedCourse.category}</span>
                   <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-bold">
                     <Clock className="w-4 h-4" />{selectedCourse.duration}
                   </div>
                 </div>
                 <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mb-4">{selectedCourse.title}</h2>
-                <div className="text-xl font-black text-[#2563B0] mb-6">{selectedCourse.price.toLocaleString()} FCFA</div>
+                <div className="text-xl font-black text-[#C1272D] mb-6">{selectedCourse.price.toLocaleString()} FCFA</div>
                 <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium mb-6">{selectedCourse.description}</p>
                 <div className="space-y-3 mb-8">
                   <h4 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white flex items-center gap-2">
@@ -94,18 +94,18 @@ export default function TrainingModule({ onContactOpen }: TrainingModuleProps) {
                   <ul className="grid sm:grid-cols-2 gap-2">
                     {['Fondamentaux techniques', 'Ateliers pratiques', 'Certification officielle', 'Support post-formation'].map((item, i) => (
                       <li key={i} className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                        <div className="w-1.5 h-1.5 bg-[#2563B0] rounded-full" />{item}
+                        <div className="w-1.5 h-1.5 bg-[#C1272D] rounded-full" />{item}
                       </li>
                     ))}
                   </ul>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button onClick={() => { handleEnroll(selectedCourse.title, selectedCourse.price); setSelectedCourse(null); }}
-                    className="flex-1 bg-[#2563B0] text-white py-4 rounded-2xl font-bold shadow-xl shadow-blue-500/20 hover:bg-[#1E4D8C] transition-all flex items-center justify-center gap-3 active:scale-95">
+                    className="flex-1 bg-[#C1272D] text-white py-4 rounded-2xl font-bold shadow-xl shadow-blue-500/20 hover:bg-[#1E4D8C] transition-all flex items-center justify-center gap-3 active:scale-95">
                     S'inscrire via WhatsApp
                   </button>
                   <button onClick={() => setSelectedCourse(null)}
-                    className="flex-1 py-4 px-6 rounded-2xl font-bold transition-all flex items-center justify-center gap-3 border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-[#2563B0] hover:text-[#2563B0]">
+                    className="flex-1 py-4 px-6 rounded-2xl font-bold transition-all flex items-center justify-center gap-3 border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-[#C1272D] hover:text-[#C1272D]">
                     Fermer
                   </button>
                 </div>
@@ -125,13 +125,13 @@ export default function TrainingModule({ onContactOpen }: TrainingModuleProps) {
             <div className="flex flex-wrap justify-center gap-3">
               <button onClick={() => setSelectedTag(null)}
                 className={cn("px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all",
-                  selectedTag === null ? "bg-[#2563B0] text-white shadow-lg shadow-blue-500/20" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200")}>
+                  selectedTag === null ? "bg-[#C1272D] text-white shadow-lg shadow-blue-500/20" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200")}>
                 Tous les cours
               </button>
               {allTags.map(tag => (
                 <button key={tag} onClick={() => setSelectedTag(tag)}
                   className={cn("px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all",
-                    selectedTag === tag ? "bg-[#2563B0] text-white shadow-lg shadow-blue-500/20" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200")}>
+                    selectedTag === tag ? "bg-[#C1272D] text-white shadow-lg shadow-blue-500/20" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200")}>
                   {tag}
                 </button>
               ))}
@@ -155,18 +155,18 @@ export default function TrainingModule({ onContactOpen }: TrainingModuleProps) {
                     <img src={course.image} alt={course.title} loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                     <div className="absolute top-4 left-4">
-                      <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#2563B0] text-white">{course.category}</span>
+                      <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#C1272D] text-white">{course.category}</span>
                     </div>
                   </div>
                   <div className="p-8 flex-1 flex flex-col">
                     <div className="flex items-center text-slate-500 dark:text-slate-400 text-sm mb-4">
                       <Clock className="w-4 h-4 mr-2" />{course.duration}
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-[#2563B0] transition-colors">{course.title}</h3>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-[#C1272D] transition-colors">{course.title}</h3>
                     <div className="flex flex-wrap gap-2 mb-4">
                       {course.tags?.map(tag => (
                         <button key={tag} onClick={e => { e.stopPropagation(); setSelectedTag(tag); }}
-                          className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#2563B0] transition-colors">
+                          className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#C1272D] transition-colors">
                           #{tag}
                         </button>
                       ))}
@@ -174,14 +174,14 @@ export default function TrainingModule({ onContactOpen }: TrainingModuleProps) {
                     <p className="text-slate-600 dark:text-slate-400 text-sm mb-6 line-clamp-2 italic flex-1">{course.description}</p>
                     <div className="flex items-center justify-between pt-6 border-t border-slate-200 dark:border-slate-700 mt-auto">
                       <button onClick={() => setSelectedCourse(course)}
-                        className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-[#2563B0] transition-colors flex items-center gap-1">
+                        className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-[#C1272D] transition-colors flex items-center gap-1">
                         <Info className="w-3 h-3" /> Détails
                       </button>
-                      <span className="text-lg font-bold text-[#2563B0]">{course.price.toLocaleString()} FCFA</span>
+                      <span className="text-lg font-bold text-[#C1272D]">{course.price.toLocaleString()} FCFA</span>
                     </div>
                     <div className="mt-4">
                       <button onClick={() => handleEnroll(course.title, course.price)}
-                        className="w-full bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center hover:bg-[#2563B0] hover:text-white transition-all group">
+                        className="w-full bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center hover:bg-[#C1272D] hover:text-white transition-all group">
                         S'inscrire <ChevronRight className="ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </button>
                     </div>
@@ -192,13 +192,13 @@ export default function TrainingModule({ onContactOpen }: TrainingModuleProps) {
           </div>
         )}
 
-        <div className="mt-20 bg-[#2563B0] rounded-[2rem] p-12 text-white relative overflow-hidden shadow-xl shadow-blue-500/20">
+        <div className="mt-20 bg-[#C1272D] rounded-[2rem] p-12 text-white relative overflow-hidden shadow-xl shadow-blue-500/20">
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="max-w-xl">
               <h3 className="text-3xl font-bold mb-4">Besoin d'un programme sur mesure ?</h3>
               <p className="text-red-100 opacity-80">Nous accompagnons les entreprises dans la montée en compétences de leurs équipes techniques.</p>
             </div>
-            <button onClick={onContactOpen} className="bg-white text-[#2563B0] px-8 py-4 rounded-full font-bold hover:bg-red-50 transition-colors whitespace-nowrap">
+            <button onClick={onContactOpen} className="bg-white text-[#C1272D] px-8 py-4 rounded-full font-bold hover:bg-red-50 transition-colors whitespace-nowrap">
               Demander un devis formation
             </button>
           </div>
