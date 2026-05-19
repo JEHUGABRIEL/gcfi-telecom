@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Home, GraduationCap, ShoppingBag, Phone,
-  User, Bell, Search, ShieldCheck, Menu, X, Sun, Moon
+  User, Bell, Search, ShieldCheck, Menu, X, Sun, Moon, Briefcase
 } from 'lucide-react';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useTheme } from '@/shared/context/ThemeContext';
@@ -31,6 +31,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
     { to: '/',          label: 'Accueil',   icon: Home },
     { to: '/formation', label: 'Formation', icon: GraduationCap },
     { to: '/boutique',  label: 'Boutique',  icon: ShoppingBag },
+    { to: '/services',  label: 'Services',  icon: Briefcase },
     ...(isAdmin ? [{ to: '/admin', label: 'Admin', icon: ShieldCheck }] : []),
   ];
 
