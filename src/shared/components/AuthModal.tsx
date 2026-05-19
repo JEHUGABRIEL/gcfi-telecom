@@ -156,19 +156,6 @@ export default function AuthModal() {
               </button>
             </form>
 
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100 dark:border-slate-700" /></div>
-              <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest text-slate-400"><span className="bg-white dark:bg-slate-800 px-4">Ou</span></div>
-            </div>
-
-            <button 
-              onClick={handleSignInWithGoogle}
-              className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-4 rounded-2xl font-bold hover:bg-white dark:hover:bg-slate-700/50 transition-colors flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-sm"
-            >
-              <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-3" />
-              Google
-            </button>
-
             <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
               {authMode === 'login' ? "Pas encore de compte ?" : "Déjà inscrit ?"}
               <button 
