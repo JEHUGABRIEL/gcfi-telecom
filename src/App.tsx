@@ -14,6 +14,8 @@ import FloatingContact from '@/shared/components/FloatingContact';
 import ContactModal from '@/shared/components/ContactModal';
 import AuthModal from '@/shared/components/AuthModal';
 import { useAuth } from '@/shared/context/AuthContext';
+import AuthCallback from '@/shared/components/AuthCallback';
+
 const ServicesPage = lazy(() => import('@/modules/services/ServicesPage'));
 
 const StoreModule    = lazy(() => import('@/modules/store').then(m => ({ default: m.StoreModule })));
@@ -87,6 +89,7 @@ function AnimatedRoutes({ onContactOpen }: { onContactOpen: () => void }) {
           <Route path="/admin" element={<AdminRoute><Suspense fallback={<ModuleLoader />}><AdminModule /></Suspense></AdminRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
           <Route path="/services" element={<ClientRoute><Suspense fallback={<ModuleLoader />}><ServicesPage /></Suspense></ClientRoute>} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
         </Routes>
       </motion.div>
     </AnimatePresence>

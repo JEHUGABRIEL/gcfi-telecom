@@ -56,11 +56,9 @@ export default function ProfileModule() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
-          queryParams: {
-            prompt: 'select_account'
-          }
-        }
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: { prompt: 'select_account' },
+        },
       });
       if (error) throw error;
     } catch (error: any) {

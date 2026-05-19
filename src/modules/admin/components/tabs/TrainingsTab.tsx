@@ -5,23 +5,12 @@ import { Plus, Trash2, RefreshCw, GraduationCap, Edit, X } from 'lucide-react';
 import ImageUpload from '@/shared/components/ImageUpload';
 import { motion, AnimatePresence } from 'motion/react';
 
-interface Training {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  price: number;
-  duration: string;
-  image: string;
-  tags: string[];
-}
-
 export default function TrainingsTab() {
-  const [trainings, setTrainings] = React.useState<Training[]>([]);
+  const [trainings, setTrainings] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [showForm, setShowForm] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
-  const [editingTraining, setEditingTraining] = React.useState<Training | null>(null);
+  const [editingTraining, setEditingTraining] = React.useState<any>(null);
   const [form, setForm] = React.useState({
     title: '',
     description: '',
@@ -52,23 +41,51 @@ export default function TrainingsTab() {
   };
 
   const save = async () => {
-    if (!form.title || !form.price) return;
+    if (!form.title || !form.price) {
+      alert("Le titre et le prix sont obligatoires");
+      return;
+    }
     setSaving(true);
-    const payload = {
-      title: form.title,
-      description: form.description,
-      price: Number(form.price),
-      category: form.category,
-      duration: form.duration,
-      image: form.image,
-      tags: form.tags ? form.tags.split(',').map(t => t.trim()) : [],
-    };
-    const { error } = editingTraining
-      ? await supabase.from('trainings').update(payload).eq('id', editingTraining.id)
-      : await supabase.from('trainings').insert([payload]);
-    if (error) logError('TrainingsTab/save', error);
-    else { resetForm(); fetch(); }
-    setSaving(false);
+    try {
+      const payload = {
+        title: form.title.trim(),
+        description: form.description.trim() || null,
+        price: Number(form.price),
+        category: form.category.trim() || null,
+        duration: form.duration.trim() || null,
+        image: form.image || null,
+        tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(t => t) : [],
+      };
+      console.log("Payload envoyé :", payload);
+
+      let result;
+      if (editingTraining) {
+        result = await supabase
+          .from('trainings')
+          .update(payload)
+          .eq('id', editingTraining.id);
+      } else {
+        result = await supabase
+          .from('trainings')
+          .insert([payload]);
+      }
+      
+      console.log("Résultat Supabase :", result);
+      
+      if (result.error) {
+        console.error("Erreur Supabase :", result.error);
+        alert(`Erreur: ${result.error.message}\nCode: ${result.error.code}`);
+      } else {
+        resetForm();
+        fetch();
+        alert("Formation enregistrée !");
+      }
+    } catch (err: any) {
+      console.error("Exception :", err);
+      alert(`Erreur: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const remove = async (id: string) => {
@@ -77,7 +94,7 @@ export default function TrainingsTab() {
     setTrainings(t => t.filter(x => x.id !== id));
   };
 
-  const startEdit = (training: Training) => {
+  const startEdit = (training: any) => {
     setEditingTraining(training);
     setForm({
       title: training.title,
@@ -131,7 +148,6 @@ export default function TrainingsTab() {
         ))}
       </div>
 
-      {/* Modal d'ajout / modification */}
       <AnimatePresence>
         {showForm && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -151,7 +167,7 @@ export default function TrainingsTab() {
               </div>
               <div className="p-6 space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {[['title','Titre *'], ['category','Catégorie'], ['price','Prix (FCFA) *'], ['duration','Durée (ex: 3 semaines)']].map(([k, label]) => (
+                  {[['title','Titre *'], ['category','Catégorie'], ['price','Prix (FCFA) *'], ['duration','Durée']].map(([k, label]) => (
                     <div key={k}>
                       <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">{label}</label>
                       <input value={(form as any)[k]} onChange={set(k)} type={k === 'price' ? 'number' : 'text'}
@@ -165,7 +181,7 @@ export default function TrainingsTab() {
                   </div>
                   <div className="sm:col-span-2">
                     <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">Tags (séparés par virgule)</label>
-                    <input value={form.tags} onChange={set('tags')} placeholder="Réseaux, Cisco, CCNA"
+                    <input value={form.tags} onChange={set('tags')} placeholder="ex: Réseaux, Cisco"
                       className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D]" />
                   </div>
                   <div className="sm:col-span-2">
