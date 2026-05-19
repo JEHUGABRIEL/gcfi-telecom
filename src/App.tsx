@@ -96,6 +96,8 @@ function AnimatedRoutes({ onContactOpen }: { onContactOpen: () => void }) {
 function AppContent() {
   const { loading: authLoading, isAdmin } = useAuth();
   const [isContactOpen, setIsContactOpen] = React.useState(false);
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 bg-white dark:bg-[var(--bg-primary)] font-sans transition-colors">
@@ -115,7 +117,7 @@ function AppContent() {
           <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
         </>
       )}
-      <ScrollToTop />
+      {!isAdminRoute && <ScrollToTop />}
     </div>
   );
 }
