@@ -18,7 +18,7 @@ export default function Footer() {
               "Un groupe proche de votre entreprise !!!"
             </p>
             <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed mb-8">
-              Global Communication & Finance International. Votre partenaire multidimensionnel pour le développement technologique.
+              GAVEAUX - CHRISTIAN - FIRME - INFORMATIQUE. Votre partenaire pour le développement technologique.
             </p>
             <div className="flex space-x-4">
               {/* Liens sociaux — remplacer # par les vraies URLs */}

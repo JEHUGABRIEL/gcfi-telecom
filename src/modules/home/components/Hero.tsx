@@ -25,8 +25,7 @@ export default function Hero({ onNavigate }: HeroProps) {
               Propulsez votre <span className="text-[var(--accent)]">Avenir</span> avec GCFI.
             </h1>
             <p className="text-lg text-slate-600 dark:text-slate-400 mb-10 max-w-lg leading-relaxed">
-              De la formation d'experts en cybersécurité à l'investissement aurifère,
-              GCFI est votre partenaire stratégique en République Centrafricaine.
+              De la formation d'experts en cybersécurité à tous vos besoins en équipements télécom, GCFI est votre partenaire technologique en République Centrafricaine.
             </p>
 
             <div className="flex flex-wrap gap-4">
