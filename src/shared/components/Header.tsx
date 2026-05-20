@@ -3,9 +3,10 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Home, GraduationCap, ShoppingBag, Phone, Wrench,
-  User, Bell, Search, ShieldCheck, Menu, X, LogOut
+  User, Bell, Search, ShieldCheck, Menu, X, LogOut, Moon, Sun
 } from 'lucide-react';
 import { useAuth } from '@/shared/context/AuthContext';
+import { useTheme } from '@/shared/context/ThemeContext';
 import { cn } from '@/shared/lib/utils';
 import GcfiLogo from './GcfiLogo';
 import NotificationCenter from './NotificationCenter';
@@ -18,6 +19,7 @@ interface HeaderProps {
 
 export default function Header({ onContactOpen }: HeaderProps) {
   const { user, profile, isAdmin, setShowSignOutModal, setShowAuthModal } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { notifications, unreadCount, markAsRead, clearAll, requestPermission } = useNotifications();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
@@ -100,6 +102,15 @@ export default function Header({ onContactOpen }: HeaderProps) {
                 className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all"
               >
                 <Search className="w-5 h-5" />
+              </button>
+
+              {/* Toggle Dark / Light */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-all"
+                title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+              >
+                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
 
               {/* Notifications — visible uniquement si connecté */}
