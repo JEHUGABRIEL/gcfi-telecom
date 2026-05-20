@@ -116,10 +116,10 @@ export default function Header({ onContactOpen }: HeaderProps) {
 
               {/* Notifications — visible uniquement si connecté */}
               {user && (
-                <div className="relative">
+                <>
                   <button
                     onClick={() => setIsNotificationsOpen(v => !v)}
-                    className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all relative"
+                    className="relative p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all"
                     title="Mes notifications"
                   >
                     <Bell className="w-5 h-5" />
@@ -129,18 +129,15 @@ export default function Header({ onContactOpen }: HeaderProps) {
                       </span>
                     )}
                   </button>
-                  <AnimatePresence>
-                    {isNotificationsOpen && (
-                      <NotificationCenter
-                        notifications={notifications}
-                        onMarkAsRead={markAsRead}
-                        onClearAll={clearAll}
-                        onRequestPermission={requestPermission}
-                        onClose={() => setIsNotificationsOpen(false)}
-                      />
-                    )}
-                  </AnimatePresence>
-                </div>
+                  <NotificationCenter
+                    isOpen={isNotificationsOpen}
+                    notifications={notifications}
+                    onMarkAsRead={markAsRead}
+                    onClearAll={clearAll}
+                    onRequestPermission={requestPermission}
+                    onClose={() => setIsNotificationsOpen(false)}
+                  />
+                </>
               )}
 
               {/* User — bouton Connexion ou avatar+nom selon état */}

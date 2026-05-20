@@ -19,7 +19,7 @@ export default function Hero({ onNavigate }: HeroProps) {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
             <span className="inline-block py-1 px-3 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold uppercase tracking-wider mb-6">
-              Leader en Télécommunication & Finance
+              Leader en Télécommunication 
             </span>
             <h1 className="text-5xl lg:text-7xl font-bold text-slate-900 dark:text-white leading-[1.1] mb-6">
               Propulsez votre <span className="text-[var(--accent)]">Avenir</span> avec GCFI.
