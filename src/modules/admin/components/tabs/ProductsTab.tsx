@@ -1,11 +1,11 @@
 import React from 'react';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
-import { Plus, Trash2, RefreshCw, ShoppingBag, AlertTriangle, X } from 'lucide-react';
+import { Plus, Trash2, RefreshCw, ShoppingBag, AlertTriangle, Edit, X } from 'lucide-react';
 import ImageUpload from '@/shared/components/ImageUpload';
 import { motion, AnimatePresence } from 'motion/react';
 
-/* ── Modal de confirmation générique ─────────────────────────── */
+/* ── Modal de confirmation suppression ───────────────────────── */
 function ConfirmModal({ message, onConfirm, onCancel }: {
   message: string; onConfirm: () => void; onCancel: () => void;
 }) {
@@ -15,7 +15,7 @@ function ConfirmModal({ message, onConfirm, onCancel }: {
         onClick={onCancel} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="relative bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center">
+        className="relative bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center z-10">
         <div className="w-14 h-14 bg-red-50 dark:bg-red-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="w-7 h-7 text-red-500" />
         </div>
@@ -36,13 +36,16 @@ function ConfirmModal({ message, onConfirm, onCancel }: {
   );
 }
 
+const EMPTY_FORM = { name: '', description: '', price: '', category: '', image: '', stock: '0' };
+
 export default function ProductsTab() {
-  const [products, setProducts] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [showForm, setShowForm] = React.useState(false);
-  const [saving, setSaving] = React.useState(false);
+  const [products, setProducts]         = React.useState<any[]>([]);
+  const [loading, setLoading]           = React.useState(true);
+  const [showForm, setShowForm]         = React.useState(false);
+  const [saving, setSaving]             = React.useState(false);
+  const [editingProduct, setEditing]    = React.useState<any>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<{ id: string; name: string } | null>(null);
-  const [form, setForm] = React.useState({ name: '', description: '', price: '', category: '', image: '', stock: '0' });
+  const [form, setForm]                 = React.useState(EMPTY_FORM);
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
@@ -57,21 +60,34 @@ export default function ProductsTab() {
 
   React.useEffect(() => { fetch(); }, []);
 
+  const resetForm = () => { setForm(EMPTY_FORM); setEditing(null); setShowForm(false); };
+
+  const startEdit = (p: any) => {
+    setEditing(p);
+    setForm({
+      name: p.name ?? '',
+      description: p.description ?? '',
+      price: p.price?.toString() ?? '',
+      category: p.category ?? '',
+      image: p.image ?? '',
+      stock: p.stock?.toString() ?? '0',
+    });
+    setShowForm(true);
+  };
+
   const save = async () => {
     if (!form.name || !form.price) return;
     setSaving(true);
-    const { error } = await supabase.from('products').insert([{
+    const payload = {
       name: form.name, description: form.description,
       price: Number(form.price), category: form.category,
       image: form.image, stock: Number(form.stock),
-      popularity: 0, rating: 0, reviews_count: 0,
-    }]);
+    };
+    const { error } = editingProduct
+      ? await supabase.from('products').update(payload).eq('id', editingProduct.id)
+      : await supabase.from('products').insert([{ ...payload, popularity: 0, rating: 0, reviews_count: 0 }]);
     if (error) logError('ProductsTab/save', error);
-    else {
-      setShowForm(false);
-      setForm({ name: '', description: '', price: '', category: '', image: '', stock: '0' });
-      fetch();
-    }
+    else { resetForm(); fetch(); }
     setSaving(false);
   };
 
@@ -90,7 +106,7 @@ export default function ProductsTab() {
 
   return (
     <div className="space-y-4">
-      {/* Modal de confirmation */}
+      {/* Modal suppression */}
       <AnimatePresence>
         {deleteTarget && (
           <ConfirmModal
@@ -101,52 +117,74 @@ export default function ProductsTab() {
         )}
       </AnimatePresence>
 
+      {/* Modal ajout / édition */}
+      <AnimatePresence>
+        {showForm && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white dark:bg-slate-800 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+            >
+              <div className="sticky top-0 bg-white dark:bg-slate-800 p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                  {editingProduct ? 'Modifier le produit' : 'Ajouter un produit'}
+                </h3>
+                <button onClick={resetForm} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {[['name', 'Nom *'], ['category', 'Catégorie'], ['price', 'Prix (FCFA) *'], ['stock', 'Stock']].map(([k, label]) => (
+                    <div key={k}>
+                      <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">{label}</label>
+                      <input value={(form as any)[k]} onChange={set(k)} type={k === 'price' || k === 'stock' ? 'number' : 'text'}
+                        className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D]" />
+                    </div>
+                  ))}
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">Description</label>
+                    <textarea value={form.description} onChange={set('description')} rows={2}
+                      className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D]" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block">Image</label>
+                    <ImageUpload value={form.image} onChange={url => setForm(f => ({ ...f, image: url }))} folder="gcfi/products" />
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button onClick={save} disabled={saving}
+                    className="bg-[#C1272D] text-white px-6 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50">
+                    {saving ? 'Enregistrement...' : 'Enregistrer'}
+                  </button>
+                  <button onClick={resetForm}
+                    className="px-6 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300">
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">Produits ({products.length})</h3>
         <div className="flex gap-2">
           <button onClick={fetch} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors">
             <RefreshCw className="w-4 h-4" />
           </button>
-          <button onClick={() => setShowForm(v => !v)}
+          <button onClick={() => { resetForm(); setShowForm(true); }}
             className="flex items-center gap-2 bg-[#C1272D] text-white px-4 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition-all">
             <Plus className="w-4 h-4" /> Ajouter
           </button>
         </div>
       </div>
 
-      {showForm && (
-        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            {[['name', 'Nom *'], ['category', 'Catégorie'], ['price', 'Prix (FCFA) *'], ['stock', 'Stock']].map(([k, label]) => (
-              <div key={k}>
-                <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">{label}</label>
-                <input value={(form as any)[k]} onChange={set(k)} type={k === 'price' || k === 'stock' ? 'number' : 'text'}
-                  className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D]" />
-              </div>
-            ))}
-            <div className="sm:col-span-2">
-              <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">Description</label>
-              <textarea value={form.description} onChange={set('description')} rows={2}
-                className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D]" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block">Image</label>
-              <ImageUpload value={form.image} onChange={url => setForm(f => ({ ...f, image: url }))} folder="gcfi/products" />
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <button onClick={save} disabled={saving}
-              className="bg-[#C1272D] text-white px-6 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50">
-              {saving ? 'Enregistrement...' : 'Enregistrer'}
-            </button>
-            <button onClick={() => setShowForm(false)}
-              className="px-6 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300">
-              Annuler
-            </button>
-          </div>
-        </div>
-      )}
-
+      {/* Liste */}
       <div className="space-y-3">
         {products.length === 0 ? (
           <div className="text-center py-12 text-slate-400">
@@ -161,13 +199,19 @@ export default function ProductsTab() {
               <div className="flex items-center gap-3 mt-1">
                 <span className="text-xs text-[#C1272D] font-bold">{p.price?.toLocaleString()} FCFA</span>
                 {p.category && <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full text-slate-600 dark:text-slate-300">{p.category}</span>}
-                <span className="text-xs text-slate-400">Stock: {p.stock ?? 0}</span>
+                <span className="text-xs text-slate-400">Stock : {p.stock ?? 0}</span>
               </div>
             </div>
-            <button onClick={() => setDeleteTarget({ id: p.id, name: p.name })}
-              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <div className="flex gap-1">
+              <button onClick={() => startEdit(p)}
+                className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                <Edit className="w-4 h-4" />
+              </button>
+              <button onClick={() => setDeleteTarget({ id: p.id, name: p.name })}
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         ))}
       </div>

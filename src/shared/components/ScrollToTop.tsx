@@ -39,7 +39,7 @@ export default function ScrollToTop() {
           onClick={scrollToTop}
           className={cn(
             "fixed bottom-32 right-8 z-[60] w-14 h-14 rounded-2xl flex items-center justify-center transition-all shadow-2xl overflow-hidden",
-            "bg-[#C1272D] text-white shadow-[#C1272D]/30",
+            "bg-[var(--accent)] text-white shadow-[var(--accent)]/30",
             "border border-white/20 dark:border-white/10"
           )}
           aria-label="Retour en haut"

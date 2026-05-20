@@ -13,72 +13,64 @@ export interface AppNotification {
 }
 
 interface NotificationCenterProps {
-  isOpen: boolean;
   onClose: () => void;
   notifications: AppNotification[];
-  onMarkRead: (id: string) => void;
+  onMarkAsRead: (id: string) => void;
   onClearAll: () => void;
+  onRequestPermission?: () => void;
 }
 
 export default function NotificationCenter({
-  isOpen,
   onClose,
   notifications,
-  onMarkRead,
-  onClearAll
+  onMarkAsRead,
+  onClearAll,
+  onRequestPermission,
 }: NotificationCenterProps) {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop — plus opaque pour meilleure lisibilité */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 z-[100] bg-black/50"
-          />
-          {/* Panneau latéral */}
-          <motion.div
-            initial={{ opacity: 0, x: 320 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 320 }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed top-0 right-0 bottom-0 z-[101] w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
-          >
-            {/* En-tête */}
-            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-[#C1272D]/10 rounded-xl flex items-center justify-center">
-                  <Bell className="w-5 h-5 text-[#C1272D]" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white text-base">Notifications</h3>
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 z-[100] bg-slate-900/20 backdrop-blur-sm"
+      />
+      <motion.div
+        initial={{ opacity: 0, x: 300 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 300 }}
+        className="fixed top-0 right-0 bottom-0 z-[101] w-full max-w-sm bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col"
+      >
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Bell className="w-5 h-5 text-slate-900 dark:text-white" />
                   {unreadCount > 0 && (
-                    <p className="text-xs text-[#C1272D] font-semibold">{unreadCount} non lue{unreadCount > 1 ? 's' : ''}</p>
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full">
+                      {unreadCount}
+                    </span>
                   )}
                 </div>
+                <h3 className="font-bold text-slate-900 dark:text-white">Notifications</h3>
               </div>
               <button
                 onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
               >
-                <X className="w-4 h-4 text-slate-500" />
+                <X className="w-5 h-5 text-slate-500" />
               </button>
             </div>
 
-            {/* Contenu */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-slate-900/50">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {notifications.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center py-16 px-6">
-                  <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-5">
-                    <Bell className="w-9 h-9 text-slate-300 dark:text-slate-600" />
+                <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                    <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-50 dark:border-transparent">
+                    <Bell className="w-8 h-8 text-slate-300" />
                   </div>
-                  <p className="text-slate-700 dark:text-slate-300 font-semibold text-sm mb-1">Aucune notification</p>
-                  <p className="text-slate-400 dark:text-slate-500 text-xs">Vous êtes à jour ! Les nouvelles alertes apparaîtront ici.</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">Vous n'avez aucune notification pour le moment.</p>
                 </div>
               ) : (
                 notifications.map((notification: AppNotification) => (
@@ -87,30 +79,30 @@ export default function NotificationCenter({
                     layout
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    onClick={() => onMarkRead(notification.id)}
+                    onClick={() => onMarkAsRead(notification.id)}
                     className={cn(
-                      "p-4 rounded-2xl border transition-all cursor-pointer relative bg-white dark:bg-slate-800",
-                      notification.read
-                        ? "border-slate-100 dark:border-slate-700"
-                        : "border-[#C1272D]/20 dark:border-[#C1272D]/30 shadow-sm"
+                      "p-4 rounded-2xl border transition-all cursor-pointer group relative",
+                      notification.read 
+                        ? "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800" 
+                        : "bg-red-50/30 dark:bg-red-900/10 border-red-100 dark:border-red-900/20"
                     )}
                   >
                     {!notification.read && (
-                      <span className="absolute top-4 right-4 w-2 h-2 bg-[#C1272D] rounded-full" />
+                      <span className="absolute top-4 right-4 w-2 h-2 bg-red-500 rounded-full" />
                     )}
-                    <div className="flex gap-3">
+                    <div className="flex gap-4">
                       <div className={cn(
                         "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                        notification.type === 'order'  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600" :
-                        notification.type === 'offer'  ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600" :
-                        "bg-slate-100 dark:bg-slate-700 text-slate-500"
+                        notification.type === 'order' ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600" :
+                        notification.type === 'offer' ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600" :
+                        "bg-slate-100 dark:bg-slate-800 text-slate-600"
                       )}>
-                        {notification.type === 'order'  ? <Package className="w-5 h-5" /> :
-                         notification.type === 'offer'  ? <Tag className="w-5 h-5" /> :
+                        {notification.type === 'order' ? <Package className="w-5 h-5" /> :
+                         notification.type === 'offer' ? <Tag className="w-5 h-5" /> :
                          <Info className="w-5 h-5" />}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-sm text-slate-900 dark:text-white mb-1 truncate">
+                      <div>
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-white mb-1 group-hover:text-red-500 transition-colors">
                           {notification.title}
                         </h4>
                         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-2">
@@ -118,8 +110,10 @@ export default function NotificationCenter({
                         </p>
                         <span className="text-[10px] text-slate-400 font-medium">
                           {new Intl.DateTimeFormat('fr-FR', {
-                            hour: '2-digit', minute: '2-digit',
-                            day: '2-digit', month: 'short'
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            day: '2-digit',
+                            month: 'short'
                           }).format(notification.timestamp)}
                         </span>
                       </div>
@@ -129,27 +123,24 @@ export default function NotificationCenter({
               )}
             </div>
 
-            {/* Pied */}
             {notifications.length > 0 && (
-              <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800">
                 <button
                   onClick={onClearAll}
-                  className="w-full py-2.5 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-red-500 transition-colors rounded-xl hover:bg-red-50 dark:hover:bg-red-900/10"
+                  className="w-full py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-red-500 transition-colors"
                 >
                   Tout effacer
                 </button>
               </div>
             )}
-
-            <div className="px-6 py-4 border-t border-slate-50 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                <span>Notifications configurées</span>
+            
+            <div className="p-6 bg-white dark:bg-slate-800/50 mt-auto border-t border-slate-50 dark:border-transparent">
+              <div className="flex items-center gap-3 text-xs text-slate-500">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span>Notifications Push configurées</span>
               </div>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+      </motion.div>
+    </>
   );
 }
