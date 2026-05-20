@@ -63,9 +63,12 @@ function ProtectedClientRoute({ children }: { children: React.ReactNode }) {
 function AdminRedirect() {
   const { isAdmin, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   React.useEffect(() => {
-    if (!loading && isAdmin) navigate('/admin', { replace: true });
-  }, [isAdmin, loading, navigate]);
+    // Ne pas rediriger vers /admin si on est sur la page de reset password
+    if (!loading && isAdmin && location.pathname !== '/reset-password')
+      navigate('/admin', { replace: true });
+  }, [isAdmin, loading, navigate, location.pathname]);
   return null;
 }
 

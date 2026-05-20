@@ -1,9 +1,40 @@
 import React from 'react';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
-import { Plus, Trash2, RefreshCw, GraduationCap, Edit, X } from 'lucide-react';
+import { Plus, Trash2, RefreshCw, GraduationCap, Edit, X, AlertTriangle } from 'lucide-react';
 import ImageUpload from '@/shared/components/ImageUpload';
 import { motion, AnimatePresence } from 'motion/react';
+
+/* ── Modal de confirmation ───────────────────────────────────── */
+function ConfirmModal({ message, onConfirm, onCancel }: {
+  message: string; onConfirm: () => void; onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={onCancel} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="relative bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center">
+        <div className="w-14 h-14 bg-red-50 dark:bg-red-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <AlertTriangle className="w-7 h-7 text-red-500" />
+        </div>
+        <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">Confirmer la suppression</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{message}</p>
+        <div className="flex gap-3">
+          <button onClick={onCancel}
+            className="flex-1 py-3 rounded-2xl font-bold text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition-colors">
+            Annuler
+          </button>
+          <button onClick={onConfirm}
+            className="flex-1 py-3 rounded-2xl font-bold text-sm bg-red-500 text-white hover:bg-red-600 transition-colors">
+            Supprimer
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
 export default function TrainingsTab() {
   const [trainings, setTrainings] = React.useState<any[]>([]);
@@ -11,6 +42,7 @@ export default function TrainingsTab() {
   const [showForm, setShowForm] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [editingTraining, setEditingTraining] = React.useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<{ id: string; title: string } | null>(null);
   const [form, setForm] = React.useState({
     title: '',
     description: '',
@@ -42,7 +74,7 @@ export default function TrainingsTab() {
 
   const save = async () => {
     if (!form.title || !form.price) {
-      alert("Le titre et le prix sont obligatoires");
+      return; // validation silencieuse, les champs sont marqués *
       return;
     }
     setSaving(true);
@@ -74,24 +106,25 @@ export default function TrainingsTab() {
       
       if (result.error) {
         console.error("Erreur Supabase :", result.error);
-        alert(`Erreur: ${result.error.message}\nCode: ${result.error.code}`);
+        console.error("Erreur Supabase:", result.error);
       } else {
         resetForm();
         fetch();
-        alert("Formation enregistrée !");
+        // Succès silencieux — la liste se rafraîchit automatiquement
       }
     } catch (err: any) {
       console.error("Exception :", err);
-      alert(`Erreur: ${err.message}`);
+      console.error("Exception:", err);
     } finally {
       setSaving(false);
     }
   };
 
-  const remove = async (id: string) => {
-    if (!confirm('Supprimer cette formation ?')) return;
-    await supabase.from('trainings').delete().eq('id', id);
-    setTrainings(t => t.filter(x => x.id !== id));
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    await supabase.from('trainings').delete().eq('id', deleteTarget.id);
+    setTrainings(t => t.filter(x => x.id !== deleteTarget.id));
+    setDeleteTarget(null);
   };
 
   const startEdit = (training: any) => {
@@ -112,6 +145,17 @@ export default function TrainingsTab() {
 
   return (
     <div className="space-y-4">
+      {/* Modal de confirmation suppression */}
+      <AnimatePresence>
+        {deleteTarget && (
+          <ConfirmModal
+            message={`Voulez-vous vraiment supprimer "${deleteTarget.title}" ? Cette action est irréversible.`}
+            onConfirm={confirmDelete}
+            onCancel={() => setDeleteTarget(null)}
+          />
+        )}
+      </AnimatePresence>
+
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">Formations ({trainings.length})</h3>
         <div className="flex gap-2">
@@ -140,7 +184,7 @@ export default function TrainingsTab() {
               <button onClick={() => startEdit(t)} className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
                 <Edit className="w-4 h-4" />
               </button>
-              <button onClick={() => remove(t.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
+              <button onClick={() => setDeleteTarget({ id: t.id, title: t.title })} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
