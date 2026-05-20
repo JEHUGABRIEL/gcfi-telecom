@@ -174,16 +174,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
                 </button>
               )}
 
-              {/* Déconnexion desktop — si connecté */}
-              {user && (
-                <button
-                  onClick={() => setShowSignOutModal(true)}
-                  className="hidden md:flex p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
-                  title="Se déconnecter"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
-              )}
+
 
               {/* Menu hamburger mobile */}
               <button
@@ -256,13 +247,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
                       )}
                       <span className="truncate">{displayName ?? 'Mon profil'}</span>
                     </NavLink>
-                    <button
-                      onClick={() => { setShowSignOutModal(true); closeMenu(); }}
-                      className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-red-500 hover:bg-red-50 w-full transition-all"
-                    >
-                      <LogOut className="w-5 h-5" />
-                      Se déconnecter
-                    </button>
+
                   </>
                 ) : (
                   <button

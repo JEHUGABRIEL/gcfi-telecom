@@ -16,10 +16,11 @@ export default function AuthModal() {
   const [success, setSuccess]     = useState<string | null>(null);
   const [loading, setLoading]     = useState(false);
   const [showPwd, setShowPwd]     = useState(false);
+  const [confirm, setConfirm]     = useState('');
 
   const reset = () => {
     setError(null); setSuccess(null);
-    setEmail(''); setPassword(''); setFullName('');
+    setEmail(''); setPassword(''); setFullName(''); setConfirm('');
     setShowPwd(false);
   };
 
@@ -46,6 +47,11 @@ export default function AuthModal() {
     setError(null); setLoading(true);
     try {
       if (mode === 'signup') {
+        if (password !== confirm) {
+          setError('Les mots de passe ne correspondent pas.');
+          setLoading(false);
+          return;
+        }
         const { error } = await supabase.auth.signUp({
           email, password,
           options: { data: { full_name: fullName } },
@@ -193,6 +199,20 @@ export default function AuthModal() {
                         {showPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
+
+                    {mode === 'signup' && (
+                      <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                        <input type={showPwd ? 'text' : 'password'} placeholder="Confirmer le mot de passe"
+                          value={confirm} onChange={e => setConfirm(e.target.value)} required
+                          className={`${inputCls} pr-12 ${confirm && confirm !== password ? 'ring-2 ring-red-400' : confirm && confirm === password ? 'ring-2 ring-green-400' : ''}`} />
+                        {confirm && (
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold">
+                            {confirm === password ? '✅' : '❌'}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     {mode === 'login' && (
                       <div className="text-right">

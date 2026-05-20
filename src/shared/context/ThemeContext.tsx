@@ -14,8 +14,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('theme') as Theme;
       if (saved) return saved;
-      // ✅ Dark mode par défaut — override la préférence système
-      return 'dark';
+      // ✅ Light mode par défaut
+      return 'light';
     }
     return 'light';
   });
