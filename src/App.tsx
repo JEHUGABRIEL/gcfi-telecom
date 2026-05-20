@@ -18,6 +18,7 @@ const AuthCallback  = lazy(() => import('@/shared/components/AuthCallback'));
 const ResetPassword = lazy(() => import('@/shared/components/ResetPassword'));
 
 const ServicesPage = lazy(() => import('@/modules/services/ServicesPage'));
+const BlogPage     = lazy(() => import('@/modules/blog/BlogPage'));
 
 const StoreModule    = lazy(() => import('@/modules/store').then(m => ({ default: m.StoreModule })));
 const TrainingModule = lazy(() => import('@/modules/training').then(m => ({ default: m.TrainingModule })));
@@ -93,6 +94,7 @@ function AnimatedRoutes({ onContactOpen }: { onContactOpen: () => void }) {
           <Route path="/admin" element={<AdminRoute><Suspense fallback={<ModuleLoader />}><AdminModule /></Suspense></AdminRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
           <Route path="/services" element={<ClientRoute><Suspense fallback={<ModuleLoader />}><ServicesPage /></Suspense></ClientRoute>} />
+          <Route path="/blog"     element={<ClientRoute><Suspense fallback={<ModuleLoader />}><BlogPage /></Suspense></ClientRoute>} />
           <Route path="/reset-password" element={<Suspense fallback={<ModuleLoader />}><ResetPassword /></Suspense>} />
           <Route path="/auth/callback"  element={<Suspense fallback={<ModuleLoader />}><AuthCallback /></Suspense>} />
         </Routes>
@@ -125,7 +127,7 @@ function AppContent() {
           <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
         </>
       )}
-      {!isAdminRoute && <ScrollToTop />}
+      <ScrollToTop />
     </div>
   );
 }

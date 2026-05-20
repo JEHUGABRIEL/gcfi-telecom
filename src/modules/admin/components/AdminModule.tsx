@@ -40,20 +40,13 @@ import OrdersTab from './tabs/OrdersTab';
 import UsersTab from './tabs/UsersTab';
 import ProductsTab from './tabs/ProductsTab';
 import TrainingsTab from './tabs/TrainingsTab';
+import BlogTab from './BlogTab';
 import NotificationsTab from './tabs/NotificationsTab';
-import { useSearchParams } from 'react-router-dom';
-
-const VALID_TABS = ['overview','notifications','orders','users','formations','produits','stock','commentaires','devis','temoignages','realisations','partenaires','actualites'] as const;
-type AdminTab = typeof VALID_TABS[number];
 
 const AdminModule = () => {
   const { addNotification } = useNotifications();
   const { user: adminUser, isAdmin: isAuthorized, loading: authLoading } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = React.useState<AdminTab>(() => {
-    const param = searchParams.get('tab') as AdminTab;
-    return VALID_TABS.includes(param) ? param : 'overview';
-  });
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'notifications' | 'orders' | 'users' | 'formations' | 'produits' | 'stock' | 'commentaires' | 'devis' | 'temoignages' | 'realisations' | 'partenaires' | 'actualites' | 'blog'>('overview');
   const [msgTitle, setMsgTitle] = React.useState('');
   const [msgContent, setMsgContent] = React.useState('');
   const [category, setCategory] = React.useState('info');
@@ -107,7 +100,7 @@ const AdminModule = () => {
       setComments(commentsData || []);
       setAllNotifications(globalNotifsData || []);
     } catch (error) {
-      logError("AdminModule: Error fetching data", error)
+      logError("AdminModule", "Error fetching data:", error)
     } finally {
       setLoading(false);
     }
@@ -168,7 +161,7 @@ const AdminModule = () => {
       setIsModalOpen(false);
       fetchData();
     } catch (err) {
-      logError("AdminModule: Error saving item", err)
+      logError("AdminModule", "Error saving item:", err)
     }
   };
 
@@ -181,7 +174,7 @@ const AdminModule = () => {
       setDeleteConfirmation(null);
       fetchData();
     } catch (err) {
-      logError("AdminModule: Error deleting item", err)
+      logError("AdminModule", "Error deleting item:", err)
     }
   };
 
@@ -191,7 +184,7 @@ const AdminModule = () => {
       if (error) throw error;
       fetchData();
     } catch (err) {
-      logError("AdminModule: Error approving comment", err)
+      logError("AdminModule", "Error approving comment:", err)
     }
   };
 
@@ -201,7 +194,7 @@ const AdminModule = () => {
       if (error) throw error;
       fetchData();
     } catch (err) {
-      logError("AdminModule: Error rejecting comment", err)
+      logError("AdminModule", "Error rejecting comment:", err)
     }
   };
 
@@ -231,12 +224,12 @@ const AdminModule = () => {
       addNotification({
         title: "Commande Clôturée",
         message: `La commande #${order.id.slice(0, 8)} a été marquée comme terminée.`,
-        type: 'info'
+        type: 'success'
       });
 
       fetchData();
     } catch (err) {
-      logError("AdminModule: Error completing order", err)
+      logError("AdminModule", "Error completing order:", err)
     }
   };
 
@@ -290,7 +283,7 @@ const AdminModule = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 pt-24">
         <div className="flex flex-col items-center gap-4">
-          <RefreshCw className="w-8 h-8 text-[#C1272D] animate-spin" />
+          <RefreshCw className="w-8 h-8 text-[#2563B0] animate-spin" />
           <p className="text-sm font-bold text-slate-500">Vérification des accès...</p>
         </div>
       </div>
@@ -302,13 +295,13 @@ const AdminModule = () => {
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 pt-20">
         <div className="max-w-md w-full text-center bg-white dark:bg-slate-800 p-12 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700">
           <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lock className="w-10 h-10 text-[#C1272D]" />
+            <Lock className="w-10 h-10 text-[#2563B0]" />
           </div>
           <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-4 transition-colors">Accès Refusé</h2>
           <p className="text-slate-600 dark:text-slate-400 mb-8 transition-colors">Vous n'avez pas les privilèges nécessaires pour accéder au panel d'administration GCFI.</p>
           <button 
             onClick={() => window.location.href = '/'}
-            className="w-full bg-[#C1272D] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-blue-500/20"
+            className="w-full bg-[#2563B0] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-blue-500/20"
           >
             Retour à l'accueil
           </button>
@@ -320,7 +313,7 @@ const AdminModule = () => {
   if (isAuthorized === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-[#C1272D] rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-[#2563B0] rounded-full animate-spin" />
       </div>
     );
   }
@@ -377,7 +370,7 @@ const AdminModule = () => {
       fetchData();
       setTimeout(() => setSendSuccess(false), 3000);
     } catch (error) {
-      logError("AdminModule: Error sending notification", error)
+      logError("AdminModule", "Error sending notification:", error)
     } finally {
       setIsSending(false);
     }
@@ -390,14 +383,14 @@ const AdminModule = () => {
         {/* Admin Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
-            <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-2">Panel <span className="text-[#C1272D]">Administration</span></h1>
+            <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-2">Panel <span className="text-[#2563B0]">Administration</span></h1>
             <p className="text-slate-600 dark:text-slate-400">Gérez le contenu, les utilisateurs et les opérations de GCFI.</p>
           </div>
           <div className="flex items-center gap-3">
             <button className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700">
               <BarChart3 className="w-4 h-4" /> Rapport mensuel
             </button>
-            <div className="w-10 h-10 rounded-full bg-[#C1272D] flex items-center justify-center text-white font-black">
+            <div className="w-10 h-10 rounded-full bg-[#2563B0] flex items-center justify-center text-white font-black">
               {adminUser?.email?.[0].toUpperCase() || 'A'}
             </div>
           </div>
@@ -440,16 +433,16 @@ const AdminModule = () => {
                 onClick={() => setActiveTab('overview')}
                 className={cn(
                    "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'overview' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  activeTab === 'overview' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 )}
               >
-                <BarChart3 className="w-4 h-4" /> <span>Vue d&apos;ensemble</span>
+                <BarChart3 className="w-4 h-4" /> Vue d'ensemble
               </button>
               <button 
                 onClick={() => setActiveTab('users')}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'users' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  activeTab === 'users' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 )}
               >
                 <Users className="w-4 h-4" /> Utilisateurs
@@ -458,7 +451,7 @@ const AdminModule = () => {
                 onClick={() => setActiveTab('notifications')}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'notifications' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  activeTab === 'notifications' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 )}
               >
                 <Megaphone className="w-4 h-4" /> Notifications
@@ -467,7 +460,7 @@ const AdminModule = () => {
                 onClick={() => setActiveTab('orders')}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'orders' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  activeTab === 'orders' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 )}
               >
                 <ShoppingBag className="w-4 h-4" /> Commandes
@@ -476,7 +469,7 @@ const AdminModule = () => {
                 onClick={() => setActiveTab('formations')}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'formations' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  activeTab === 'formations' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 )}
               >
                 <GraduationCap className="w-4 h-4" /> Formations
@@ -485,16 +478,25 @@ const AdminModule = () => {
                 onClick={() => setActiveTab('produits')}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'produits' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  activeTab === 'produits' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 )}
               >
                 <ShoppingBag className="w-4 h-4" /> Produits
               </button>
               <button 
+                onClick={() => setActiveTab('blog')}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
+                  activeTab === 'blog' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                )}
+              >
+                <BookOpen className="w-4 h-4" /> Blog
+              </button>
+              <button 
                 onClick={() => setActiveTab('stock')}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'stock' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  activeTab === 'stock' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 )}
               >
                 <Package className="w-4 h-4" /> Gestion Stock
@@ -503,7 +505,7 @@ const AdminModule = () => {
                 onClick={() => setActiveTab('commentaires')}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'commentaires' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  activeTab === 'commentaires' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 )}
               >
                 <MessageSquare className="w-4 h-4" /> Commentaires
@@ -513,7 +515,7 @@ const AdminModule = () => {
               <button
                 onClick={() => setActiveTab('devis')}
                 className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'devis' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  activeTab === 'devis' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 )}
               >
                 <FileText className="w-4 h-4" /> Devis reçus
@@ -521,7 +523,7 @@ const AdminModule = () => {
               <button
                 onClick={() => setActiveTab('temoignages')}
                 className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'temoignages' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  activeTab === 'temoignages' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 )}
               >
                 <Star className="w-4 h-4" /> Témoignages
@@ -529,7 +531,7 @@ const AdminModule = () => {
               <button
                 onClick={() => setActiveTab('realisations')}
                 className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'realisations' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  activeTab === 'realisations' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 )}
               >
                 <Award className="w-4 h-4" /> Réalisations
@@ -537,7 +539,7 @@ const AdminModule = () => {
               <button
                 onClick={() => setActiveTab('partenaires')}
                 className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'partenaires' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  activeTab === 'partenaires' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 )}
               >
                 <Users className="w-4 h-4" /> Partenaires
@@ -545,7 +547,7 @@ const AdminModule = () => {
               <button
                 onClick={() => setActiveTab('actualites')}
                 className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'actualites' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  activeTab === 'actualites' ? "bg-blue-50 text-[#2563B0] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                 )}
               >
                 <Megaphone className="w-4 h-4" /> Actualités
@@ -555,30 +557,13 @@ const AdminModule = () => {
 
           {/* Tab Content */}
           <div className="lg:col-span-9">
-            {activeTab === 'overview' && <OverviewTab onNavigate={(tab) => setActiveTab(tab as any)} />}
+            {activeTab === 'overview' && <OverviewTab onNavigate={setActiveTab} />}
             {activeTab === 'users' && <UsersTab />}
             {activeTab === 'notifications' && <NotificationsTab onDelete={(id, table) => setDeleteConfirmation({ id, table })} />}
             {activeTab === 'orders' && <OrdersTab />}
             {activeTab === 'formations' && <TrainingsTab />}
+            {activeTab === 'blog' && <BlogTab />}
             {activeTab === 'produits' && <ProductsTab />}
-            {activeTab === 'stock' && (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="relative mb-8">
-                  <div className="w-24 h-24 bg-gradient-to-br from-[#C1272D]/10 to-[#C1272D]/5 rounded-3xl flex items-center justify-center mx-auto">
-                    <Package className="w-12 h-12 text-[#C1272D]" />
-                  </div>
-                  <span className="absolute -top-2 -right-2 bg-amber-400 text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full">Bientôt</span>
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3">Coming Soon...</h3>
-                <p className="text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed">
-                  Le module de gestion de stock est en cours de développement. Il sera disponible très prochainement.
-                </p>
-                <div className="mt-8 flex items-center gap-2 text-xs text-[#C1272D] font-bold bg-[#C1272D]/5 px-6 py-3 rounded-full">
-                  <span className="w-2 h-2 bg-[#C1272D] rounded-full animate-pulse" />
-                  En développement actif
-                </div>
-              </div>
-            )}
             {activeTab === 'devis' && (
               <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6">
                 <QuotesTab />
@@ -642,7 +627,7 @@ const AdminModule = () => {
                   <input 
                     name={formType === 'product' ? 'name' : 'title'}
                     defaultValue={editingItem ? (formType === 'product' ? editingItem.name : editingItem.title) : ''}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D]"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#2563B0]"
                     required
                   />
                 </div>
@@ -652,7 +637,7 @@ const AdminModule = () => {
                     name="category"
                     defaultValue={editingItem?.category || ''}
                     placeholder={formType === 'product' ? "Mobile, Réseau..." : "IT, Télécom..."}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D]"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#2563B0]"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -664,7 +649,7 @@ const AdminModule = () => {
                       min="0"
                       step="1"
                       defaultValue={editingItem?.price || ''}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D]"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#2563B0]"
                       required
                     />
                   </div>
@@ -678,7 +663,7 @@ const AdminModule = () => {
                       min={formType === 'product' ? "0" : undefined}
                       defaultValue={editingItem ? (formType === 'product' ? editingItem.stock : editingItem.level) : ''}
                       placeholder={formType === 'training' ? "Ex: Débutant" : ""}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D]"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#2563B0]"
                     />
                   </div>
                 </div>
@@ -690,7 +675,7 @@ const AdminModule = () => {
                         name="instructor"
                         defaultValue={editingItem?.instructor || ''}
                         placeholder="Nom"
-                        className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D]"
+                        className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#2563B0]"
                       />
                     </div>
                     <div>
@@ -699,7 +684,7 @@ const AdminModule = () => {
                         name="duration"
                         defaultValue={editingItem?.duration || ''}
                         placeholder="Ex: 3 mois"
-                        className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D]"
+                        className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#2563B0]"
                       />
                     </div>
                   </div>
@@ -710,7 +695,7 @@ const AdminModule = () => {
                     name="description"
                     defaultValue={editingItem?.description || ''}
                     rows={3}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D] resize-none"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#2563B0] resize-none"
                   />
                 </div>
                 <div>
@@ -718,10 +703,10 @@ const AdminModule = () => {
                   <input 
                     name="image"
                     defaultValue={editingItem?.image || ''}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D]"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#2563B0]"
                   />
                 </div>
-                <button type="submit" className="w-full bg-[#C1272D] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-blue-500/20 mt-4">
+                <button type="submit" className="w-full bg-[#2563B0] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-blue-500/20 mt-4">
                   Confirmer
                 </button>
               </form>
@@ -748,7 +733,7 @@ const AdminModule = () => {
               className="relative w-full max-w-sm bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl p-8 text-center"
             >
               <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <AlertCircle className="w-8 h-8 text-[#C1272D]" />
+                <AlertCircle className="w-8 h-8 text-[#2563B0]" />
               </div>
               <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Confirmation</h3>
               <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">
@@ -763,7 +748,7 @@ const AdminModule = () => {
                 </button>
                 <button 
                   onClick={handleDelete}
-                  className="py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-[#C1272D] text-white shadow-lg shadow-blue-500/20"
+                  className="py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-[#2563B0] text-white shadow-lg shadow-blue-500/20"
                 >
                   Supprimer
                 </button>

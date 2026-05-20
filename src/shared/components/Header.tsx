@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Home, GraduationCap, ShoppingBag, Phone, Wrench,
+  Home, GraduationCap, ShoppingBag, Phone, Wrench, BookOpen,
   User, Bell, Search, ShieldCheck, Menu, X, LogOut, Moon, Sun
 } from 'lucide-react';
 import { useAuth } from '@/shared/context/AuthContext';
@@ -32,6 +32,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
     { to: '/formation', label: 'Formation', icon: GraduationCap },
     { to: '/boutique',  label: 'Boutique',  icon: ShoppingBag },
     { to: '/services',  label: 'Services',  icon: Wrench },
+    { to: '/blog',      label: 'Blog',      icon: BookOpen },
     ...(isAdmin ? [{ to: '/admin', label: 'Admin', icon: ShieldCheck }] : []),
   ];
 
