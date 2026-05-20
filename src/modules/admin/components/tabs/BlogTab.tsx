@@ -32,6 +32,7 @@ export default function BlogTab() {
   const [loading, setLoading]       = React.useState(true);
   const [showForm, setShowForm]     = React.useState(false);
   const [saving, setSaving]         = React.useState(false);
+  const [saveError, setSaveError]   = React.useState<string | null>(null);
   const [editing, setEditing]       = React.useState<any>(null);
   const [deleteTarget, setDelete]   = React.useState<{ id: string; title: string } | null>(null);
   const [form, setForm]             = React.useState(EMPTY);
@@ -63,6 +64,7 @@ export default function BlogTab() {
 
   const save = async () => {
     if (!form.title || !form.content) return;
+    setSaveError(null);
     setSaving(true);
     const payload = {
       title: form.title.trim(), excerpt: form.excerpt.trim(), content: form.content.trim(),
@@ -71,11 +73,21 @@ export default function BlogTab() {
       image: form.image || null, read_time: Number(form.read_time) || 5,
       published: (form as any).published,
     };
-    const { error } = editing
-      ? await supabase.from('blog_posts').update(payload).eq('id', editing.id)
-      : await supabase.from('blog_posts').insert([payload]);
-    if (!error) { resetForm(); fetch(); }
-    setSaving(false);
+    try {
+      const { error } = editing
+        ? await supabase.from('blog_posts').update(payload).eq('id', editing.id)
+        : await supabase.from('blog_posts').insert([payload]);
+      if (error) {
+        setSaveError(`Erreur Supabase: ${error.message} (code: ${error.code})`);
+      } else {
+        resetForm();
+        fetch();
+      }
+    } catch (err: any) {
+      setSaveError(err.message || 'Erreur inconnue');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const togglePublish = async (id: string, current: boolean) => {
@@ -157,6 +169,14 @@ export default function BlogTab() {
                     </label>
                   </div>
                 </div>
+                {saveError && (
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 rounded-xl text-xs text-red-600 dark:text-red-400 font-medium">
+                    ⚠️ {saveError}
+                    {saveError.includes('does not exist') && (
+                      <p className="mt-1 font-bold">→ La table blog_posts n'existe pas encore dans Supabase. Créez-la via l'éditeur SQL.</p>
+                    )}
+                  </div>
+                )}
                 <div className="flex gap-3 pt-2">
                   <button onClick={save} disabled={saving} className="bg-[#C1272D] text-white px-6 py-2 rounded-xl text-sm font-bold hover:opacity-90 disabled:opacity-50">
                     {saving ? 'Enregistrement...' : 'Enregistrer'}

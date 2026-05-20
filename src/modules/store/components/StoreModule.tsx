@@ -55,6 +55,11 @@ export default function StoreModule() {
   );
 
   const [visibleCount, setVisibleCount] = React.useState(8);
+  const [showPromoBanner, setShowPromoBanner] = React.useState(true);
+  const promoProducts = React.useMemo(
+    () => allProducts.filter(p => (p as any).is_promo || (p as any).discount > 0).slice(0, 4),
+    [allProducts]
+  );
   const [wishlist, setWishlist] = React.useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('wishlist') || '[]'); } catch { return []; }
   });
@@ -91,11 +96,9 @@ export default function StoreModule() {
   // ✅ Charger le panier depuis Supabase si connecté
   React.useEffect(() => {
     if (!user) return;
-    supabase.from('carts').select('items').eq('user_id', user.id).maybeSingle()
-      .then(
-        ({ data }) => { if (data?.items?.length) setCart(data.items as CartItem[]); },
-        () => {}
-      );
+    supabase.from('carts').select('items').eq('user_id', user.id).single()
+      .then(({ data }) => { if (data?.items?.length) setCart(data.items as CartItem[]); })
+      .catch(() => {});
   }, [user?.id]);
 
   // ✅ Sauvegarder le panier dans Supabase (upsert direct sur la table carts)
@@ -214,13 +217,60 @@ export default function StoreModule() {
   if (productsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-slate-100 dark:border-slate-800 border-t-[#C1272D] rounded-full animate-spin" />
+        <div className="w-12 h-12 border-4 border-slate-100 dark:border-slate-800 border-t-[#2563B0] rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
     <section className="py-16 bg-white dark:bg-slate-900 transition-colors">
+      {/* ── Bannière Produits en Promotion ──────────────────── */}
+      <AnimatePresence>
+        {showPromoBanner && promoProducts.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 60 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 60 }}
+            transition={{ type: 'spring', stiffness: 250, damping: 28 }}
+            className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-[90] w-[95vw] max-w-3xl"
+          >
+            <div className="bg-gradient-to-r from-[var(--accent)] to-slate-900 rounded-3xl shadow-2xl overflow-hidden">
+              <div className="flex items-center gap-4 p-4">
+                {/* Images produits */}
+                <div className="hidden sm:flex gap-2 shrink-0">
+                  {promoProducts.slice(0, 3).map(p => (
+                    <div key={p.id} className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 shrink-0">
+                      {p.image && <img src={p.image} alt={p.name} className="w-full h-full object-cover" />}
+                    </div>
+                  ))}
+                </div>
+                {/* Texte */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-black text-sm uppercase tracking-widest">
+                    🔥 Promotions en cours
+                  </p>
+                  <p className="text-white/70 text-xs mt-0.5">
+                    {promoProducts.length} produit{promoProducts.length > 1 ? 's' : ''} à prix réduit
+                  </p>
+                </div>
+                {/* CTA */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => { setShowPromoBanner(false); document.getElementById('promo-section')?.scrollIntoView({ behavior: 'smooth' }); }}
+                    className="bg-white text-[var(--accent)] text-xs font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl hover:bg-red-50 transition-colors whitespace-nowrap"
+                  >
+                    Voir les offres
+                  </button>
+                  <button onClick={() => setShowPromoBanner(false)}
+                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
@@ -234,7 +284,7 @@ export default function StoreModule() {
             </button>
             <motion.button onClick={() => setIsCartOpen(true)}
               animate={cartBump ? { scale: [1, 1.2, 1] } : {}}
-              className="relative flex items-center gap-2 px-4 py-2.5 bg-[#C1272D] rounded-2xl text-sm font-bold text-white shadow-lg shadow-blue-500/20 hover:bg-[#1E4D8C] transition-colors">
+              className="relative flex items-center gap-2 px-4 py-2.5 bg-[#2563B0] rounded-2xl text-sm font-bold text-white shadow-lg shadow-blue-500/20 hover:bg-[#1E4D8C] transition-colors">
               <ShoppingCart className="w-4 h-4" />
               Panier
               {cartCount > 0 && (
@@ -252,7 +302,7 @@ export default function StoreModule() {
           <input type="text" placeholder="Rechercher un produit..."
             value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-            className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#C1272D] transition-all" />
+            className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2563B0] transition-all" />
           {showSuggestions && suggestions.length > 0 && (
             <div className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 z-20 overflow-hidden">
               {suggestions.map(s => (
@@ -261,7 +311,7 @@ export default function StoreModule() {
                   <img src={s.image} alt={s.name} className="w-10 h-10 rounded-xl object-cover" />
                   <div>
                     <p className="font-bold text-slate-900 dark:text-white">{s.name}</p>
-                    <p className="text-xs text-[#C1272D] font-bold">{s.price.toLocaleString()} FCFA</p>
+                    <p className="text-xs text-[#2563B0] font-bold">{s.price.toLocaleString()} FCFA</p>
                   </div>
                 </button>
               ))}
@@ -281,7 +331,7 @@ export default function StoreModule() {
                     {categories.map(cat => (
                       <button key={cat} onClick={() => setSelectedCategory(cat)}
                         className={cn("px-3 py-1.5 rounded-full text-xs font-bold transition-all",
-                          selectedCategory === cat ? "bg-[#C1272D] text-white" : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100")}>
+                          selectedCategory === cat ? "bg-[#2563B0] text-white" : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100")}>
                         {cat}
                       </button>
                     ))}
@@ -289,7 +339,7 @@ export default function StoreModule() {
                 </div>
                 <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Prix max : {maxPrice.toLocaleString()} FCFA</label>
-                  <input type="range" min="0" max="500000" step="5000" value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))} className="w-full accent-[#C1272D]" />
+                  <input type="range" min="0" max="500000" step="5000" value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))} className="w-full accent-[#2563B0]" />
                 </div>
                 <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Trier par</label>
@@ -297,7 +347,7 @@ export default function StoreModule() {
                     {sortOptions.map(opt => (
                       <button key={opt.value} onClick={() => setSortBy(opt.value)}
                         className={cn("px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 transition-all",
-                          sortBy === opt.value ? "bg-[#C1272D] text-white" : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300")}>
+                          sortBy === opt.value ? "bg-[#2563B0] text-white" : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300")}>
                         <ArrowUpDown className="w-3 h-3" /> {opt.label}
                       </button>
                     ))}
@@ -325,18 +375,18 @@ export default function StoreModule() {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   <button onClick={e => toggleWishlist(product.id, e)}
                     className={cn("absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-lg",
-                      wishlist.includes(product.id) ? "bg-[#C1272D] text-white" : "bg-white/90 dark:bg-slate-800/90 text-slate-400 hover:text-[#C1272D]")}>
+                      wishlist.includes(product.id) ? "bg-[#2563B0] text-white" : "bg-white/90 dark:bg-slate-800/90 text-slate-400 hover:text-[#2563B0]")}>
                     <Heart className={cn("w-4 h-4", wishlist.includes(product.id) && "fill-current")} />
                   </button>
                 </div>
                 <div className="p-5 flex-1 flex flex-col">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[#C1272D] mb-1">{product.category}</p>
-                  <h3 className="font-bold text-slate-900 dark:text-white mb-2 group-hover:text-[#C1272D] transition-colors">{product.name}</h3>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-[#2563B0] mb-1">{product.category}</p>
+                  <h3 className="font-bold text-slate-900 dark:text-white mb-2 group-hover:text-[#2563B0] transition-colors">{product.name}</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 flex-1">{product.description}</p>
                   <div className="flex items-center justify-between mt-auto">
-                    <p className="text-lg font-black text-[#C1272D]">{product.price.toLocaleString()} <span className="text-xs font-bold">FCFA</span></p>
+                    <p className="text-lg font-black text-[#2563B0]">{product.price.toLocaleString()} <span className="text-xs font-bold">FCFA</span></p>
                     <button onClick={e => { e.stopPropagation(); addToCart(product); }}
-                      className="flex items-center gap-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-[#C1272D] hover:dark:bg-[#C1272D] hover:dark:text-white transition-all">
+                      className="flex items-center gap-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-[#2563B0] hover:dark:bg-[#2563B0] hover:dark:text-white transition-all">
                       <Plus className="w-3.5 h-3.5" /> Ajouter
                     </button>
                   </div>
@@ -347,7 +397,7 @@ export default function StoreModule() {
         )}
 
         {hasMore && <div ref={loaderRef} className="flex justify-center mt-10">
-          <div className="w-8 h-8 border-4 border-slate-100 dark:border-slate-800 border-t-[#C1272D] rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-slate-100 dark:border-slate-800 border-t-[#2563B0] rounded-full animate-spin" />
         </div>}
       </div>
 
@@ -366,16 +416,16 @@ export default function StoreModule() {
                 <img src={selectedProduct.image} alt={selectedProduct.name} loading="lazy" className="w-full h-full object-cover" />
               </div>
               <div className="p-8 md:w-7/12">
-                <p className="text-xs font-black uppercase tracking-widest text-[#C1272D] mb-2">{selectedProduct.category}</p>
+                <p className="text-xs font-black uppercase tracking-widest text-[#2563B0] mb-2">{selectedProduct.category}</p>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">{selectedProduct.name}</h2>
                 <div className="flex items-center gap-2 mb-4">
                   {[...Array(5)].map((_, i) => <Star key={i} className={cn("w-4 h-4", i < Math.floor(selectedProduct.rating || 0) ? "text-yellow-400 fill-current" : "text-slate-300")} />)}
                   <span className="text-xs text-slate-500 dark:text-slate-400">({selectedProduct.reviewsCount || 0} avis)</span>
                 </div>
                 <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">{selectedProduct.description}</p>
-                <p className="text-3xl font-black text-[#C1272D] mb-6">{selectedProduct.price.toLocaleString()} <span className="text-sm font-bold">FCFA</span></p>
+                <p className="text-3xl font-black text-[#2563B0] mb-6">{selectedProduct.price.toLocaleString()} <span className="text-sm font-bold">FCFA</span></p>
                 <button onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }}
-                  className="w-full bg-[#C1272D] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-blue-500/20 hover:bg-[#1E4D8C] flex items-center justify-center gap-2">
+                  className="w-full bg-[#2563B0] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-blue-500/20 hover:bg-[#1E4D8C] flex items-center justify-center gap-2">
                   <ShoppingCart className="w-4 h-4" /> Ajouter au panier
                 </button>
               </div>
@@ -393,7 +443,7 @@ export default function StoreModule() {
             <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30 }}
               className="relative w-full max-w-sm h-full bg-white dark:bg-slate-900 shadow-2xl flex flex-col">
               <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="text-xl font-black text-slate-900 dark:text-white">Mon Panier <span className="text-[#C1272D]">({cartCount})</span></h3>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">Mon Panier <span className="text-[#2563B0]">({cartCount})</span></h3>
                 <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"><X className="w-5 h-5" /></button>
               </div>
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -407,7 +457,7 @@ export default function StoreModule() {
                     <img src={item.image} alt={item.name} loading="lazy" className="w-16 h-16 rounded-xl object-cover" />
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{item.name}</p>
-                      <p className="text-[#C1272D] font-black text-sm">{(item.price * item.quantity).toLocaleString()} FCFA</p>
+                      <p className="text-[#2563B0] font-black text-sm">{(item.price * item.quantity).toLocaleString()} FCFA</p>
                     </div>
                     <div className="flex flex-col items-center gap-1">
                       <div className="flex items-center gap-1">
@@ -424,9 +474,9 @@ export default function StoreModule() {
                 <div className="p-6 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex justify-between mb-4">
                     <span className="font-bold text-slate-900 dark:text-white">Total</span>
-                    <span className="font-black text-[#C1272D]">{cartTotal.toLocaleString()} FCFA</span>
+                    <span className="font-black text-[#2563B0]">{cartTotal.toLocaleString()} FCFA</span>
                   </div>
-                  <button onClick={handleCheckout} className="w-full bg-[#C1272D] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-blue-500/20 flex items-center justify-center gap-2 hover:bg-[#1E4D8C]">
+                  <button onClick={handleCheckout} className="w-full bg-[#2563B0] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-blue-500/20 flex items-center justify-center gap-2 hover:bg-[#1E4D8C]">
                     <MessageSquare className="w-4 h-4" /> Commander via WhatsApp
                   </button>
                 </div>
@@ -444,11 +494,11 @@ export default function StoreModule() {
               onClick={() => setItemToDelete(null)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
               className="relative bg-white dark:bg-slate-800 rounded-3xl p-8 text-center shadow-2xl max-w-sm w-full">
-              <AlertCircle className="w-12 h-12 text-[#C1272D] mx-auto mb-4" />
+              <AlertCircle className="w-12 h-12 text-[#2563B0] mx-auto mb-4" />
               <h3 className="font-black text-slate-900 dark:text-white mb-2">Retirer du panier ?</h3>
               <div className="flex gap-3 mt-6">
                 <button onClick={() => setItemToDelete(null)} className="flex-1 py-3 rounded-2xl font-black text-xs uppercase bg-slate-100 dark:bg-slate-700">Annuler</button>
-                <button onClick={() => removeFromCart(itemToDelete)} className="flex-1 py-3 rounded-2xl font-black text-xs uppercase bg-[#C1272D] text-white">Retirer</button>
+                <button onClick={() => removeFromCart(itemToDelete)} className="flex-1 py-3 rounded-2xl font-black text-xs uppercase bg-[#2563B0] text-white">Retirer</button>
               </div>
             </motion.div>
           </div>
