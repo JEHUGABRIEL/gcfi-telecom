@@ -14,7 +14,8 @@ import FloatingContact from '@/shared/components/FloatingContact';
 import ContactModal from '@/shared/components/ContactModal';
 import AuthModal from '@/shared/components/AuthModal';
 import { useAuth } from '@/shared/context/AuthContext';
-import AuthCallback from '@/shared/components/AuthCallback';
+const AuthCallback  = lazy(() => import('@/shared/components/AuthCallback'));
+const ResetPassword = lazy(() => import('@/shared/components/ResetPassword'));
 
 const ServicesPage = lazy(() => import('@/modules/services/ServicesPage'));
 
@@ -89,7 +90,8 @@ function AnimatedRoutes({ onContactOpen }: { onContactOpen: () => void }) {
           <Route path="/admin" element={<AdminRoute><Suspense fallback={<ModuleLoader />}><AdminModule /></Suspense></AdminRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
           <Route path="/services" element={<ClientRoute><Suspense fallback={<ModuleLoader />}><ServicesPage /></Suspense></ClientRoute>} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/reset-password" element={<Suspense fallback={<ModuleLoader />}><ResetPassword /></Suspense>} />
+          <Route path="/auth/callback"  element={<Suspense fallback={<ModuleLoader />}><AuthCallback /></Suspense>} />
         </Routes>
       </motion.div>
     </AnimatePresence>
@@ -127,7 +129,7 @@ function AppContent() {
 
 export default function App() {
   return (
-    <HashRouter>
+    <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <ThemeProvider>
         <AuthProvider>
           <NotificationProvider>

@@ -179,6 +179,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
         </div>
       </div>
 
+
       {/* Achievement Modal */}
       <AnimatePresence>
         {selectedAchievement && (

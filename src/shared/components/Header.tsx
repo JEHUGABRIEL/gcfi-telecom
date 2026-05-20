@@ -2,11 +2,10 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Home, GraduationCap, ShoppingBag, Phone,
-  User, Bell, Search, ShieldCheck, Menu, X, Sun, Moon, Briefcase
+  Home, GraduationCap, ShoppingBag, Phone, Wrench,
+  User, Bell, Search, ShieldCheck, Menu, X, LogOut
 } from 'lucide-react';
 import { useAuth } from '@/shared/context/AuthContext';
-import { useTheme } from '@/shared/context/ThemeContext';
 import { cn } from '@/shared/lib/utils';
 import GcfiLogo from './GcfiLogo';
 import NotificationCenter from './NotificationCenter';
@@ -19,7 +18,6 @@ interface HeaderProps {
 
 export default function Header({ onContactOpen }: HeaderProps) {
   const { user, profile, isAdmin, setShowSignOutModal, setShowAuthModal } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const { notifications, unreadCount, markAsRead, clearAll, requestPermission } = useNotifications();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
@@ -31,7 +29,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
     { to: '/',          label: 'Accueil',   icon: Home },
     { to: '/formation', label: 'Formation', icon: GraduationCap },
     { to: '/boutique',  label: 'Boutique',  icon: ShoppingBag },
-    { to: '/services',  label: 'Services',  icon: Briefcase },
+    { to: '/services',  label: 'Services',  icon: Wrench },
     ...(isAdmin ? [{ to: '/admin', label: 'Admin', icon: ShieldCheck }] : []),
   ];
 
@@ -64,19 +62,19 @@ export default function Header({ onContactOpen }: HeaderProps) {
                     cn(
                       'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all',
                       isActive
-                        ? 'text-[#C1272D] font-bold'
+                        ? 'text-[var(--accent)] font-bold'
                         : 'text-slate-600 hover:bg-slate-100'
                     )
                   }
                 >
                   {({ isActive }) => (
                     <>
-                      <item.icon className={cn("w-4 h-4", isActive && "text-[#C1272D]")} />
-                      <span className={isActive ? "text-[#C1272D]" : ""}>{item.label}</span>
+                      <item.icon className={cn("w-4 h-4", isActive && "text-[var(--accent)]")} />
+                      <span className={isActive ? "text-[var(--accent)]" : ""}>{item.label}</span>
                       {isActive && (
                         <motion.div
                           layoutId="nav-indicator"
-                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#C1272D] rounded-full"
+                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent)] rounded-full"
                         />
                       )}
                     </>
@@ -87,7 +85,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
               {/* Bouton Contact — blanc avec bordure bleue */}
               <button
                 onClick={onContactOpen}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-[#C1272D] bg-white border-2 border-[#C1272D] hover:bg-blue-50 transition-all ml-1"
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-[var(--accent)] bg-white border-2 border-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_8%,white)] transition-all ml-1"
               >
                 <Phone className="w-4 h-4" />
                 Contact
@@ -104,18 +102,6 @@ export default function Header({ onContactOpen }: HeaderProps) {
                 <Search className="w-5 h-5" />
               </button>
 
-              {/* ✅ Toggle Light / Dark */}
-              <button
-                onClick={toggleTheme}
-                title={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
-                className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all"
-              >
-                {theme === 'dark'
-                  ? <Sun className="w-5 h-5 text-amber-400" />
-                  : <Moon className="w-5 h-5" />
-                }
-              </button>
-
               {/* Notifications — visible uniquement si connecté */}
               {user && (
                 <div className="relative">
@@ -126,19 +112,22 @@ export default function Header({ onContactOpen }: HeaderProps) {
                   >
                     <Bell className="w-5 h-5" />
                     {unreadCount > 0 && (
-                      <span className="absolute top-0 right-0 w-4 h-4 bg-[#C1272D] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      <span className="absolute top-0 right-0 w-4 h-4 bg-[var(--accent)] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                         {unreadCount > 9 ? '9+' : unreadCount}
                       </span>
                     )}
                   </button>
-                  {/* ✅ isOpen passé + AnimatePresence géré dans NotificationCenter */}
-                  <NotificationCenter
-                    isOpen={isNotificationsOpen}
-                    notifications={notifications}
-                    onMarkRead={markAsRead}
-                    onClearAll={clearAll}
-                    onClose={() => setIsNotificationsOpen(false)}
-                  />
+                  <AnimatePresence>
+                    {isNotificationsOpen && (
+                      <NotificationCenter
+                        notifications={notifications}
+                        onMarkAsRead={markAsRead}
+                        onClearAll={clearAll}
+                        onRequestPermission={requestPermission}
+                        onClose={() => setIsNotificationsOpen(false)}
+                      />
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
 
@@ -153,10 +142,10 @@ export default function Header({ onContactOpen }: HeaderProps) {
                       src={profile.avatar_url}
                       alt={displayName ?? ''}
                       referrerPolicy="no-referrer"
-                      className="w-7 h-7 rounded-full object-cover ring-2 ring-[#C1272D]/30"
+                      className="w-7 h-7 rounded-full object-cover ring-2 ring-[var(--accent)]/30"
                     />
                   ) : (
-                    <div className="w-7 h-7 bg-[#C1272D] rounded-full flex items-center justify-center shrink-0">
+                    <div className="w-7 h-7 bg-[var(--accent)] rounded-full flex items-center justify-center shrink-0">
                       <span className="text-white text-xs font-black">
                         {displayName?.charAt(0).toUpperCase()}
                       </span>
@@ -167,10 +156,21 @@ export default function Header({ onContactOpen }: HeaderProps) {
               ) : (
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white bg-[#C1272D] hover:bg-[#1d4f9a] transition-all shadow-md shadow-blue-900/20"
+                  className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] transition-all shadow-md shadow-[color-mix(in_srgb,var(--accent)_15%,transparent)]"
                 >
                   <User className="w-4 h-4" />
                   Connexion
+                </button>
+              )}
+
+              {/* Déconnexion desktop — si connecté */}
+              {user && (
+                <button
+                  onClick={() => setShowSignOutModal(true)}
+                  className="hidden md:flex p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+                  title="Se déconnecter"
+                >
+                  <LogOut className="w-5 h-5" />
                 </button>
               )}
 
@@ -205,7 +205,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
                       cn(
                         'flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all',
                         isActive
-                          ? 'text-[#C1272D] bg-blue-50'
+                          ? 'text-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_8%,white)]'
                           : 'text-slate-600 hover:bg-slate-50'
                       )
                     }
@@ -216,7 +216,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
                 ))}
                 <button
                   onClick={() => { onContactOpen(); closeMenu(); }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-[#C1272D] border-2 border-[#C1272D] w-full transition-all hover:bg-blue-50"
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-[var(--accent)] border-2 border-[var(--accent)] w-full transition-all hover:bg-[color-mix(in_srgb,var(--accent)_8%,white)]"
                 >
                   <Phone className="w-5 h-5" />
                   Contact
@@ -234,10 +234,10 @@ export default function Header({ onContactOpen }: HeaderProps) {
                           src={profile.avatar_url}
                           alt={displayName ?? ''}
                           referrerPolicy="no-referrer"
-                          className="w-8 h-8 rounded-full object-cover ring-2 ring-[#C1272D]/30 shrink-0"
+                          className="w-8 h-8 rounded-full object-cover ring-2 ring-[var(--accent)]/30 shrink-0"
                         />
                       ) : (
-                        <div className="w-8 h-8 bg-[#C1272D] rounded-full flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 bg-[var(--accent)] rounded-full flex items-center justify-center shrink-0">
                           <span className="text-white text-xs font-black">
                             {displayName?.charAt(0).toUpperCase()}
                           </span>
@@ -245,11 +245,18 @@ export default function Header({ onContactOpen }: HeaderProps) {
                       )}
                       <span className="truncate">{displayName ?? 'Mon profil'}</span>
                     </NavLink>
+                    <button
+                      onClick={() => { setShowSignOutModal(true); closeMenu(); }}
+                      className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-red-500 hover:bg-red-50 w-full transition-all"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      Se déconnecter
+                    </button>
                   </>
                 ) : (
                   <button
                     onClick={() => { setShowAuthModal(true); closeMenu(); }}
-                    className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-white bg-[#C1272D] hover:bg-[#1d4f9a] w-full transition-all"
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] w-full transition-all"
                   >
                     <User className="w-5 h-5" />
                     Se connecter
