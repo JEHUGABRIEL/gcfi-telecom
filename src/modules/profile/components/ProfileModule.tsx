@@ -38,6 +38,7 @@ export default function ProfileModule() {
   }, [user, activeTab]);
 
   const fetchOrders = async () => {
+    if (!user) return;
     setOrdersLoading(true);
     try {
       const { data } = await supabase
@@ -251,7 +252,7 @@ export default function ProfileModule() {
           <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-lg border border-slate-100 dark:border-slate-700">
             <div className="text-center mb-8">
               <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-[var(--accent)]/10 bg-slate-100">
-                <img src={profile?.avatar_url || user.photoURL || `https://ui-avatars.com/api/?name=${profile?.full_name || user.email}`} alt={profile?.full_name || ''} className="w-full h-full object-cover" />
+                <img src={profile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.full_name || user?.email || 'U')}&background=C1272D&color=fff`} alt={profile?.full_name || ''} className="w-full h-full object-cover" />
               </div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">{profile?.full_name || user.email?.split('@')[0]}</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>

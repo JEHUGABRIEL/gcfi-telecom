@@ -96,9 +96,8 @@ export default function StoreModule() {
   // ✅ Charger le panier depuis Supabase si connecté
   React.useEffect(() => {
     if (!user) return;
-    supabase.from('carts').select('items').eq('user_id', user.id).single()
-      .then(({ data }) => { if (data?.items?.length) setCart(data.items as CartItem[]); })
-      .catch(() => {});
+    supabase.from('carts').select('items').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => { if (data?.items?.length) setCart(data.items as CartItem[]); });
   }, [user?.id]);
 
   // ✅ Sauvegarder le panier dans Supabase (upsert direct sur la table carts)
