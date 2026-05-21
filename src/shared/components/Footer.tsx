@@ -75,7 +75,7 @@ export default function Footer() {
               <li className="flex items-center">
                 <Phone className="w-5 h-5 mr-3 text-[var(--accent)] shrink-0" />
                 <div>
-                  <p>+236 72 72 62 08</p>
+                  <p>+236 72 72 72 08</p>
                   <p>+236 75 50 03 24</p>
                 </div>
               </li>

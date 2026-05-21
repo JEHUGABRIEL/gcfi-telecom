@@ -90,7 +90,7 @@ export default function ContactModal({ isOpen, onClose }: ContactModalProps) {
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                   <div className="flex gap-4 mb-2">
                     <a 
-                      href="https://wa.me/23672726208 " 
+                      href="https://wa.me/23672727208 " 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-500 text-white rounded-xl text-xs font-bold hover:bg-green-600 transition-colors"
