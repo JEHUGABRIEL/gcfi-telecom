@@ -25,7 +25,8 @@ import {
   Lock,
   Package,
   Minus,
-  RefreshCw
+  RefreshCw,
+  Tag
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { supabase } from '@/shared/lib/supabase';
@@ -41,10 +42,11 @@ import UsersTab from './tabs/UsersTab';
 import ProductsTab from './tabs/ProductsTab';
 import TrainingsTab from './tabs/TrainingsTab';
 import BlogTab from './tabs/BlogTab';
+import PromoTab from './tabs/PromoTab';
 import NotificationsTab from './tabs/NotificationsTab';
 import { useSearchParams } from 'react-router-dom';
 
-const VALID_TABS = ['overview','notifications','orders','users','formations','produits','stock','commentaires','devis','temoignages','realisations','partenaires','actualites','blog'] as const;
+const VALID_TABS = ['overview','notifications','orders','users','formations','produits','stock','commentaires','devis','temoignages','realisations','partenaires','actualites','blog','promotions'] as const;
 type AdminTab = typeof VALID_TABS[number];
 
 const AdminModule = () => {
@@ -501,6 +503,15 @@ const AdminModule = () => {
                 <FileText className="w-4 h-4" /> Blog
               </button>
               <button 
+                onClick={() => setActiveTab('promotions')}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
+                  activeTab === 'promotions' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                )}
+              >
+                <Tag className="w-4 h-4" /> Promotions
+              </button>
+              <button 
                 onClick={() => setActiveTab('stock')}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
@@ -571,6 +582,7 @@ const AdminModule = () => {
             {activeTab === 'orders' && <OrdersTab />}
             {activeTab === 'formations' && <TrainingsTab />}
             {activeTab === 'blog' && <BlogTab />}
+            {activeTab === 'promotions' && <PromoTab />}
             {activeTab === 'produits' && <ProductsTab />}
             {activeTab === 'stock' && (
               <div className="flex flex-col items-center justify-center py-24 text-center">
