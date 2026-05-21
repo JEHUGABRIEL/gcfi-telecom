@@ -75,6 +75,19 @@ export default function AuthModal() {
     e.preventDefault();
     setError(null); setLoading(true);
     try {
+      // ✅ Vérifier si le compte est admin — les admins ne peuvent pas réinitialiser eux-mêmes
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (profile?.role === 'admin' || profile?.role === 'superadmin') {
+        setError('Les comptes administrateurs ne peuvent pas réinitialiser leur mot de passe via ce formulaire. Contactez jehubin@gmail.com.');
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/#/reset-password`,
       });

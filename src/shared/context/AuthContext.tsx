@@ -34,7 +34,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const mounted = React.useRef(true);
-  const isFetchingProfile = React.useRef(false); // ✅ guard anti-concurrence StrictMode
 
   useEffect(() => {
     mounted.current = true;
@@ -45,9 +44,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }, 15000);
 
-    // ✅ onAuthStateChange seul — supprime le NavigatorLockAcquireTimeoutError
-    // getSession() supprimé : il concurrençait onAuthStateChange sur le lock IndexedDB
-    // onAuthStateChange fire avec INITIAL_SESSION au mount → session courante disponible immédiatement
+    async function initializeAuth() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted.current) return;
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        if (currentUser) await fetchProfile(currentUser.id, currentUser);
+        else setLoading(false);
+      } catch (err) {
+        logError('Auth init', err);
+        if (mounted.current) setLoading(false);
+      }
+    }
+
+    initializeAuth();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted.current) return;
       const currentUser = session?.user ?? null;
@@ -66,48 +78,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function fetchProfile(uid: string, currentUser?: SupabaseUser) {
-    // ✅ Empêche deux fetchProfile simultanés (React 18 StrictMode double-mount)
-    if (isFetchingProfile.current) return;
-    isFetchingProfile.current = true;
     try {
-      // ✅ Colonnes explicites (évite 400 sur colonnes inexistantes)
-      // ✅ maybeSingle() → retourne null au lieu de 406 si aucune ligne
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, role, avatar_url')
-        .eq('id', uid)
-        .maybeSingle();
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
 
-      if (error) {
-        logError('fetchProfile/select', error);
-        return;
-      }
-
-      if (!data) {
-        // Pas de ligne en DB → profil temporaire depuis les métadonnées auth
-        // (évite le 403 RLS — l'INSERT est géré par le trigger SQL côté Supabase)
-        const fallback: Profile = {
-          id: uid,
-          email: currentUser?.email ?? '',
-          full_name: currentUser?.user_metadata?.full_name
-                  ?? currentUser?.user_metadata?.name
-                  ?? 'Utilisateur',
-          role: 'client',
-          avatar_url: currentUser?.user_metadata?.avatar_url ?? null,
-        };
-        setProfile(fallback);
-        setIsAdmin(false);
-      } else {
+      if (error && error.code === 'PGRST116') {
+        const actualUser = currentUser;
+        if (actualUser) {
+          const { data: newProfile } = await supabase.from('profiles').insert([{
+            id: uid,
+            email: actualUser.email,
+            full_name: actualUser.user_metadata?.full_name || 'Utilisateur',
+            role: 'client'
+          }]).select().single();
+          if (newProfile) { setProfile(newProfile as Profile); setIsAdmin(false); }
+        }
+      } else if (data) {
         setProfile(data as Profile);
         setIsAdmin(data.role === 'admin' || data.role === 'superadmin');
       }
     } catch (err) {
       logError('fetchProfile', err);
     } finally {
-      isFetchingProfile.current = false; // ✅ libérer le guard
       if (mounted.current) setLoading(false);
     }
   }
+
+  // ✅ Auto-logout admin après 15 minutes d'inactivité
+  const ADMIN_TIMEOUT_MS = 15 * 60 * 1000; // 15 min
+  const adminTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const resetAdminTimer = React.useCallback(() => {
+    if (!mounted.current) return;
+    if (adminTimerRef.current) clearTimeout(adminTimerRef.current);
+    // On vérifie isAdmin via ref pour éviter les dépendances cycliques
+  }, []);
+
+  React.useEffect(() => {
+    if (!isAdmin) {
+      if (adminTimerRef.current) clearTimeout(adminTimerRef.current);
+      return;
+    }
+
+    const startTimer = () => {
+      if (adminTimerRef.current) clearTimeout(adminTimerRef.current);
+      adminTimerRef.current = setTimeout(() => {
+        if (mounted.current) {
+          console.info('[GCFI] Admin auto-déconnecté après 15 min d\'inactivité');
+          signOut();
+        }
+      }, ADMIN_TIMEOUT_MS);
+    };
+
+    const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+    const handler = () => startTimer();
+
+    events.forEach(e => document.addEventListener(e, handler, { passive: true }));
+    startTimer(); // Démarrer dès la connexion admin
+
+    return () => {
+      events.forEach(e => document.removeEventListener(e, handler));
+      if (adminTimerRef.current) clearTimeout(adminTimerRef.current);
+    };
+  }, [isAdmin]);
 
   // ✅ signOut robuste — fonctionne même si Supabase est lent
   const signOut = async () => {
