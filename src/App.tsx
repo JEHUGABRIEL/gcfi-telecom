@@ -109,7 +109,17 @@ function AppContent() {
   const { loading: authLoading, isAdmin } = useAuth();
   const [isContactOpen, setIsContactOpen] = React.useState(false);
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAdminRoute      = location.pathname.startsWith('/admin');
+  const isAdminLoginRoute = location.pathname === '/admin-login';
+
+  // ✅ Page admin-login : layout totalement isolé, sans header/footer
+  if (isAdminLoginRoute) {
+    return (
+      <Suspense fallback={<ModuleLoader />}>
+        <AnimatedRoutes onContactOpen={() => setIsContactOpen(true)} />
+      </Suspense>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 bg-white dark:bg-[var(--bg-primary)] font-sans transition-colors">
