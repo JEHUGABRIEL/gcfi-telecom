@@ -223,8 +223,8 @@ export default function UsersTab() {
                     {options.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 ) : (
-                  <div className="w-24 flex items-center justify-center">
-                    <Shield className="w-4 h-4 text-slate-300 dark:text-slate-600" title="Modification non autorisée" />
+                  <div className="w-24 flex items-center justify-center" title="Modification non autorisée">
+                    <Shield className="w-4 h-4 text-slate-300 dark:text-slate-600" aria-label="Modification non autorisée" />
                   </div>
                 )}
               </div>
