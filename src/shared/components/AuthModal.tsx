@@ -16,6 +16,17 @@ export default function AuthModal() {
   const [success, setSuccess]     = useState<string | null>(null);
   const [loading, setLoading]     = useState(false);
   const [showPwd, setShowPwd]     = useState(false);
+  const [adminBlocked, setAdminBlocked] = useState(false);
+
+  React.useEffect(() => {
+    const handler = () => {
+      setAdminBlocked(true);
+      setLoading(false);
+      setError(null);
+    };
+    window.addEventListener('gcfi:admin-wrong-form', handler);
+    return () => window.removeEventListener('gcfi:admin-wrong-form', handler);
+  }, []);
   const [confirm, setConfirm]     = useState('');
 
   const reset = () => {
@@ -161,6 +172,22 @@ export default function AuthModal() {
                 <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
                   <p className="text-sm text-green-700 dark:text-green-400 font-medium">{success}</p>
+                </div>
+              )}
+
+              {/* ── Admin bloqué ────────────────────────────── */}
+              {adminBlocked && (
+                <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 rounded-2xl">
+                  <p className="text-sm text-amber-700 dark:text-amber-400 font-bold mb-2">
+                    ⚠️ Compte administrateur détecté
+                  </p>
+                  <p className="text-xs text-amber-600 dark:text-amber-500 mb-3">
+                    Les administrateurs doivent utiliser le portail dédié.
+                  </p>
+                  <a href="/#/admin-login"
+                    className="inline-flex items-center gap-2 bg-[var(--accent)] text-white text-xs font-black uppercase tracking-widest px-4 py-2 rounded-xl hover:opacity-90 transition-all">
+                    Accéder au portail admin →
+                  </a>
                 </div>
               )}
 
