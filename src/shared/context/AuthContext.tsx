@@ -67,21 +67,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (currentUser) {
         await fetchProfile(currentUser.id, currentUser);
 
-        // ✅ Bloquer connexion admin via AuthModal (ils doivent utiliser /admin-login)
-        // On vérifie après fetchProfile car isAdmin est déjà mis à jour
-        // Note: on utilise une ref locale pour ne pas dépendre de l'état React
-        const freshProfile = await supabase
-          .from('profiles').select('role').eq('id', currentUser.id).maybeSingle()
-          .then(r => r.data);
-        if (freshProfile?.role === 'admin' || freshProfile?.role === 'superadmin') {
-          if (mounted.current) {
-            setShowAuthModal(false);
-            // Déconnexion silencieuse + redirection
-            await supabase.auth.signOut();
-            // Afficher un message via un événement custom
-            window.dispatchEvent(new CustomEvent('gcfi:admin-wrong-form'));
+        // ✅ Bloquer connexion admin via AuthModal (sauf si déjà sur /admin-login)
+        const isOnAdminLoginRoute = window.location.hash === '#/admin-login'
+          || window.location.pathname === '/admin-login';
+
+        if (!isOnAdminLoginRoute) {
+          const freshProfile = await supabase
+            .from('profiles').select('role').eq('id', currentUser.id).maybeSingle()
+            .then(r => r.data);
+          if (freshProfile?.role === 'admin' || freshProfile?.role === 'superadmin') {
+            if (mounted.current) {
+              setShowAuthModal(false);
+              await supabase.auth.signOut();
+              window.dispatchEvent(new CustomEvent('gcfi:admin-wrong-form'));
+            }
+            return;
           }
-          return;
         }
 
         setPendingAction(prev => { if (prev) { prev(); setShowAuthModal(false); } return null; });

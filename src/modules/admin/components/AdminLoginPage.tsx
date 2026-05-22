@@ -21,30 +21,31 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      // 1. Tentative de connexion
+      // 1. Connexion Supabase
       const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) throw authError;
 
-      // 2. Vérifier le rôle — seuls admin et superadmin peuvent passer
-      const { data: profile, error: profileError } = await supabase
+      // 2. Vérifier le rôle directement depuis user_metadata ou profiles
+      //    On interroge profiles avec la session fraîche
+      const { data: profile } = await supabase
         .from('profiles')
-        .select('role, email')
+        .select('role')
         .eq('id', data.user.id)
         .maybeSingle();
 
-      if (profileError || !profile) {
-        await supabase.auth.signOut();
-        throw new Error('Profil introuvable.');
-      }
+      const role = profile?.role;
 
-      if (profile.role !== 'admin' && profile.role !== 'superadmin') {
+      // Superadmin identifié par email en fallback si profil non encore créé
+      const isSuperAdminEmail = data.user.email === 'jehubin@gmail.com';
+
+      if (role !== 'admin' && role !== 'superadmin' && !isSuperAdminEmail) {
         await supabase.auth.signOut();
-        setError('Accès refusé. Ce formulaire est réservé aux administrateurs.');
+        setError('Accès refusé. Ce formulaire est réservé aux administrateurs GCFI.');
         setLoading(false);
         return;
       }
 
-      // 3. Succès → redirection vers /admin
+      // 3. Succès → AdminRoute vérifiera isAdmin côté AuthContext
       navigate('/admin', { replace: true });
 
     } catch (err: any) {
@@ -52,9 +53,9 @@ export default function AdminLoginPage() {
       if (msg.includes('Invalid login credentials')) {
         setError('Email ou mot de passe incorrect.');
       } else if (msg.includes('Email not confirmed')) {
-        setError('Email non confirmé.');
+        setError('Email non confirmé. Vérifiez votre boîte email.');
       } else {
-        setError(err.message || 'Une erreur est survenue.');
+        setError(msg || 'Une erreur est survenue.');
       }
     } finally {
       setLoading(false);
