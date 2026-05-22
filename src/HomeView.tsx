@@ -90,19 +90,20 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Nos Piliers d'Excellence</h2>
-            <p className="text-slate-600 dark:text-slate-400">Trois domaines d'expertise pour transformer l'économie numérique et financière.</p>
+            <p className="text-slate-600 dark:text-slate-400">Formation, équipements et services télécom pour transformer l'économie numérique en RCA.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { path: '/formation', icon: '🎓', title: 'Formation',    desc: 'Programmes intensifs en télécom et cybersécurité.', cta: 'Découvrir' },
-              { path: '/boutique', icon: '🛍️',  title: 'Boutique',    desc: 'Équipements réseaux et terminaux mobiles certifiés.', cta: 'Acheter' },
+              { path: '/formation', icon: '🎓', title: 'Formation',  desc: 'Programmes intensifs en télécom et cybersécurité.', cta: 'Découvrir' },
+              { path: '/boutique',  icon: '🛍️',  title: 'Boutique',   desc: 'Équipements réseaux et terminaux mobiles certifiés.', cta: 'Acheter' },
+              { path: '/services',  icon: '🔧',  title: 'Services',   desc: 'Déploiement réseau, maintenance et solutions télécom sur mesure.', cta: 'En savoir plus' },
             ].map(item => (
               <div key={item.path} onClick={() => navigate(item.path)}
-                className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 hover:border-[#2563B0] transition-all cursor-pointer group">
+                className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 hover:border-[var(--accent)] transition-all cursor-pointer group">
                 <div className="text-4xl mb-6">{item.icon}</div>
                 <h3 className="text-2xl font-bold mb-4 dark:text-white">{item.title}</h3>
                 <p className="text-slate-500 dark:text-slate-400 mb-6">{item.desc}</p>
-                <span className="text-[#2563B0] font-bold flex items-center gap-2">{item.cta} <ChevronRight className="w-4 h-4" /></span>
+                <span className="text-[var(--accent)] font-bold flex items-center gap-2">{item.cta} <ChevronRight className="w-4 h-4" /></span>
               </div>
             ))}
           </div>
@@ -157,11 +158,11 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
               </h2>
               <div className="flex gap-4">
                 <button onClick={() => setTestimonialIndex(p => (p - 1 + testimonials.length) % testimonials.length)}
-                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#2563B0] hover:border-[#2563B0] hover:text-white transition-all">
+                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#2563B0] hover:border-[var(--accent)] hover:text-white transition-all">
                   <ChevronLeft className="w-6 h-6" />
                 </button>
                 <button onClick={() => setTestimonialIndex(p => (p + 1) % testimonials.length)}
-                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#2563B0] hover:border-[#2563B0] hover:text-white transition-all">
+                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#2563B0] hover:border-[var(--accent)] hover:text-white transition-all">
                   <ChevronRight className="w-6 h-6" />
                 </button>
               </div>

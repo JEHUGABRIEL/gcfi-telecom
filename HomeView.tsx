@@ -67,13 +67,13 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Nos Piliers d'Excellence</h2>
-            <p className="text-slate-600 dark:text-slate-400">Trois domaines d'expertise pour transformer l'économie numérique et financière.</p>
+            <p className="text-slate-600 dark:text-slate-400">Trois domaines d'expertise pour transformer l'économie numérique.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {[
               { path: '/formation', icon: '🎓', title: 'Formation',    desc: 'Programmes intensifs en télécom et cybersécurité.', cta: 'Découvrir', onClick: null },
               { path: '/boutique', icon: '🛍️',  title: 'Boutique',    desc: 'Équipements réseaux et terminaux mobiles certifiés.', cta: 'Acheter', onClick: null },
-              { path: null, icon: '🔧', title: 'Services', desc: 'Déploiement réseau, fibre optique, vidéosurveillance et cybersécurité.', cta: 'Demander un devis', onClick: onContactOpen },
+              { path: '/services', icon: '🔧', title: 'Services', desc: 'Déploiement réseau, fibre optique, vidéosurveillance et cybersécurité.', cta: 'Demander un devis', onClick: onContactOpen },
             ].map(item => (
               <div key={item.title} onClick={() => item.onClick ? item.onClick() : navigate(item.path!)}
                 className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 hover:border-[#2563B0] transition-all cursor-pointer group">

@@ -25,7 +25,21 @@ export default function AuthModal() {
       setError(null);
     };
     window.addEventListener('gcfi:admin-wrong-form', handler);
-    return () => window.removeEventListener('gcfi:admin-wrong-form', handler);
+
+    const blockedHandler = (e: any) => {
+      const { permanent, until } = e.detail || {};
+      setLoading(false);
+      setError(permanent
+        ? "Votre compte a été définitivement bloqué. Contactez l'administrateur."
+        : `Votre compte est bloqué jusqu'au ${new Date(until).toLocaleDateString('fr-FR')}. Contactez l'administrateur.`
+      );
+    };
+    window.addEventListener('gcfi:user-blocked', blockedHandler);
+
+    return () => {
+      window.removeEventListener('gcfi:admin-wrong-form', handler);
+      window.removeEventListener('gcfi:user-blocked', blockedHandler);
+    };
   }, []);
   const [confirm, setConfirm]     = useState('');
 

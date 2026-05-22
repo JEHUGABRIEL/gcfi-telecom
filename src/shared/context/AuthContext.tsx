@@ -112,6 +112,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (newProfile) { setProfile(newProfile as Profile); setIsAdmin(false); }
         }
       } else if (data) {
+        // ✅ Vérifier si l'utilisateur est bloqué
+        const isBlockedPerm = (data as any).is_blocked === true;
+        const isBlockedTemp = (data as any).blocked_until && new Date((data as any).blocked_until) > new Date();
+
+        if (isBlockedPerm || isBlockedTemp) {
+          await supabase.auth.signOut();
+          setUser(null); setProfile(null); setIsAdmin(false);
+          window.dispatchEvent(new CustomEvent('gcfi:user-blocked', {
+            detail: { permanent: isBlockedPerm, until: (data as any).blocked_until }
+          }));
+          return;
+        }
+
         setProfile(data as Profile);
         setIsAdmin(data.role === 'admin' || data.role === 'superadmin');
       }

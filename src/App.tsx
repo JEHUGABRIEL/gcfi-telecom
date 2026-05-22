@@ -25,7 +25,7 @@ const StoreModule    = lazy(() => import('@/modules/store').then(m => ({ default
 const TrainingModule = lazy(() => import('@/modules/training').then(m => ({ default: m.TrainingModule })));
 const ProfileModule  = lazy(() => import('@/modules/profile').then(m => ({ default: m.ProfileModule })));
 const AdminModule    = lazy(() => import('@/modules/admin').then(m => ({ default: m.AdminModule })));
-const HomeView       = lazy(() => import('./HomeView'));
+const HomeView       = lazy(() => import('./HomeView')) as React.LazyExoticComponent<React.ComponentType<{ onContactOpen: () => void }>>;
 const ProductDetail  = lazy(() => import('@/modules/store/components/ProductDetail'));
 const CourseDetail   = lazy(() => import('@/modules/training/components/CourseDetail'));
 
@@ -40,13 +40,17 @@ function ModuleLoader() {
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, loading } = useAuth();
   if (loading) return <ModuleLoader />;
-  if (!loading && (!user || !isAdmin)) return <Navigate to="/" replace />;
+  // ✅ Non connecté → page admin-login (pas home)
+  if (!user) return <Navigate to="/admin-login" replace />;
+  // ✅ Connecté mais pas admin → home
+  if (!isAdmin) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
 function ClientRoute({ children }: { children: React.ReactNode }) {
   const { isAdmin, loading } = useAuth();
-  if (loading) return <>{children}</>;
+  // ✅ Spinner pendant loading — l'admin ne voit jamais la home page
+  if (loading) return <ModuleLoader />;
   if (isAdmin) return <Navigate to="/admin" replace />;
   return <>{children}</>;
 }
