@@ -143,6 +143,19 @@ export default function StoreModule() {
 
   const hasMore = visibleCount < filteredProducts.length;
 
+  // ✅ Groupement par catégorie (désactivé si filtre/recherche actif)
+  const productsByCategory = React.useMemo(() => {
+    const isFiltered = searchQuery.trim() || selectedCategory !== 'Tous';
+    if (isFiltered) return null;
+    const groups: Record<string, typeof filteredProducts> = {};
+    filteredProducts.forEach(p => {
+      const cat = p.category || 'Autres';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(p);
+    });
+    return groups;
+  }, [filteredProducts, searchQuery, selectedCategory]);
+
   React.useEffect(() => {
     const observer = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) setVisibleCount(prev => Math.min(prev + 4, filteredProducts.length));
@@ -363,9 +376,18 @@ export default function StoreModule() {
             <ShoppingBag className="w-16 h-16 text-slate-200 dark:text-slate-700 mx-auto mb-4" />
             <p className="text-slate-500 dark:text-slate-400 font-bold">Aucun produit trouvé</p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.slice(0, visibleCount).map((product) => (
+        ) : productsByCategory && !searchQuery.trim() && selectedCategory === 'Tous' ? (
+          // ── Affichage par catégorie ─────────────────────────
+          <div className="space-y-10">
+            {Object.entries(productsByCategory).map(([cat, products]) => (
+              <div key={cat}>
+                <div className="flex items-center gap-3 mb-5">
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">{cat}</h3>
+                  <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {(products as any[]).map((product) => (
               <motion.div key={product.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                 className="group bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:shadow-2xl transition-all shadow-sm flex flex-col cursor-pointer"
                 onClick={() => setSelectedProduct(product)}>
@@ -403,6 +425,19 @@ export default function StoreModule() {
                     </button>
                   </div>
                 </div>
+              </motion.div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredProducts.slice(0, visibleCount).map((product) => (
+              <motion.div key={product.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                className="group bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:shadow-2xl transition-all shadow-sm flex flex-col cursor-pointer"
+                onClick={() => setSelectedProduct(product)}>
+                <p className="p-4 font-bold text-sm text-slate-900 dark:text-white">{product.name}</p>
               </motion.div>
             ))}
           </div>

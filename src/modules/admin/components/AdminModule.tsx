@@ -26,6 +26,9 @@ import {
   Package,
   Minus,
   RefreshCw,
+  ChevronLeft,
+  Menu,
+  BookOpen,
   Tag
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
@@ -53,6 +56,8 @@ const AdminModule = () => {
   const { addNotification } = useNotifications();
   const { user: adminUser, isAdmin: isAuthorized, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [sidebarOpen, setSidebarOpen] = React.useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<AdminTab>(() => {
     const param = searchParams.get('tab') as AdminTab;
     return VALID_TABS.includes(param) ? param : 'overview';
@@ -289,6 +294,24 @@ const AdminModule = () => {
     setSearchQuery('');
   }, [activeTab]);
 
+  const navItems = [
+    { tab: 'overview',       icon: BarChart3,     label: 'Vue d\'ensemble' },
+    { tab: 'users',          icon: Users,         label: 'Utilisateurs' },
+    { tab: 'notifications',  icon: Megaphone,     label: 'Notifications' },
+    { tab: 'orders',         icon: ShoppingBag,   label: 'Commandes' },
+    { tab: 'formations',     icon: GraduationCap, label: 'Formations' },
+    { tab: 'produits',       icon: ShoppingBag,   label: 'Produits' },
+    { tab: 'blog',           icon: BookOpen,      label: 'Blog' },
+    { tab: 'promotions',     icon: Tag,           label: 'Promotions' },
+    { tab: 'stock',          icon: Package,       label: 'Gestion Stock' },
+    { tab: 'commentaires',   icon: MessageSquare, label: 'Commentaires' },
+    { tab: 'devis',          icon: FileText,      label: 'Devis reçus' },
+    { tab: 'temoignages',    icon: Star,          label: 'Témoignages' },
+    { tab: 'realisations',   icon: Award,         label: 'Réalisations' },
+    { tab: 'partenaires',    icon: Users,         label: 'Partenaires' },
+    { tab: 'actualites',     icon: Megaphone,     label: 'Actualités' },
+  ];
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 pt-24">
@@ -367,7 +390,7 @@ const AdminModule = () => {
         {
           title: msgTitle,
           message: msgContent,
-          type: category, // Using the dynamic category
+          type: category,
         }
       ]);
       
@@ -434,148 +457,60 @@ const AdminModule = () => {
           ))}
         </div>
 
-        {/* Main Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          <div className="lg:col-span-3">
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col gap-2">
-              <button 
-                onClick={() => setActiveTab('overview')}
-                className={cn(
-                   "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'overview' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <BarChart3 className="w-4 h-4" /> <span>Vue d&apos;ensemble</span>
-              </button>
-              <button 
-                onClick={() => setActiveTab('users')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'users' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Users className="w-4 h-4" /> Utilisateurs
-              </button>
-              <button 
-                onClick={() => setActiveTab('notifications')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'notifications' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Megaphone className="w-4 h-4" /> Notifications
-              </button>
-              <button 
-                onClick={() => setActiveTab('orders')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'orders' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <ShoppingBag className="w-4 h-4" /> Commandes
-              </button>
-              <button 
-                onClick={() => setActiveTab('formations')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'formations' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <GraduationCap className="w-4 h-4" /> Formations
-              </button>
-              <button 
-                onClick={() => setActiveTab('produits')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'produits' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <ShoppingBag className="w-4 h-4" /> Produits
-              </button>
-              <button 
-                onClick={() => setActiveTab('blog')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'blog' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <FileText className="w-4 h-4" /> Blog
-              </button>
-              <button 
-                onClick={() => setActiveTab('promotions')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'promotions' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Tag className="w-4 h-4" /> Promotions
-              </button>
-              <button 
-                onClick={() => setActiveTab('stock')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'stock' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Package className="w-4 h-4" /> Gestion Stock
-              </button>
-              <button 
-                onClick={() => setActiveTab('commentaires')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'commentaires' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <MessageSquare className="w-4 h-4" /> Commentaires
-              </button>
+        {/* Mobile sidebar overlay */}
+        {mobileSidebarOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileSidebarOpen(false)} />
+            <div className="absolute left-0 top-0 h-full w-72 bg-white dark:bg-slate-800 shadow-2xl flex flex-col p-4 gap-2 overflow-y-auto z-10">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-black text-slate-900 dark:text-white text-sm uppercase tracking-widest">Menu</span>
+                <button onClick={() => setMobileSidebarOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl"><X className="w-5 h-5" /></button>
+              </div>
+              {navItems.map(({ tab, icon: Icon, label }) => (
+                <button key={tab} onClick={() => { setActiveTab(tab as any); setMobileSidebarOpen(false); }}
+                  className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all w-full",
+                    activeTab === tab ? "bg-red-50 text-[#C1272D] dark:bg-red-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50")}>
+                  <Icon className="w-4 h-4 shrink-0" /><span>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-              {/* ── Nouveaux onglets priorité 3 ── */}
-              <button
-                onClick={() => setActiveTab('devis')}
-                className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'devis' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <FileText className="w-4 h-4" /> Devis reçus
+        {/* Bouton hamburger mobile */}
+        <div className="flex items-center gap-3 mb-4 lg:hidden">
+          <button onClick={() => setMobileSidebarOpen(true)} className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm">
+            <Menu className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+          </button>
+          <span className="text-sm font-bold text-slate-600 dark:text-slate-300 capitalize">{navItems.find(n => n.tab === activeTab)?.label || 'Menu'}</span>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex gap-6">
+          {/* Sidebar desktop */}
+          <div className={cn("hidden lg:flex flex-col shrink-0 transition-all duration-300", sidebarOpen ? "w-56" : "w-16")}>
+            <div className="bg-white dark:bg-slate-800 p-3 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col gap-1 sticky top-24">
+              {/* Toggle button */}
+              <button onClick={() => setSidebarOpen(v => !v)}
+                className="flex items-center justify-center w-full p-2 mb-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors text-slate-400 hover:text-[#C1272D]">
+                {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </button>
-              <button
-                onClick={() => setActiveTab('temoignages')}
-                className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'temoignages' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Star className="w-4 h-4" /> Témoignages
-              </button>
-              <button
-                onClick={() => setActiveTab('realisations')}
-                className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'realisations' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Award className="w-4 h-4" /> Réalisations
-              </button>
-              <button
-                onClick={() => setActiveTab('partenaires')}
-                className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'partenaires' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Users className="w-4 h-4" /> Partenaires
-              </button>
-              <button
-                onClick={() => setActiveTab('actualites')}
-                className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'actualites' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Megaphone className="w-4 h-4" /> Actualités
-              </button>
+              {navItems.map(({ tab, icon: Icon, label }) => (
+                <button key={tab} onClick={() => setActiveTab(tab as any)}
+                  title={!sidebarOpen ? label : undefined}
+                  className={cn("flex items-center gap-3 py-3 rounded-2xl text-sm font-bold transition-all",
+                    sidebarOpen ? "px-4" : "px-0 justify-center",
+                    activeTab === tab ? "bg-red-50 text-[#C1272D] dark:bg-red-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50")}>
+                  <Icon className="w-4 h-4 shrink-0" />
+                  {sidebarOpen && <span className="truncate">{label}</span>}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Tab Content */}
-          <div className="lg:col-span-9">
+          {/* Contenu principal */}
+          <div className="flex-1 min-w-0">
+            {/* Tab Content */}
             {activeTab === 'overview' && <OverviewTab onNavigate={(tab) => setActiveTab(tab as any)} />}
             {activeTab === 'users' && <UsersTab />}
             {activeTab === 'notifications' && <NotificationsTab onDelete={(id, table) => setDeleteConfirmation({ id, table })} />}
@@ -600,6 +535,12 @@ const AdminModule = () => {
                   <span className="w-2 h-2 bg-[#C1272D] rounded-full animate-pulse" />
                   En développement actif
                 </div>
+              </div>
+            )}
+            {activeTab === 'commentaires' && (
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6">
+                <h2 className="text-xl font-black text-slate-900 dark:text-white mb-4">Commentaires</h2>
+                <p>Module de gestion des commentaires en cours de développement</p>
               </div>
             )}
             {activeTab === 'devis' && (
@@ -634,7 +575,7 @@ const AdminModule = () => {
       {/* Admin Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -756,7 +697,7 @@ const AdminModule = () => {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {deleteConfirmation && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

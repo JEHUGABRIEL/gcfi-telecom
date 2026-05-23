@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GraduationCap, Clock, ChevronRight, X, CheckCircle, Info } from 'lucide-react';
+import { GraduationCap, Clock, ChevronRight, X, CheckCircle, Info, Search } from 'lucide-react';
 import { Course } from '@/shared/types';
 import { cn } from '@/shared/lib/utils';
 import { useAuth } from '@/shared/context/AuthContext';
@@ -19,6 +19,8 @@ export default function TrainingModule({ onContactOpen }: TrainingModuleProps) {
   const [courses, setCourses] = React.useState<Course[]>([]);
   const [coursesLoading, setCoursesLoading] = React.useState(true);
   const [selectedTag, setSelectedTag] = React.useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = React.useState<Course | null>(null);
 
   React.useEffect(() => {
@@ -39,11 +41,24 @@ export default function TrainingModule({ onContactOpen }: TrainingModuleProps) {
     fetchCourses();
   }, []);
 
-  const filteredCourses = selectedTag
-    ? courses.filter(c => c.tags?.includes(selectedTag))
-    : courses;
-
+  const allCategories = Array.from(new Set(courses.map(c => c.category).filter(Boolean)));
   const allTags = Array.from(new Set(courses.flatMap(c => c.tags || [])));
+
+  const filteredCourses = React.useMemo(() => {
+    let result = courses;
+    if (selectedCategory) result = result.filter(c => c.category === selectedCategory);
+    if (selectedTag) result = result.filter(c => c.tags?.includes(selectedTag));
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(c =>
+        c.title?.toLowerCase().includes(q) ||
+        c.description?.toLowerCase().includes(q) ||
+        c.category?.toLowerCase().includes(q) ||
+        c.tags?.some(t => t.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [courses, selectedCategory, selectedTag, searchQuery]);
 
   const handleEnroll = (courseTitle: string, price: number) => {
     requireAuth(() => {
@@ -122,22 +137,61 @@ export default function TrainingModule({ onContactOpen }: TrainingModuleProps) {
             <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-10">
               Des formations certifiantes conçues pour répondre aux défis technologiques du continent.
             </p>
-            <div className="flex flex-wrap justify-center gap-3">
-              <button onClick={() => setSelectedTag(null)}
-                className={cn("px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all",
-                  selectedTag === null ? "bg-[#C1272D] text-white shadow-lg shadow-blue-500/20" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200")}>
-                Tous les cours
+            {/* Barre de recherche */}
+            <div className="relative max-w-xl mx-auto mb-6">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Rechercher une formation..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-10 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] shadow-sm"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Filtre catégories */}
+            <div className="flex flex-wrap justify-center gap-2 mb-3">
+              <button onClick={() => { setSelectedCategory(null); setSelectedTag(null); }}
+                className={cn("px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all",
+                  !selectedCategory && !selectedTag ? "bg-[#C1272D] text-white shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200")}>
+                Toutes
               </button>
-              {allTags.map(tag => (
-                <button key={tag} onClick={() => setSelectedTag(tag)}
-                  className={cn("px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all",
-                    selectedTag === tag ? "bg-[#C1272D] text-white shadow-lg shadow-blue-500/20" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200")}>
-                  {tag}
+              {allCategories.map(cat => (
+                <button key={cat} onClick={() => { setSelectedCategory(cat); setSelectedTag(null); }}
+                  className={cn("px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all",
+                    selectedCategory === cat ? "bg-[#C1272D] text-white shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200")}>
+                  {cat}
                 </button>
               ))}
             </div>
+
+            {/* Filtre tags (si catégorie sélectionnée) */}
+            {selectedCategory && allTags.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-2">
+                {allTags.map(tag => (
+                  <button key={tag} onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                    className={cn("px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
+                      selectedTag === tag ? "bg-slate-800 text-white border-slate-800" : "border-slate-300 dark:border-slate-600 text-slate-500 hover:border-slate-500")}>
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            )}
           </motion.div>
         </div>
+
+        {/* Résultats */}
+        {(searchQuery || selectedCategory) && (
+          <p className="text-center text-sm text-slate-500 mb-4">
+            {filteredCourses.length} formation{filteredCourses.length > 1 ? 's' : ''} trouvée{filteredCourses.length > 1 ? 's' : ''}
+            {searchQuery && <span> pour "<strong>{searchQuery}</strong>"</span>}
+          </p>
+        )}
 
         {courses.length === 0 ? (
           <div className="text-center py-20">
