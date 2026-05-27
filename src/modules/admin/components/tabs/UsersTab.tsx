@@ -18,7 +18,7 @@ function ConfirmModal({ title, message, onConfirm, onCancel, danger = false }: {
   title: string; message: string; onConfirm: () => void; onCancel: () => void; danger?: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-300 flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={onCancel} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
@@ -60,14 +60,14 @@ function UserDetailModal({ user, isSuperAdmin, onClose, onBlock, onUnblock, onRo
     : 'Actif';
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-300 flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={onClose} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
         className="relative bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full shadow-2xl z-10 overflow-hidden">
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-6 flex items-center gap-4">
+        <div className="bg-linear-to-r from-slate-900 to-slate-800 p-6 flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#C1272D] flex items-center justify-center shrink-0 text-white font-black text-xl">
             {user.avatar_url
               ? <img src={user.avatar_url} className="w-full h-full object-cover rounded-2xl" alt="" />

@@ -95,7 +95,7 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Formulaire */}
-        <div className="bg-slate-900 border border-slate-800 rounded-[2rem] p-8 shadow-2xl">
+        <div className="bg-slate-900 border border-slate-800 rounded-4xl p-8 shadow-2xl">
           {/* Barre rouge en haut */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-[#C1272D] rounded-full" />
 

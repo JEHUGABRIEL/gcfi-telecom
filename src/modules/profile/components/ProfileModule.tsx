@@ -140,7 +140,7 @@ export default function ProfileModule() {
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-12 h-12 border-4 border-[var(--accent)]/20 border-t-[var(--accent)] rounded-full mb-4"
+          className="w-12 h-12 border-4 border-(--accent)/20 border-t-(--accent) rounded-full mb-4"
         />
         <p className="text-sm font-bold text-slate-500 animate-pulse">Synchronisation de votre profil...</p>
       </div>
@@ -153,7 +153,7 @@ export default function ProfileModule() {
         <div className="max-w-md w-full bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700">
           <div className="text-center mb-10">
             <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              {authMode === 'login' ? <LogIn className="w-10 h-10 text-[var(--accent)]" /> : <UserPlus className="w-10 h-10 text-[var(--accent)]" />}
+              {authMode === 'login' ? <LogIn className="w-10 h-10 text-(--accent)" /> : <UserPlus className="w-10 h-10 text-(--accent)" />}
             </div>
             <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">
               {authMode === 'login' ? 'Bienvenue' : 'Créer un compte'}
@@ -182,7 +182,7 @@ export default function ProfileModule() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
-                  className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-slate-900 dark:text-white transition-all shadow-sm"
+                  className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-(--accent) text-slate-900 dark:text-white transition-all shadow-sm"
                 />
               </div>
             )}
@@ -194,7 +194,7 @@ export default function ProfileModule() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-slate-900 dark:text-white transition-all shadow-sm"
+                className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-(--accent) text-slate-900 dark:text-white transition-all shadow-sm"
               />
             </div>
             <div className="relative">
@@ -205,7 +205,7 @@ export default function ProfileModule() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-slate-900 dark:text-white transition-all shadow-sm"
+                className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-(--accent) text-slate-900 dark:text-white transition-all shadow-sm"
               />
             </div>
             <button
@@ -224,7 +224,7 @@ export default function ProfileModule() {
 
           <button 
             onClick={handleSignIn}
-            className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-4 rounded-2xl font-bold hover:bg-white dark:hover:bg-slate-700/50 transition-colors flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-sm hover:border-[var(--accent)]/30"
+            className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-4 rounded-2xl font-bold hover:bg-white dark:hover:bg-slate-700/50 transition-colors flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-sm hover:border-(--accent)/30"
           >
             <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-3" />
             Google
@@ -234,7 +234,7 @@ export default function ProfileModule() {
             {authMode === 'login' ? "Pas encore de compte ?" : "Déjà inscrit ?"}
             <button 
               onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-              className="ml-2 font-bold text-[var(--accent)] hover:underline"
+              className="ml-2 font-bold text-(--accent) hover:underline"
             >
               {authMode === 'login' ? "S'inscrire" : "Se connecter"}
             </button>
@@ -249,9 +249,9 @@ export default function ProfileModule() {
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Sidebar */}
         <div className="lg:col-span-1">
-          <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-lg border border-slate-100 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-4xl shadow-lg border border-slate-100 dark:border-slate-700">
             <div className="text-center mb-8">
-              <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-[var(--accent)]/10 bg-slate-100">
+              <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-(--accent)/10 bg-slate-100">
                 <img src={profile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.full_name || user?.email || 'U')}&background=C1272D&color=fff`} alt={profile?.full_name || ''} className="w-full h-full object-cover" />
               </div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">{profile?.full_name || user.email?.split('@')[0]}</h2>
@@ -263,7 +263,7 @@ export default function ProfileModule() {
                 onClick={() => setActiveTab('dashboard')}
                 className={cn(
                   "w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors",
-                  activeTab === 'dashboard' ? "text-[var(--accent)] bg-[var(--accent)]/5" : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
+                  activeTab === 'dashboard' ? "text-(--accent) bg-(--accent)/5" : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
                 )}
               >
                 <User className="w-5 h-5 mr-3" />
@@ -273,7 +273,7 @@ export default function ProfileModule() {
                 onClick={() => setActiveTab('orders')}
                 className={cn(
                   "w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors",
-                  activeTab === 'orders' ? "text-[var(--accent)] bg-[var(--accent)]/5" : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
+                  activeTab === 'orders' ? "text-(--accent) bg-(--accent)/5" : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
                 )}
               >
                 <Package className="w-5 h-5 mr-3" />
@@ -283,7 +283,7 @@ export default function ProfileModule() {
                 onClick={() => setActiveTab('wishlist')}
                 className={cn(
                   "w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors",
-                  activeTab === 'wishlist' ? "text-[var(--accent)] bg-[var(--accent)]/5" : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
+                  activeTab === 'wishlist' ? "text-(--accent) bg-(--accent)/5" : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
                 )}
               >
                 <Heart className="w-5 h-5 mr-3" />
@@ -293,7 +293,7 @@ export default function ProfileModule() {
                 onClick={() => setActiveTab('investments')}
                 className={cn(
                   "w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors",
-                  activeTab === 'investments' ? "text-[var(--accent)] bg-[var(--accent)]/5" : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
+                  activeTab === 'investments' ? "text-(--accent) bg-(--accent)/5" : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
                 )}
               >
                 <CreditCard className="w-5 h-5 mr-3" />
@@ -302,7 +302,7 @@ export default function ProfileModule() {
                 onClick={() => setActiveTab('settings')}
                 className={cn(
                   "w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors",
-                  activeTab === 'settings' ? "text-[var(--accent)] bg-[var(--accent)]/5" : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
+                  activeTab === 'settings' ? "text-(--accent) bg-(--accent)/5" : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
                 )}
               >
                 <Settings className="w-5 h-5 mr-3" />
@@ -328,21 +328,21 @@ export default function ProfileModule() {
         <div className="lg:col-span-2 space-y-8">
           {activeTab === 'dashboard' && (
             <>
-              <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-lg border border-slate-100 dark:border-slate-700 transition-colors">
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-4xl shadow-lg border border-slate-100 dark:border-slate-700 transition-colors">
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Tableau de bord</h3>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="p-6 bg-white dark:bg-slate-700 rounded-2xl border border-slate-100 dark:border-slate-600 shadow-sm">
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Formations en cours</p>
-                    <p className="text-3xl font-bold text-[var(--accent)]">0</p>
+                    <p className="text-3xl font-bold text-(--accent)">0</p>
                   </div>
                   <div className="p-6 bg-white dark:bg-slate-700 rounded-2xl border border-slate-100 dark:border-slate-600 shadow-sm">
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Commandes livrées</p>
-                    <p className="text-3xl font-bold text-[var(--accent)]">0</p>
+                    <p className="text-3xl font-bold text-(--accent)">0</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-lg border border-slate-100 dark:border-slate-700 transition-colors">
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-4xl shadow-lg border border-slate-100 dark:border-slate-700 transition-colors">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white">Sécurité</h3>
                   <Shield className="text-green-500 w-6 h-6" />
@@ -357,7 +357,7 @@ export default function ProfileModule() {
                 ) : (
                   <button 
                     onClick={handlePasswordReset}
-                    className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[var(--accent)] hover:underline"
+                    className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-(--accent) hover:underline"
                   >
                     <Lock className="w-4 h-4" />
                     Réinitialiser le mot de passe par email
@@ -373,7 +373,7 @@ export default function ProfileModule() {
             <div className="space-y-6">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-2xl font-black text-slate-900 dark:text-white">Suivi de commandes</h3>
-                <span className="text-xs font-black uppercase tracking-widest text-[var(--accent)] bg-[var(--accent)]/5 px-4 py-2 rounded-full">
+                <span className="text-xs font-black uppercase tracking-widest text-(--accent) bg-(--accent)/5 px-4 py-2 rounded-full">
                   {userOrders.length} Commandes
                 </span>
               </div>
@@ -381,12 +381,12 @@ export default function ProfileModule() {
               {ordersLoading ? (
                 <div className="p-12 text-center text-slate-400">Chargement de vos commandes...</div>
               ) : userOrders.length === 0 ? (
-                <div className="bg-white dark:bg-slate-800 p-12 rounded-[2rem] text-center text-slate-500 border border-slate-100 dark:border-slate-700">
+                <div className="bg-white dark:bg-slate-800 p-12 rounded-4xl text-center text-slate-500 border border-slate-100 dark:border-slate-700">
                   <ShoppingBag className="w-12 h-12 mx-auto mb-4 opacity-20" />
                   <p className="font-bold">Vous n'avez pas encore passé de commande.</p>
                 </div>
               ) : userOrders.map((order) => (
-                <div key={order.id} className="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-xl overflow-hidden">
+                <div key={order.id} className="bg-white dark:bg-slate-800 rounded-4xl border border-slate-100 dark:border-slate-700 shadow-xl overflow-hidden">
                   <div className="p-6 border-b border-slate-50 dark:border-slate-700 flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">N° de commande</p>
@@ -409,16 +409,16 @@ export default function ProfileModule() {
                     </div>
                     <div>
                       <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Total</p>
-                      <p className="text-lg font-black text-[var(--accent)]">{(order.total || 0).toLocaleString()} FCFA</p>
+                      <p className="text-lg font-black text-(--accent)">{(order.total || 0).toLocaleString()} FCFA</p>
                     </div>
                   </div>
                   
                   <div className="p-8">
                     {/* Stepper tracking */}
                     <div className="relative flex justify-between mb-12 max-w-2xl mx-auto">
-                      <div className="absolute top-5 left-0 w-full h-[2px] bg-slate-100 dark:bg-slate-700" />
+                      <div className="absolute top-5 left-0 w-full  h-0.5 bg-slate-100 dark:bg-slate-700" />
                       <div 
-                        className="absolute top-5 left-0 h-[2px] bg-[var(--accent)] transition-all duration-1000"
+                        className="absolute top-5 left-0 h-0.5 bg-(--accent) transition-all duration-1000"
                         style={{ 
                           width: order.status === 'completed' ? '100%' : 
                                  order.status === 'Expédiée' ? '66%' : 
@@ -435,7 +435,7 @@ export default function ProfileModule() {
                           <div className={cn(
                             "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500",
                             step.active 
-                              ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-lg shadow-blue-500/20" 
+                              ? "bg-(--accent) border-(--accent) text-white shadow-lg shadow-blue-500/20" 
                               : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-300"
                           )}>
                             <step.icon className="w-5 h-5" />
@@ -507,7 +507,7 @@ export default function ProfileModule() {
                             <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)] mb-1">{product.category}</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-(--accent) mb-1">{product.category}</p>
                             <h4 className="text-base font-bold text-slate-900 dark:text-white truncate mb-1">{product.name}</h4>
                             <p className="text-lg font-black text-slate-900 dark:text-white mb-2">{product.price.toLocaleString()} FCFA</p>
                             <div className="flex items-center gap-2">

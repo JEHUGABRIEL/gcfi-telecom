@@ -43,6 +43,7 @@ export default function ProductsTab() {
   const [loading, setLoading]           = React.useState(true);
   const [showForm, setShowForm]         = React.useState(false);
   const [saving, setSaving]             = React.useState(false);
+  const [saveError, setSaveError]       = React.useState<string | null>(null);
   const [editingProduct, setEditing]    = React.useState<any>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<{ id: string; name: string } | null>(null);
   const [form, setForm]                 = React.useState(EMPTY_FORM);
@@ -52,15 +53,30 @@ export default function ProductsTab() {
 
   const fetch = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-    if (error) logError('ProductsTab', error);
-    else setProducts(data || []);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      if (error) {
+        logError('ProductsTab/fetch', error);
+        setProducts([]);
+      } else {
+        setProducts(data || []);
+      }
+    } catch (err) {
+      console.error('[ProductsTab] Fetch error:', err);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   React.useEffect(() => { fetch(); }, []);
 
-  const resetForm = () => { setForm(EMPTY_FORM); setEditing(null); setShowForm(false); };
+  const resetForm = () => {
+    setForm(EMPTY_FORM);
+    setEditing(null);
+    setShowForm(false);
+    setSaveError(null);
+  };
 
   const startEdit = (p: any) => {
     setEditing(p);
@@ -72,30 +88,59 @@ export default function ProductsTab() {
       image: p.image ?? '',
       stock: p.stock?.toString() ?? '0',
     });
+    setSaveError(null);
     setShowForm(true);
   };
 
   const save = async () => {
-    if (!form.name || !form.price) return;
+    if (!form.name || !form.price) {
+      setSaveError('Le nom et le prix sont obligatoires.');
+      return;
+    }
+
     setSaving(true);
-    const payload = {
-      name: form.name, description: form.description,
-      price: Number(form.price), category: form.category,
-      image: form.image, stock: Number(form.stock),
-    };
-    const { error } = editingProduct
-      ? await supabase.from('products').update(payload).eq('id', editingProduct.id)
-      : await supabase.from('products').insert([{ ...payload, popularity: 0, rating: 0, reviews_count: 0 }]);
-    if (error) logError('ProductsTab/save', error);
-    else { resetForm(); fetch(); }
-    setSaving(false);
+    setSaveError(null);
+    
+    try {
+      const payload = {
+        name: form.name,
+        description: form.description,
+        price: Number(form.price),
+        category: form.category,
+        image: form.image,
+        stock: Number(form.stock),
+      };
+
+      const { error } = editingProduct
+        ? await supabase.from('products').update(payload).eq('id', editingProduct.id)
+        : await supabase.from('products').insert([{ ...payload, popularity: 0, rating: 0, reviews_count: 0 }]);
+
+      if (error) {
+        logError('ProductsTab/save', error);
+        setSaveError(error.message || 'Erreur lors de l\'enregistrement.');
+      } else {
+        resetForm();
+        // ✅ Rafraîchir après succès
+        await fetch();
+      }
+    } catch (err: any) {
+      console.error('[ProductsTab] Save error:', err);
+      setSaveError(err?.message || 'Erreur lors de l\'enregistrement.');
+    } finally {
+      // ✅ TOUJOURS arrêter le chargement
+      setSaving(false);
+    }
   };
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    await supabase.from('products').delete().eq('id', deleteTarget.id);
-    setProducts(p => p.filter(x => x.id !== deleteTarget.id));
-    setDeleteTarget(null);
+    try {
+      await supabase.from('products').delete().eq('id', deleteTarget.id);
+      setProducts(p => p.filter(x => x.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error('[ProductsTab] Delete error:', err);
+    }
   };
 
   if (loading) return (
@@ -136,6 +181,13 @@ export default function ProductsTab() {
                 </button>
               </div>
               <div className="p-6 space-y-4">
+                {/* ✅ Message d'erreur */}
+                {saveError && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 text-sm text-red-600 dark:text-red-400">
+                    {saveError}
+                  </div>
+                )}
+
                 <div className="grid sm:grid-cols-2 gap-4">
                   {[['name', 'Nom *'], ['category', 'Catégorie'], ['price', 'Prix (FCFA) *'], ['stock', 'Stock']].map(([k, label]) => (
                     <div key={k}>
@@ -156,7 +208,7 @@ export default function ProductsTab() {
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button onClick={save} disabled={saving}
-                    className="bg-[#C1272D] text-white px-6 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50">
+                    className="bg-[#C1272D] text-white px-6 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                     {saving ? 'Enregistrement...' : 'Enregistrer'}
                   </button>
                   <button onClick={resetForm}

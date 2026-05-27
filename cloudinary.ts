@@ -1,7 +1,8 @@
 // ================================================================
-// GCFI — Intégration Cloudinary
-// Cloud name et preset UNIQUEMENT depuis les variables d'env
-// Ne jamais mettre de valeurs en dur ici
+// GCFI — Intégration Cloudinary (CORRIGÉ)
+// • Timeout XHR configuré
+// • Meilleure gestion d'erreur réseau
+// • Validation robuste
 // ================================================================
 
 const CLOUD_NAME    = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -17,6 +18,8 @@ const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 // ✅ Taille max : 5 Mo
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+// ✅ TIMEOUT : 60 secondes par défaut
+const UPLOAD_TIMEOUT_MS = 60000;
 
 export interface CloudinaryResult {
   secure_url: string;
@@ -47,6 +50,13 @@ export async function uploadToCloudinary(
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    
+    // ✅ TIMEOUT configuré : 60 secondes
+    const timeoutId = setTimeout(() => {
+      xhr.abort();
+      reject(new Error('Timeout : l\'upload a pris trop de temps. Vérifiez votre connexion.'));
+    }, UPLOAD_TIMEOUT_MS);
+
     xhr.open('POST', UPLOAD_URL);
 
     if (onProgress) {
@@ -56,10 +66,29 @@ export async function uploadToCloudinary(
     }
 
     xhr.onload = () => {
-      if (xhr.status === 200) resolve(JSON.parse(xhr.responseText));
-      else reject(new Error(`Cloudinary error ${xhr.status}: ${xhr.responseText}`));
+      clearTimeout(timeoutId);
+      if (xhr.status === 200) {
+        try {
+          const result = JSON.parse(xhr.responseText);
+          resolve(result);
+        } catch (err) {
+          reject(new Error('Réponse Cloudinary invalide : impossible de parser le JSON.'));
+        }
+      } else {
+        reject(new Error(`Erreur Cloudinary ${xhr.status}: ${xhr.responseText}`));
+      }
     };
-    xhr.onerror = () => reject(new Error('Erreur réseau Cloudinary'));
+
+    xhr.onerror = () => {
+      clearTimeout(timeoutId);
+      reject(new Error('Erreur réseau : impossible de contacter Cloudinary.'));
+    };
+
+    xhr.onabort = () => {
+      clearTimeout(timeoutId);
+      reject(new Error('Upload annulé.'));
+    };
+
     xhr.send(formData);
   });
 }
@@ -75,5 +104,3 @@ export function getOptimizedUrl(
   ].filter(Boolean).join(',');
   return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${transforms}/${publicId}`;
 }
-
-

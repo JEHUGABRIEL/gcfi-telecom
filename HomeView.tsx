@@ -176,7 +176,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
       {/* Achievement Modal */}
       <AnimatePresence>
         {selectedAchievement && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedAchievement(null)} className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" />
             <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl overflow-y-auto max-h-[90vh]">
@@ -184,7 +184,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
                 <X className="w-6 h-6" />
               </button>
               <div className="flex flex-col md:flex-row">
-                <div className="md:w-1/2 h-80 md:h-[500px]">
+                <div className="md:w-1/2 h-80 md:h-125">
                   <img src={selectedAchievement.image} alt={selectedAchievement.title} loading="lazy" className="w-full h-full object-cover" />
                 </div>
                 <div className="md:w-1/2 p-12">
@@ -212,7 +212,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
       {/* Fullscreen image */}
       <AnimatePresence>
         {fullscreenImage && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-110 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setFullscreenImage(null)} className="absolute inset-0 bg-black/95 backdrop-blur-xl" />
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="relative max-w-5xl w-full">
               <button onClick={() => setFullscreenImage(null)} className="absolute -top-16 right-0 p-4 text-white hover:text-red-500 transition-colors"><X className="w-8 h-8" /></button>

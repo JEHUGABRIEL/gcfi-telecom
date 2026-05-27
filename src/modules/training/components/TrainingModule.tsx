@@ -80,7 +80,7 @@ export default function TrainingModule({ onContactOpen }: TrainingModuleProps) {
     <section className="py-24 bg-white dark:bg-slate-900 transition-colors">
       <AnimatePresence>
         {selectedCourse && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setSelectedCourse(null)} className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" />
             <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -246,7 +246,7 @@ export default function TrainingModule({ onContactOpen }: TrainingModuleProps) {
           </div>
         )}
 
-        <div className="mt-20 bg-[#C1272D] rounded-[2rem] p-12 text-white relative overflow-hidden shadow-xl shadow-blue-500/20">
+        <div className="mt-20 bg-[#C1272D] rounded-4xl p-12 text-white relative overflow-hidden shadow-xl shadow-blue-500/20">
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="max-w-xl">
               <h3 className="text-3xl font-bold mb-4">Besoin d'un programme sur mesure ?</h3>

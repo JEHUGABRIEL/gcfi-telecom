@@ -99,11 +99,11 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
               { path: '/services',  icon: '🔧',  title: 'Services',   desc: 'Déploiement réseau, maintenance et solutions télécom sur mesure.', cta: 'En savoir plus' },
             ].map(item => (
               <div key={item.path} onClick={() => navigate(item.path)}
-                className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 hover:border-[var(--accent)] transition-all cursor-pointer group">
+                className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 hover:border-(--accent) transition-all cursor-pointer group">
                 <div className="text-4xl mb-6">{item.icon}</div>
                 <h3 className="text-2xl font-bold mb-4 dark:text-white">{item.title}</h3>
                 <p className="text-slate-500 dark:text-slate-400 mb-6">{item.desc}</p>
-                <span className="text-[var(--accent)] font-bold flex items-center gap-2">{item.cta} <ChevronRight className="w-4 h-4" /></span>
+                <span className="text-(--accent) font-bold flex items-center gap-2">{item.cta} <ChevronRight className="w-4 h-4" /></span>
               </div>
             ))}
           </div>
@@ -158,11 +158,11 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
               </h2>
               <div className="flex gap-4">
                 <button onClick={() => setTestimonialIndex(p => (p - 1 + testimonials.length) % testimonials.length)}
-                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#2563B0] hover:border-[var(--accent)] hover:text-white transition-all">
+                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#2563B0] hover:border-(--accent) hover:text-white transition-all">
                   <ChevronLeft className="w-6 h-6" />
                 </button>
                 <button onClick={() => setTestimonialIndex(p => (p + 1) % testimonials.length)}
-                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#2563B0] hover:border-[var(--accent)] hover:text-white transition-all">
+                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#2563B0] hover:border-(--accent) hover:text-white transition-all">
                   <ChevronRight className="w-6 h-6" />
                 </button>
               </div>
@@ -199,7 +199,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
       {/* Achievement Modal */}
       <AnimatePresence>
         {selectedAchievement && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedAchievement(null)} className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" />
             <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl overflow-y-auto max-h-[90vh]">
@@ -207,7 +207,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
                 <X className="w-6 h-6" />
               </button>
               <div className="flex flex-col md:flex-row">
-                <div className="md:w-1/2 h-80 md:h-[500px]">
+                <div className="md:w-1/2 h-80 md:h-125">
                   <img src={selectedAchievement.image} alt={selectedAchievement.title} loading="lazy" className="w-full h-full object-cover" />
                 </div>
                 <div className="md:w-1/2 p-12">
@@ -235,7 +235,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
       {/* Fullscreen image */}
       <AnimatePresence>
         {fullscreenImage && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-110 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setFullscreenImage(null)} className="absolute inset-0 bg-black/95 backdrop-blur-xl" />
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="relative max-w-5xl w-full">
               <button onClick={() => setFullscreenImage(null)} className="absolute -top-16 right-0 p-4 text-white hover:text-red-500 transition-colors"><X className="w-8 h-8" /></button>

@@ -3,6 +3,7 @@ import { Upload, X, Image, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { uploadToCloudinary } from '@/shared/lib/cloudinary';
 import { cn } from '@/shared/lib/utils';
+import { checkRateLimit, recordUpload } from '@/shared/lib/rate-limiter';
 
 interface ImageUploadProps {
   value?: string;
@@ -27,15 +28,23 @@ export default function ImageUpload({
   const [dragging, setDragging] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleFile = async (file: File) => {
-    setError(null);
+const handleFile = async (file: File) => {
+  setError(null);
+  
+  if (!file.type.startsWith('image/')) {
+    setError('Fichier non supporté.');
+    return;
+  }
+  if (file.size > maxSizeMB * 1024 * 1024) {
+    setError(`Fichier trop volumineux. Max ${maxSizeMB} Mo.`);
+    return;
+  }
 
-    if (!file.type.startsWith('image/')) {
-      setError('Fichier non supporté. Utilisez JPG, PNG, WebP ou SVG.');
-      return;
-    }
-    if (file.size > maxSizeMB * 1024 * 1024) {
-      setError(`Fichier trop volumineux. Maximum ${maxSizeMB} Mo.`);
+  // ✅ NOUVEAU : Check rate limit
+    const userId = localStorage.getItem('userId') || 'anonymous';
+    const { allowed, reason } = await checkRateLimit(userId);
+    if (!allowed) {
+      setError(reason || 'Trop d\'uploads.');
       return;
     }
 
@@ -44,9 +53,12 @@ export default function ImageUpload({
     try {
       const result = await uploadToCloudinary(file, folder, setProgress);
       onChange(result.secure_url);
-    } catch (err) {
-      setError("Échec de l'upload. Vérifiez votre connexion.");
-      console.error(err);
+      // ✅ NOUVEAU : Enregistrer l'upload
+      await recordUpload(userId);
+      setProgress(0);
+    } catch (err: any) {
+      setError(err?.message || "Échec de l'upload.");
+      console.error('[ImageUpload]', err);
     } finally {
       setUploading(false);
       setProgress(0);
@@ -56,6 +68,8 @@ export default function ImageUpload({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
+    // ✅ Réinitialiser l'input pour permettre de re-uploader le même fichier
+    e.target.value = '';
   };
 
   const handleDrop = (e: React.DragEvent) => {
