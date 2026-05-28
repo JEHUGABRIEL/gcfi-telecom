@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowLeft, Clock, Tag, GraduationCap, CheckCircle2, Phone, Share2, Users, Award } from 'lucide-react';
 import { useCourses } from '@/shared/lib/queries';
+import { setStructuredData, courseSchema } from '@/shared/lib/structured-data';
 import type { Course } from '@/shared/types';
 
 export default function CourseDetail() {
@@ -11,6 +12,13 @@ export default function CourseDetail() {
   const { data: courses = [], isLoading } = useCourses();
 
   const course = courses.find((c: Course) => c.id === id);
+
+  // ✅ NOUVEAU : Structured data
+  React.useEffect(() => {
+    if (course) {
+      setStructuredData(courseSchema(course));
+    }
+  }, [course]);
 
   React.useEffect(() => {
     if (!isLoading && !course) navigate('/formation', { replace: true });
@@ -50,7 +58,6 @@ export default function CourseDetail() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
-        {/* Retour */}
         <motion.button
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
@@ -62,13 +69,16 @@ export default function CourseDetail() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
-          {/* Contenu principal */}
           <div className="lg:col-span-2">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              {/* Image hero */}
               <div className="aspect-video bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800 mb-8 relative">
                 {course.image ? (
-                  <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
+                  <img 
+                    src={course.image} 
+                    alt={course.title} 
+                    loading="lazy"
+                    className="w-full h-full object-cover" 
+                  />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-[#C1272D] to-[#1E3A8A] flex items-center justify-center">
                     <GraduationCap className="w-24 h-24 text-white/30" />
@@ -82,12 +92,10 @@ export default function CourseDetail() {
                 </div>
               </div>
 
-              {/* Titre */}
               <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-4 leading-tight">
                 {course.title}
               </h1>
 
-              {/* Méta */}
               <div className="flex flex-wrap gap-4 mb-8">
                 {course.duration && (
                   <div className="flex items-center gap-2 text-sm text-slate-500">
@@ -105,7 +113,6 @@ export default function CourseDetail() {
                 </div>
               </div>
 
-              {/* Description */}
               <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-8 mb-8">
                 <h2 className="text-lg font-black text-slate-900 dark:text-white mb-4">Description</h2>
                 <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-base">
@@ -113,7 +120,6 @@ export default function CourseDetail() {
                 </p>
               </div>
 
-              {/* Ce qui est inclus */}
               <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-8 mb-8">
                 <h2 className="text-lg font-black text-slate-900 dark:text-white mb-6">Ce qui est inclus</h2>
                 <div className="space-y-3">
@@ -126,7 +132,6 @@ export default function CourseDetail() {
                 </div>
               </div>
 
-              {/* Tags - Correction ici : typage de tag */}
               {course.tags && course.tags.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
                   <Tag className="w-4 h-4 text-slate-400" />
@@ -140,7 +145,6 @@ export default function CourseDetail() {
             </motion.div>
           </div>
 
-          {/* Sidebar sticky */}
           <div className="lg:col-span-1">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -149,7 +153,6 @@ export default function CourseDetail() {
               className="sticky top-24"
             >
               <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl p-8">
-                {/* Prix */}
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-4xl font-black text-[#C1272D]">
                     {course.price === 0 ? 'Gratuit' : course.price.toLocaleString('fr-FR')}
@@ -160,7 +163,6 @@ export default function CourseDetail() {
                 </div>
                 <p className="text-xs text-slate-400 mb-8">Prix par participant</p>
 
-                {/* CTA */}
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={handleContact}
@@ -177,7 +179,6 @@ export default function CourseDetail() {
                   <Share2 className="w-4 h-4" /> Partager
                 </button>
 
-                {/* Infos rapides */}
                 <div className="mt-8 space-y-3 pt-6 border-t border-slate-100 dark:border-slate-800">
                   {[
                     { label: 'Durée', value: course.duration || 'À définir' },

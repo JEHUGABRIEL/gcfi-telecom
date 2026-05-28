@@ -15,6 +15,7 @@ import ContactModal from '@/shared/components/ContactModal';
 import AuthModal from '@/shared/components/AuthModal';
 import { useAuth } from '@/shared/context/AuthContext';
 import { setupLazyLoading } from '@/shared/lib/image-lazy-loader';
+import { setStructuredData, organizationSchema } from '@/shared/lib/structured-data';
 
 const AuthCallback  = lazy(() => import('@/shared/components/AuthCallback'));
 const ResetPassword = lazy(() => import('@/shared/components/ResetPassword'));
@@ -153,6 +154,7 @@ function AppContent() {
 export default function App() {
     useEffect(() => {
     setupLazyLoading();
+    setStructuredData(organizationSchema);
   }, []);
   return (
     <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>

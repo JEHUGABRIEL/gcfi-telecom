@@ -6,9 +6,9 @@ import { Star, Award, ChevronLeft, ChevronRight, X, Calendar, ExternalLink } fro
 import { Hero, GcfiServices } from '@/modules/home';
 import { supabase } from '@/shared/lib/supabase';
 import { cn } from '@/shared/lib/utils';
+import { setStructuredData, organizationSchema, localBusinessSchema } from '@/shared/lib/structured-data';
 import type { Testimonial, Achievement, Partner } from '@/shared/types';
 
-// ── Données de secours (affichées si les tables sont vides) ──
 const fallbackTestimonials: Testimonial[] = [
   { id: '1', name: 'Jean-Pierre Ndombe',    role: 'Directeur IT, Bank of Africa RCA', content: 'GCFI a transformé notre infrastructure réseau avec un professionnalisme exemplaire.', avatar_url: 'https://i.pravatar.cc/150?u=jpn', rating: 5, status: 'approved' },
   { id: '2', name: 'Marie-Claire Touadera', role: 'Étudiante en Cybersécurité',        content: "La formation chez GCFI est d'un niveau international. J'ai trouvé un emploi avant même la fin de mon cursus.", avatar_url: 'https://i.pravatar.cc/150?u=mct', rating: 5, status: 'approved' },
@@ -28,7 +28,6 @@ const fallbackPartners: Partner[] = [
 
 interface HomeViewProps { onContactOpen: () => void; }
 
-// ── Fetchers Supabase ──────────────────────────────────────────────────────
 async function fetchTestimonials(): Promise<Testimonial[]> {
   const { data, error } = await supabase
     .from('testimonials').select('*').eq('status', 'approved')
@@ -54,18 +53,22 @@ async function fetchPartners(): Promise<Partner[]> {
 export default function HomeView({ onContactOpen }: HomeViewProps) {
   const navigate = useNavigate();
 
-  // ✅ TanStack Query — cache intelligent + fallback données par défaut
+  // ✅ NOUVEAU : Structured data
+  React.useEffect(() => {
+    setStructuredData(localBusinessSchema);
+  }, []);
+
   const { data: testimonials = fallbackTestimonials } = useQuery({
     queryKey: ['testimonials'],
     queryFn: fetchTestimonials,
-    staleTime: 1000 * 60 * 10,   // 10 min
+    staleTime: 1000 * 60 * 10,
     placeholderData: fallbackTestimonials,
   });
 
   const { data: achievements = fallbackAchievements } = useQuery({
     queryKey: ['achievements'],
     queryFn: fetchAchievements,
-    staleTime: 1000 * 60 * 30,   // 30 min — données rarement modifiées
+    staleTime: 1000 * 60 * 30,
     placeholderData: fallbackAchievements,
   });
 
@@ -108,7 +111,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
             ))}
           </div>
 
-          {/* ✅ Réalisations chargées depuis Supabase */}
+          {/* Réalisations */}
           <div className="mt-32">
             <div className="flex items-end justify-between mb-12">
               <div>
@@ -134,7 +137,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
             </div>
           </div>
 
-          {/* ✅ Partenaires chargés depuis Supabase */}
+          {/* Partenaires */}
           <div className="mt-32 py-16 border-y border-slate-200 dark:border-slate-800 overflow-hidden">
             <p className="text-center text-xs font-bold uppercase tracking-[0.3em] text-slate-400 mb-12">Ils nous font confiance</p>
             <div className="flex w-fit">
@@ -150,7 +153,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
             </div>
           </div>
 
-          {/* ✅ Témoignages chargés depuis Supabase */}
+          {/* Témoignages */}
           <div className="mt-32">
             <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-16">
               <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white">
