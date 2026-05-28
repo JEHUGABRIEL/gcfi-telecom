@@ -2,8 +2,8 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, GraduationCap, ShoppingBag } from 'lucide-react';
 import type { NavigateFunction } from 'react-router-dom';
+import LazyImage from '@/shared/components/LazyImage';
 
-// ✅ setActiveModule remplacé par onNavigate (react-router NavigateFunction)
 interface HeroProps {
   onNavigate: NavigateFunction;
 }
@@ -29,7 +29,6 @@ export default function Hero({ onNavigate }: HeroProps) {
             </p>
 
             <div className="flex flex-wrap gap-4">
-              {/* ✅ navigate('/formation') au lieu de setActiveModule('training') */}
               <button
                 onClick={() => onNavigate('/formation')}
                 className="bg-(--accent) text-white px-8 py-4 rounded-full font-bold hover:bg-(--accent-hover) transition-all flex items-center shadow-lg shadow-(--accent)/20"
@@ -70,7 +69,12 @@ export default function Hero({ onNavigate }: HeroProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-4">
                 <div className="h-64 rounded-3xl overflow-hidden shadow-2xl">
-                  <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800" alt="Cybersecurity" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  {/* ✅ MODIFIÉ : LazyImage au lieu de img */}
+                  <LazyImage 
+                    src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800" 
+                    alt="Cybersecurity" 
+                    className="w-full h-full object-cover" 
+                  />
                 </div>
                 <div className="h-48 bg-slate-900 dark:bg-slate-950 rounded-3xl flex flex-col justify-end p-6 text-white border border-white/5">
                   <GraduationCap className="w-8 h-8 mb-4 text-(--accent)" />
@@ -85,7 +89,12 @@ export default function Hero({ onNavigate }: HeroProps) {
                   <p className="text-sm opacity-80">Telecom & Cyber</p>
                 </div>
                 <div className="h-64 rounded-3xl overflow-hidden shadow-2xl">
-                  <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=800" alt="Telecom" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  {/* ✅ MODIFIÉ : LazyImage au lieu de img */}
+                  <LazyImage 
+                    src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=800" 
+                    alt="Telecom" 
+                    className="w-full h-full object-cover" 
+                  />
                 </div>
               </div>
             </div>

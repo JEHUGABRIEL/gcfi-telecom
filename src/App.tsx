@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'; // ← HashRouter
 import { motion, AnimatePresence } from 'motion/react';
 import { ThemeProvider } from '@/shared/context/ThemeContext';
@@ -14,6 +14,8 @@ import FloatingContact from '@/shared/components/FloatingContact';
 import ContactModal from '@/shared/components/ContactModal';
 import AuthModal from '@/shared/components/AuthModal';
 import { useAuth } from '@/shared/context/AuthContext';
+import { setupLazyLoading } from '@/shared/lib/image-lazy-loader';
+
 const AuthCallback  = lazy(() => import('@/shared/components/AuthCallback'));
 const ResetPassword = lazy(() => import('@/shared/components/ResetPassword'));
 
@@ -149,6 +151,9 @@ function AppContent() {
 }
 
 export default function App() {
+    useEffect(() => {
+    setupLazyLoading();
+  }, []);
   return (
     <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <ThemeProvider>
