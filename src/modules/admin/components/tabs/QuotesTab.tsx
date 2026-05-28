@@ -2,9 +2,12 @@ import React from 'react';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { motion } from 'motion/react';
-import { FileText, Mail, Phone, Building2, Clock, CheckCircle, AlertCircle, XCircle, RefreshCw } from 'lucide-react';
+import { FileText, Mail, Phone, Building2, Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { Quote } from '@/shared/types';
+import Pagination from '@/shared/components/ui/Pagination';
+
+const PAGE_SIZE = 10;
 
 const STATUS_CONFIG = {
   nouveau:   { label: 'Nouveau',   color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400',   icon: Clock },
@@ -14,19 +17,34 @@ const STATUS_CONFIG = {
 };
 
 export default function QuotesTab() {
-  const [quotes, setQuotes] = React.useState<Quote[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [selected, setSelected] = React.useState<Quote | null>(null);
+  const [quotes, setQuotes]         = React.useState<Quote[]>([]);
+  const [totalItems, setTotalItems] = React.useState(0);
+  const [page, setPage]             = React.useState(1);
+  const [loading, setLoading]       = React.useState(true);
+  const [selected, setSelected]     = React.useState<Quote | null>(null);
 
-  const fetch = async () => {
+  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+
+  const fetch = React.useCallback(async (p: number) => {
     setLoading(true);
-    const { data, error } = await supabase.from('quotes').select('*').order('created_at', { ascending: false });
-    if (error) logError('QuotesTab', error);
-    else setQuotes((data || []) as Quote[]);
-    setLoading(false);
-  };
+    const from = (p - 1) * PAGE_SIZE;
+    const to   = from + PAGE_SIZE - 1;
 
-  React.useEffect(() => { fetch(); }, []);
+    const { data, error, count } = await supabase
+      .from('quotes')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) logError('QuotesTab', error);
+    else {
+      setQuotes((data || []) as Quote[]);
+      setTotalItems(count ?? 0);
+    }
+    setLoading(false);
+  }, []);
+
+  React.useEffect(() => { fetch(page); }, [page, fetch]);
 
   const updateStatus = async (id: string, status: Quote['status']) => {
     await supabase.from('quotes').update({ status }).eq('id', id);
@@ -34,17 +52,24 @@ export default function QuotesTab() {
     if (selected?.id === id) setSelected(s => s ? { ...s, status } : s);
   };
 
-  if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-slate-200 border-t-[#C1272D] rounded-full animate-spin" /></div>;
-
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Demandes de devis ({quotes.length})</h3>
-        <button onClick={fetch} className="text-xs text-slate-500 hover:text-[#C1272D] flex items-center gap-1 transition-colors"><RefreshCw className="w-3 h-3" /> Actualiser</button>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+          Demandes de devis
+          {totalItems > 0 && <span className="ml-2 text-sm font-normal text-slate-400">({totalItems} au total)</span>}
+        </h3>
+        <button onClick={() => fetch(page)} className="text-xs text-slate-500 hover:text-[#C1272D] flex items-center gap-1 transition-colors">
+          <RefreshCw className={cn('w-3 h-3', loading && 'animate-spin')} /> Actualiser
+        </button>
       </div>
-      {quotes.length === 0 ? (
+
+      {loading ? (
+        <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-slate-200 border-t-[#C1272D] rounded-full animate-spin" /></div>
+      ) : quotes.length === 0 ? (
         <div className="text-center py-16 text-slate-400"><FileText className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>Aucune demande de devis pour l'instant.</p></div>
       ) : (
+        <>
         <div className="grid gap-3">
           {quotes.map(q => {
             const cfg = STATUS_CONFIG[q.status];
@@ -95,6 +120,14 @@ export default function QuotesTab() {
             );
           })}
         </div>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={PAGE_SIZE}
+          onPageChange={p => { setPage(p); setSelected(null); }}
+        />
+        </>
       )}
     </div>
   );

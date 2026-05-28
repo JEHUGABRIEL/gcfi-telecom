@@ -4,8 +4,11 @@ import { logError } from '@/shared/lib/supabase-helpers';
 import { useAuth } from '@/shared/context/AuthContext';
 import {
   Shield, ShieldCheck, User, RefreshCw, Search, AlertTriangle,
-  X, Eye, Ban, Clock, CheckCircle, ChevronRight, Mail, Calendar
+  X, Ban, Clock, CheckCircle, ChevronRight, Mail, Calendar
 } from 'lucide-react';
+import Pagination from '@/shared/components/ui/Pagination';
+
+const PAGE_SIZE = 15;
 import { cn } from '@/shared/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -168,6 +171,7 @@ export default function UsersTab() {
   const [users, setUsers]           = React.useState<any[]>([]);
   const [loading, setLoading]       = React.useState(true);
   const [search, setSearch]         = React.useState('');
+  const [page, setPage]             = React.useState(1);
   const [selectedUser, setSelected] = React.useState<any>(null);
   const [confirm, setConfirm]       = React.useState<any>(null);
 
@@ -221,6 +225,12 @@ export default function UsersTab() {
     const q = search.toLowerCase();
     return (u.full_name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q) || (u.role || '').toLowerCase().includes(q);
   });
+
+  const totalPages  = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated   = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Reset to page 1 when search changes
+  React.useEffect(() => { setPage(1); }, [search]);
 
   const stats = { total: users.length, clients: users.filter(u => u.role === 'client').length, admins: users.filter(u => u.role === 'admin').length, blocked: users.filter(u => getBlockStatus(u) !== 'active').length };
 
@@ -285,8 +295,9 @@ export default function UsersTab() {
       {loading ? (
         <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-slate-200 border-t-[#C1272D] rounded-full animate-spin" /></div>
       ) : (
+        <>
         <div className="space-y-2">
-          {filtered.map(u => {
+          {paginated.map(u => {
             const blockStatus = getBlockStatus(u);
             const isMe = u.id === currentUser?.id;
             return (
@@ -317,10 +328,18 @@ export default function UsersTab() {
               </div>
             );
           })}
-          {filtered.length === 0 && (
+          {paginated.length === 0 && (
             <div className="text-center py-16 text-slate-400"><User className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>Aucun utilisateur trouvé.</p></div>
           )}
         </div>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={filtered.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+        </>
       )}
     </div>
   );
