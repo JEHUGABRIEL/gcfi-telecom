@@ -28,26 +28,32 @@ const fallbackPartners: Partner[] = [
 
 interface HomeViewProps { onContactOpen: () => void; }
 
-async function fetchTestimonials(): Promise<Testimonial[]> {
-  const { data, error } = await supabase
-    .from('testimonials').select('*').eq('status', 'approved')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data?.length ? data : fallbackTestimonials) as Testimonial[];
+interface HomeData {
+  testimonials: Testimonial[];
+  achievements: Achievement[];
+  partners: Partner[];
 }
 
-async function fetchAchievements(): Promise<Achievement[]> {
-  const { data, error } = await supabase
-    .from('achievements').select('*').order('year', { ascending: false });
-  if (error) throw error;
-  return (data?.length ? data : fallbackAchievements) as Achievement[];
-}
+async function fetchHomeData(): Promise<HomeData> {
+  const [
+    { data: testimonialData, error: e1 },
+    { data: achievementData, error: e2 },
+    { data: partnerData,     error: e3 },
+  ] = await Promise.all([
+    supabase.from('testimonials').select('*').eq('status', 'approved').order('created_at', { ascending: false }),
+    supabase.from('achievements').select('*').order('year', { ascending: false }),
+    supabase.from('partners').select('*').order('order_index', { ascending: true }),
+  ]);
 
-async function fetchPartners(): Promise<Partner[]> {
-  const { data, error } = await supabase
-    .from('partners').select('*').order('order_index', { ascending: true });
-  if (error) throw error;
-  return (data?.length ? data : fallbackPartners) as Partner[];
+  if (e1) throw e1;
+  if (e2) throw e2;
+  if (e3) throw e3;
+
+  return {
+    testimonials: (testimonialData?.length ? testimonialData : fallbackTestimonials) as Testimonial[],
+    achievements: (achievementData?.length ? achievementData : fallbackAchievements) as Achievement[],
+    partners:     (partnerData?.length     ? partnerData     : fallbackPartners)     as Partner[],
+  };
 }
 
 export default function HomeView({ onContactOpen }: HomeViewProps) {
@@ -58,26 +64,20 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
     setStructuredData(localBusinessSchema);
   }, []);
 
-  const { data: testimonials = fallbackTestimonials } = useQuery({
-    queryKey: ['testimonials'],
-    queryFn: fetchTestimonials,
+  const { data: homeData } = useQuery({
+    queryKey: ['home-data'],
+    queryFn: fetchHomeData,
     staleTime: 1000 * 60 * 10,
-    placeholderData: fallbackTestimonials,
+    placeholderData: {
+      testimonials: fallbackTestimonials,
+      achievements: fallbackAchievements,
+      partners: fallbackPartners,
+    },
   });
 
-  const { data: achievements = fallbackAchievements } = useQuery({
-    queryKey: ['achievements'],
-    queryFn: fetchAchievements,
-    staleTime: 1000 * 60 * 30,
-    placeholderData: fallbackAchievements,
-  });
-
-  const { data: partners = fallbackPartners } = useQuery({
-    queryKey: ['partners'],
-    queryFn: fetchPartners,
-    staleTime: 1000 * 60 * 30,
-    placeholderData: fallbackPartners,
-  });
+  const testimonials = homeData?.testimonials ?? fallbackTestimonials;
+  const achievements = homeData?.achievements ?? fallbackAchievements;
+  const partners     = homeData?.partners     ?? fallbackPartners;
 
   const [testimonialIndex, setTestimonialIndex] = React.useState(0);
   const [selectedAchievement, setSelectedAchievement] = React.useState<Achievement | null>(null);
