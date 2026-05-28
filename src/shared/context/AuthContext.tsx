@@ -96,14 +96,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } else if (data) {
         // ✅ Vérifier si l'utilisateur est bloqué
-        const isBlockedPerm = (data as any).is_blocked === true;
-        const isBlockedTemp = (data as any).blocked_until && new Date((data as any).blocked_until) > new Date();
+        const profileData = data as Profile & { is_blocked?: boolean; blocked_until?: string };
+        const isBlockedPerm = profileData.is_blocked === true;
+        const isBlockedTemp = !!profileData.blocked_until && new Date(profileData.blocked_until) > new Date();
 
         if (isBlockedPerm || isBlockedTemp) {
           await supabase.auth.signOut();
           setUser(null); setProfile(null); setIsAdmin(false);
           window.dispatchEvent(new CustomEvent('gcfi:user-blocked', {
-            detail: { permanent: isBlockedPerm, until: (data as any).blocked_until }
+            detail: { permanent: isBlockedPerm, until: profileData.blocked_until }
           }));
           return;
         }
@@ -138,7 +139,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (adminTimerRef.current) clearTimeout(adminTimerRef.current);
       adminTimerRef.current = setTimeout(() => {
         if (mounted.current) {
-          console.info('[GCFI] Admin auto-déconnecté après 15 min d\'inactivité');
           signOut();
         }
       }, ADMIN_TIMEOUT_MS);

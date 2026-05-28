@@ -1,69 +1,85 @@
+// ================================================================
+// GCFI — MFA via TOTP (Google Authenticator / Authy)
+// • Complètement gratuit — aucune API externe
+// • Compatible Google Authenticator, Authy, et toutes apps TOTP
+// ================================================================
+
+import * as OTPAuth from 'otpauth';
+import QRCode from 'qrcode';
 import { supabase } from './supabase';
 
-const MFA_WINDOW = 10 * 60 * 1000; // 10 min validity
+const APP_NAME = 'GCFI Telecom';
 
-export async function generateMFACode(userId: string): Promise<string> {
-  const code = Math.random().toString().slice(2, 8).padEnd(6, '0');
-  const expiresAt = new Date(Date.now() + MFA_WINDOW);
+// ----------------------------------------------------------------
+// Génère un secret TOTP et retourne l'URI + QR code (base64)
+// ----------------------------------------------------------------
+export async function setupTOTP(userId: string, email: string): Promise<{
+  secret: string;
+  uri: string;
+  qrCode: string;
+}> {
+  const totp = new OTPAuth.TOTP({
+    issuer: APP_NAME,
+    label: email,
+    algorithm: 'SHA1',
+    digits: 6,
+    period: 30,
+  });
 
-  await supabase.from('mfa_codes').insert([{
+  const secret = totp.secret.base32;
+  const uri = totp.toString();
+
+  // Générer le QR code en base64
+  const qrCode = await QRCode.toDataURL(uri);
+
+  // Sauvegarder le secret chiffré côté Supabase
+  await supabase.from('user_mfa_settings').upsert([{
     user_id: userId,
-    code,
-    expires_at: expiresAt.toISOString(),
-    used: false,
-  }]);
+    secret,
+    enabled: false, // activé seulement après vérification
+  }], { onConflict: 'user_id' });
 
-  return code;
+  return { secret, uri, qrCode };
 }
 
-export async function sendMFAViaWhatsApp(phone: string, code: string): Promise<void> {
-  // Intégration WhatsApp API (Twilio, etc.)
-  // Pour MVP: juste log en console
-  console.log(`[MFA] Code ${code} envoyé à ${phone}`);
-  
-  // TODO: Implémenter Twilio/MessageBird API
-  // const response = await fetch('https://api.whatsapp.com/send', {
-  //   method: 'POST',
-  //   body: JSON.stringify({ phone, message: `Votre code GCFI: ${code}` }),
-  // });
-}
-
-export async function verifyMFACode(userId: string, code: string): Promise<boolean> {
+// ----------------------------------------------------------------
+// Vérifie un code TOTP à 6 chiffres
+// ----------------------------------------------------------------
+export async function verifyTOTPCode(userId: string, token: string): Promise<boolean> {
   const { data } = await supabase
-    .from('mfa_codes')
-    .select('*')
+    .from('user_mfa_settings')
+    .select('secret')
     .eq('user_id', userId)
-    .eq('code', code)
-    .eq('used', false)
-    .gt('expires_at', new Date().toISOString())
-    .order('created_at', { ascending: false })
-    .limit(1)
     .single();
 
-  if (!data) return false;
+  if (!data?.secret) return false;
 
-  // Marquer code comme utilisé
-  await supabase
-    .from('mfa_codes')
-    .update({ used: true })
-    .eq('id', data.id);
+  const totp = new OTPAuth.TOTP({
+    issuer: APP_NAME,
+    algorithm: 'SHA1',
+    digits: 6,
+    period: 30,
+    secret: OTPAuth.Secret.fromBase32(data.secret),
+  });
 
-  return true;
+  // delta: ±1 période (30s) pour tolérer les décalages d'horloge
+  const delta = totp.validate({ token, window: 1 });
+  return delta !== null;
 }
 
-export async function cleanExpiredMFACodes(): Promise<void> {
-  await supabase
-    .from('mfa_codes')
-    .delete()
-    .lt('expires_at', new Date().toISOString());
-}
-
-export async function enableMFAForUser(userId: string, phone: string): Promise<void> {
+// ----------------------------------------------------------------
+// Active le MFA après vérification du premier code
+// ----------------------------------------------------------------
+export async function enableMFAForUser(userId: string): Promise<void> {
   await supabase
     .from('user_mfa_settings')
-    .upsert([{ user_id: userId, phone, enabled: true }], { onConflict: 'user_id' });
+    .update({ enabled: true })
+    .eq('user_id', userId);
 }
 
+// ----------------------------------------------------------------
+// Désactive le MFA
+// ----------------------------------------------------------------
 export async function disableMFAForUser(userId: string): Promise<void> {
   await supabase
     .from('user_mfa_settings')
@@ -71,11 +87,35 @@ export async function disableMFAForUser(userId: string): Promise<void> {
     .eq('user_id', userId);
 }
 
+// ----------------------------------------------------------------
+// Récupère les paramètres MFA de l'utilisateur
+// ----------------------------------------------------------------
 export async function getUserMFASettings(userId: string) {
   const { data } = await supabase
     .from('user_mfa_settings')
-    .select('*')
+    .select('enabled, secret')
     .eq('user_id', userId)
     .single();
   return data;
+}
+
+// ----------------------------------------------------------------
+// Vérifie si le MFA est activé pour un utilisateur
+// ----------------------------------------------------------------
+export async function isMFAEnabled(userId: string): Promise<boolean> {
+  const settings = await getUserMFASettings(userId);
+  return settings?.enabled === true;
+}
+
+// Gardés pour compatibilité avec l'ancien code (non utilisés avec TOTP)
+export async function generateMFACode(_userId: string): Promise<string> {
+  throw new Error('generateMFACode est remplacé par setupTOTP. Utilisez verifyTOTPCode.');
+}
+
+export async function sendMFAViaWhatsApp(_phone: string, _code: string): Promise<void> {
+  throw new Error('WhatsApp MFA remplacé par TOTP (Google Authenticator). Gratuit et plus sécurisé.');
+}
+
+export async function cleanExpiredMFACodes(): Promise<void> {
+  // TOTP n'utilise pas de codes en base de données — rien à nettoyer
 }

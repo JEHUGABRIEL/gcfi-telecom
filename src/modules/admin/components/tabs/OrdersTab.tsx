@@ -1,10 +1,11 @@
 import React from 'react';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
+import { Order } from '@/shared/types';
 import { Package, Eye } from 'lucide-react';
 
 export default function OrdersTab() {
-  const [orders, setOrders] = React.useState<any[]>([]);
+  const [orders, setOrders] = React.useState<Order[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   const fetchOrders = async () => {

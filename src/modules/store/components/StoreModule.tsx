@@ -57,7 +57,7 @@ export default function StoreModule() {
   const [visibleCount, setVisibleCount] = React.useState(8);
   const [showPromoBanner, setShowPromoBanner] = React.useState(true);
   const promoProducts = React.useMemo(
-    () => allProducts.filter(p => (p as any).is_promo || (p as any).discount > 0).slice(0, 4),
+    () => allProducts.filter(p => p.is_promo || (p.discount ?? 0) > 0).slice(0, 4),
     [allProducts]
   );
   const [wishlist, setWishlist] = React.useState<string[]>(() => {
@@ -387,7 +387,7 @@ export default function StoreModule() {
 
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {(products as any[]).map((product) => (
+                  {products.map((product) => (
               <motion.div key={product.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                 className="group bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:shadow-2xl transition-all shadow-sm flex flex-col cursor-pointer"
                 onClick={() => setSelectedProduct(product)}>
@@ -406,14 +406,14 @@ export default function StoreModule() {
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 flex-1">{product.description}</p>
                   <div className="flex items-center justify-between mt-auto">
                     <div className="flex items-baseline gap-2 flex-wrap">
-                      {(product as any).discount > 0 ? (
+                      {(product.discount ?? 0) > 0 ? (
                         <>
                           <p className="text-lg font-black text-(--accent)">
-                            {Math.round(product.price * (1 - (product as any).discount / 100)).toLocaleString()}
+                            {Math.round(product.price * (1 - (product.discount ?? 0) / 100)).toLocaleString()}
                             <span className="text-xs font-bold ml-1">FCFA</span>
                           </p>
                           <p className="text-xs text-slate-400 line-through">{product.price.toLocaleString()}</p>
-                          <span className="text-[10px] font-black bg-(--accent) text-white px-1.5 py-0.5 rounded-full">-{(product as any).discount}%</span>
+                          <span className="text-[10px] font-black bg-(--accent) text-white px-1.5 py-0.5 rounded-full">-{product.discount}%</span>
                         </>
                       ) : (
                         <p className="text-lg font-black text-(--accent)">{product.price.toLocaleString()} <span className="text-xs font-bold">FCFA</span></p>
@@ -471,14 +471,14 @@ export default function StoreModule() {
                 </div>
                 <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">{selectedProduct.description}</p>
                 <div className="flex items-baseline gap-3 mb-6">
-                  {(selectedProduct as any).discount > 0 ? (
+                  {(selectedProduct.discount ?? 0) > 0 ? (
                     <>
                       <p className="text-3xl font-black text-(--accent)">
-                        {Math.round(selectedProduct.price * (1 - (selectedProduct as any).discount / 100)).toLocaleString()}
+                        {Math.round(selectedProduct.price * (1 - (selectedProduct.discount ?? 0) / 100)).toLocaleString()}
                         <span className="text-sm font-bold ml-1">FCFA</span>
                       </p>
                       <p className="text-lg text-slate-400 line-through">{selectedProduct.price.toLocaleString()}</p>
-                      <span className="bg-(--accent) text-white text-xs font-black px-2 py-1 rounded-full">-{(selectedProduct as any).discount}%</span>
+                      <span className="bg-(--accent) text-white text-xs font-black px-2 py-1 rounded-full">-{selectedProduct.discount}%</span>
                     </>
                   ) : (
                     <p className="text-3xl font-black text-(--accent)">{selectedProduct.price.toLocaleString()} <span className="text-sm font-bold">FCFA</span></p>

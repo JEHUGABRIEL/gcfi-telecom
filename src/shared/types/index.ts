@@ -8,6 +8,8 @@ export interface Product {
   id: string; name: string; price: number; category: string;
   image: string; description: string; rating?: number;
   reviewsCount?: number; reviews_count?: number; popularity?: number; stock?: number;
+  discount?: number;
+  is_promo?: boolean;
 }
 
 export interface CartItem extends Product { quantity: number; }

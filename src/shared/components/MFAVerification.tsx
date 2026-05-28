@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Smartphone, Lock, ArrowRight } from 'lucide-react';
-import { verifyMFACode } from '@/shared/lib/mfa-service';
+import { verifyTOTPCode } from '@/shared/lib/mfa-service';
 
 interface MFAVerificationProps {
   userId: string;
@@ -25,7 +25,7 @@ export default function MFAVerification({ userId, phone, onSuccess, onCancel }: 
     setError(null);
 
     try {
-      const valid = await verifyMFACode(userId, code);
+      const valid = await verifyTOTPCode(userId, code);
       if (valid) {
         onSuccess();
       } else {
@@ -54,7 +54,7 @@ export default function MFAVerification({ userId, phone, onSuccess, onCancel }: 
           Vérification 2FA
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 text-center mb-6">
-          Un code a été envoyé à <span className="font-bold">{phone}</span>
+          Entrez le code affiché dans votre application <span className="font-bold">Google Authenticator</span> ou <span className="font-bold">Authy</span>
         </p>
 
         <div className="space-y-4 mb-6">
@@ -99,7 +99,7 @@ export default function MFAVerification({ userId, phone, onSuccess, onCancel }: 
         </div>
 
         <p className="text-xs text-slate-400 text-center mt-4">
-          Votre code expire dans 10 minutes
+          Le code se renouvelle toutes les 30 secondes
         </p>
       </motion.div>
     </div>

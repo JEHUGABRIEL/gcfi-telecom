@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { ArrowLeft, Clock, Tag, GraduationCap, CheckCircle2, Phone, Share2, Users, Award } from 'lucide-react';
 import { useCourses } from '@/shared/lib/queries';
 import { setStructuredData, courseSchema } from '@/shared/lib/structured-data';
+import { trackCourseView } from '@/shared/lib/analytics-service';
 import type { Course } from '@/shared/types';
 
 export default function CourseDetail() {
@@ -13,10 +14,11 @@ export default function CourseDetail() {
 
   const course = courses.find((c: Course) => c.id === id);
 
-  // ✅ NOUVEAU : Structured data
+  // ✅ Structured data + Analytics
   React.useEffect(() => {
     if (course) {
       setStructuredData(courseSchema(course));
+      trackCourseView(course.id, course.title);
     }
   }, [course]);
 

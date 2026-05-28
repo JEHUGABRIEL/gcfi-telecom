@@ -5,6 +5,7 @@ import { ArrowLeft, Star, ShoppingCart, Heart, Share2, Shield, Truck, RefreshCw,
 import { useProducts } from '@/shared/lib/queries';
 import { useAuth } from '@/shared/context/AuthContext';
 import { setStructuredData, productSchema } from '@/shared/lib/structured-data';
+import { trackProductView, trackAddToCart } from '@/shared/lib/analytics-service';
 import type { Product } from '@/shared/types';
 
 export default function ProductDetail() {
@@ -17,10 +18,11 @@ export default function ProductDetail() {
 
   const product = products.find((p: Product) => p.id === id);
 
-  // ✅ NOUVEAU : Structured data + LazyImage
+  // ✅ Structured data + Analytics
   React.useEffect(() => {
     if (product) {
       setStructuredData(productSchema(product));
+      trackProductView(product.id, product.name);
     }
   }, [product]);
 
@@ -31,6 +33,8 @@ export default function ProductDetail() {
   const handleAddToCart = () => {
     if (!user) { setShowAuthModal(true); return; }
     window.dispatchEvent(new CustomEvent('gcfi:add-to-cart', { detail: product }));
+    // ✅ Track add to cart
+    trackAddToCart(product.id, product.name, product.price);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };

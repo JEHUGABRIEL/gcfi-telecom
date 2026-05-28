@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'; // ← HashRouter
+import { HashRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThemeProvider } from '@/shared/context/ThemeContext';
 import { AuthProvider } from '@/shared/context/AuthContext';
@@ -16,14 +16,14 @@ import AuthModal from '@/shared/components/AuthModal';
 import { useAuth } from '@/shared/context/AuthContext';
 import { setupLazyLoading } from '@/shared/lib/image-lazy-loader';
 import { setStructuredData, organizationSchema } from '@/shared/lib/structured-data';
+import { trackPageView } from '@/shared/lib/analytics-service';
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 
 const AuthCallback  = lazy(() => import('@/shared/components/AuthCallback'));
 const ResetPassword = lazy(() => import('@/shared/components/ResetPassword'));
-
 const ServicesPage = lazy(() => import('@/modules/services/ServicesPage'));
 const BlogPage       = lazy(() => import('@/modules/blog/BlogPage'));
 const AdminLoginPage = lazy(() => import('@/modules/admin/components/AdminLoginPage'));
-
 const StoreModule    = lazy(() => import('@/modules/store').then(m => ({ default: m.StoreModule })));
 const TrainingModule = lazy(() => import('@/modules/training').then(m => ({ default: m.TrainingModule })));
 const ProfileModule  = lazy(() => import('@/modules/profile').then(m => ({ default: m.ProfileModule })));
@@ -43,16 +43,13 @@ function ModuleLoader() {
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, loading } = useAuth();
   if (loading) return <ModuleLoader />;
-  // ✅ Non connecté → page admin-login (pas home)
   if (!user) return <Navigate to="/admin-login" replace />;
-  // ✅ Connecté mais pas admin → home
   if (!isAdmin) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
 function ClientRoute({ children }: { children: React.ReactNode }) {
   const { isAdmin, loading } = useAuth();
-  // ✅ Spinner pendant loading — l'admin ne voit jamais la home page
   if (loading) return <ModuleLoader />;
   if (isAdmin) return <Navigate to="/admin" replace />;
   return <>{children}</>;
@@ -74,7 +71,6 @@ function AdminRedirect() {
   const navigate = useNavigate();
   const location = useLocation();
   React.useEffect(() => {
-    // Ne pas rediriger vers /admin si on est sur la page de reset password
     if (!loading && isAdmin && location.pathname !== '/reset-password')
       navigate('/admin', { replace: true });
   }, [isAdmin, loading, navigate, location.pathname]);
@@ -100,12 +96,12 @@ function AnimatedRoutes({ onContactOpen }: { onContactOpen: () => void }) {
           <Route path="/formation/:id" element={<ClientRoute><Suspense fallback={<ModuleLoader />}><CourseDetail /></Suspense></ClientRoute>} />
           <Route path="/profil" element={<ProtectedClientRoute><Suspense fallback={<ModuleLoader />}><ProfileModule /></Suspense></ProtectedClientRoute>} />
           <Route path="/admin" element={<AdminRoute><Suspense fallback={<ModuleLoader />}><AdminModule /></Suspense></AdminRoute>} />
-          <Route path="*" element={<Navigate to="/" replace />} />
           <Route path="/services" element={<ClientRoute><Suspense fallback={<ModuleLoader />}><ServicesPage /></Suspense></ClientRoute>} />
-          <Route path="/blog"     element={<ClientRoute><Suspense fallback={<ModuleLoader />}><BlogPage /></Suspense></ClientRoute>} />
+          <Route path="/blog" element={<ClientRoute><Suspense fallback={<ModuleLoader />}><BlogPage /></Suspense></ClientRoute>} />
           <Route path="/admin-login" element={<Suspense fallback={<ModuleLoader />}><AdminLoginPage /></Suspense>} />
           <Route path="/reset-password" element={<Suspense fallback={<ModuleLoader />}><ResetPassword /></Suspense>} />
-          <Route path="/auth/callback"  element={<Suspense fallback={<ModuleLoader />}><AuthCallback /></Suspense>} />
+          <Route path="/auth/callback" element={<Suspense fallback={<ModuleLoader />}><AuthCallback /></Suspense>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </motion.div>
     </AnimatePresence>
@@ -116,10 +112,14 @@ function AppContent() {
   const { loading: authLoading, isAdmin } = useAuth();
   const [isContactOpen, setIsContactOpen] = React.useState(false);
   const location = useLocation();
-  const isAdminRoute      = location.pathname.startsWith('/admin');
+  const isAdminRoute = location.pathname.startsWith('/admin');
   const isAdminLoginRoute = location.pathname === '/admin-login';
 
-  // ✅ Page admin-login : layout totalement isolé, sans header/footer
+  // ✅ NOUVEAU : Track page views
+  React.useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location.pathname]);
+
   if (isAdminLoginRoute) {
     return (
       <Suspense fallback={<ModuleLoader />}>
@@ -152,20 +152,23 @@ function AppContent() {
 }
 
 export default function App() {
-    useEffect(() => {
+  useEffect(() => {
     setupLazyLoading();
     setStructuredData(organizationSchema);
   }, []);
+
   return (
-    <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <ThemeProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <AppContent />
-            <AuthModal />
-          </NotificationProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </HashRouter>
+    <ErrorBoundary>
+      <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <ThemeProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <AppContent />
+              <AuthModal />
+            </NotificationProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </HashRouter>
+    </ErrorBoundary>
   );
 }
