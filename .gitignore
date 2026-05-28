@@ -46,3 +46,11 @@ coverage/
 *.zip
 *.tar.gz
 .cache/
+
+# ── Next.js ───────────────────────────────────────────────────
+.next/
+next-env.d.ts
+out/
+
+# ── Claude worktrees ──────────────────────────────────────────
+.claude/worktrees/
