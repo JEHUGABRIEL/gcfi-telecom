@@ -1,3 +1,4 @@
+'use client';
 import { supabase } from './supabase';
 
 export interface PageView {
@@ -116,7 +117,7 @@ export async function getAnalyticsMetrics(days: number = 30): Promise<AnalyticsM
     }, {} as Record<string, number>) || {};
 
     const topPages = Object.entries(pageGroups)
-      .map(([page, views]) => ({ page, views }))
+      .map(([page, views]) => ({ page, views: views as number }))
       .sort((a, b) => b.views - a.views)
       .slice(0, 5);
 

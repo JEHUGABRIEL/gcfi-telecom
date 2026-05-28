@@ -1,7 +1,9 @@
+'use client';
+
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ShieldCheck, Bell, LogOut, Menu, X, LayoutDashboard } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useNotifications } from '@/shared/context/NotificationContext';
 import GcfiLogo from './GcfiLogo';
@@ -12,11 +14,10 @@ export default function AdminHeader() {
   const { notifications, unreadCount, markAsRead, clearAll, requestPermission } = useNotifications();
   const [isNotificationsOpen, setIsNotificationsOpen] = React.useState(false);
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleSignOut = async () => {
     setShowSignOutModal(true);
-    navigate('/', { replace: true });
   };
 
   return (
@@ -25,7 +26,7 @@ export default function AdminHeader() {
         <div className="flex items-center justify-between h-16">
 
           {/* Logo + badge Admin */}
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/admin')}>
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => router.push('/admin')}>
             <GcfiLogo />
             <span className="hidden sm:flex items-center gap-1.5 bg-[var(--accent)] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
               <ShieldCheck className="w-3 h-3" />
@@ -107,7 +108,7 @@ export default function AdminHeader() {
                   <p className="text-xs text-[var(--accent)] font-black uppercase tracking-wider">{profile?.role ?? 'admin'}</p>
                 </div>
               </div>
-              <button onClick={() => { navigate('/admin'); setIsMenuOpen(false); }}
+              <button onClick={() => { router.push('/admin'); setIsMenuOpen(false); }}
                 className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 w-full transition-all">
                 <LayoutDashboard className="w-5 h-5" />
                 Tableau de bord

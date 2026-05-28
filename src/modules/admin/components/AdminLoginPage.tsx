@@ -1,144 +1,81 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { Mail, Lock, AlertCircle, LogIn } from 'lucide-react';
+'use client';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ShieldCheck, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/shared/lib/supabase';
-import { generateMFACode, sendMFAViaWhatsApp, getUserMFASettings } from '@/shared/lib/mfa-service';
-import MFAVerification from '@/shared/components/MFAVerification';
 
 export default function AdminLoginPage() {
-  const navigate = useNavigate();
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  
-  // ✅ NOUVEAU : MFA state
-  const [mfaPending, setMFAPending] = React.useState(false);
-  const [mfaUserId, setMFAUserId] = React.useState<string | null>(null);
-  const [mfaPhone, setMFAPhone] = React.useState<string | null>(null);
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
-
+    setLoading(true);
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (authError) {
-        setError(authError.message || 'Erreur de connexion');
-        setLoading(false);
-        return;
+      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) throw authError;
+      const role = data.user?.app_metadata?.role;
+      if (role !== 'admin' && role !== 'superadmin') {
+        await supabase.auth.signOut();
+        throw new Error('Accès refusé. Compte administrateur requis.');
       }
-
-      if (!data.user) {
-        setError('Impossible de récupérer les infos utilisateur');
-        setLoading(false);
-        return;
-      }
-
-      // ✅ NOUVEAU : Vérifier si MFA est activé
-      const mfaSettings = await getUserMFASettings(data.user.id);
-      
-      if (mfaSettings?.enabled && mfaSettings?.phone) {
-        // Générer et envoyer code MFA
-        const code = await generateMFACode(data.user.id);
-        await sendMFAViaWhatsApp(mfaSettings.phone, code);
-        
-        setMFAPending(true);
-        setMFAUserId(data.user.id);
-        setMFAPhone(mfaSettings.phone);
-        setLoading(false);
-      } else {
-        // Pas de MFA → login direct
-        navigate('/admin', { replace: true });
-      }
+      router.replace('/admin');
     } catch (err: any) {
-      setError(err?.message || 'Erreur serveur');
+      setError(err.message || 'Erreur de connexion.');
+    } finally {
       setLoading(false);
     }
   };
 
-  if (mfaPending && mfaUserId && mfaPhone) {
-    return (
-      <MFAVerification
-        userId={mfaUserId}
-        phone={mfaPhone}
-        onSuccess={() => navigate('/admin', { replace: true })}
-        onCancel={() => {
-          setMFAPending(false);
-          setMFAUserId(null);
-          setMFAPhone(null);
-        }}
-      />
-    );
-  }
+  const inputCls = 'w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-slate-900 dark:text-white transition-all shadow-sm text-sm';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md"
-      >
-        <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 border border-slate-100 dark:border-slate-700">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4">
+      <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+        <div className="h-1.5 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)]" />
+        <div className="p-8">
           <div className="text-center mb-8">
-            <div className="w-14 h-14 bg-[#C1272D] rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-7 h-7 text-white" />
+            <div className="w-16 h-16 bg-[color-mix(in_srgb,var(--accent)_10%,white)] rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <ShieldCheck className="w-8 h-8 text-[var(--accent)]" />
             </div>
-            <h1 className="text-2xl font-black text-slate-900 dark:text-white">Accès Admin</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">GCFI Telecom</p>
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white">Connexion Admin</h1>
+            <p className="text-sm text-slate-500 mt-1">Accès réservé aux administrateurs GCFI</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-500 block mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setError(null); }}
-                placeholder="admin@gcfi-rca.com"
-                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-[#C1272D] text-sm"
-              />
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 rounded-2xl text-sm text-red-600 font-medium">
+              {error}
             </div>
+          )}
 
-            <div>
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-500 block mb-2">
-                Mot de passe
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(null); }}
-                placeholder="••••••••"
-                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-[#C1272D] text-sm"
-              />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <input type="email" placeholder="Email administrateur" value={email}
+                onChange={e => setEmail(e.target.value)} required className={inputCls} />
             </div>
-
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 flex items-start gap-3 text-sm text-red-600 dark:text-red-400">
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-[#C1272D] hover:bg-[#1E4D8C] text-white font-black text-sm uppercase tracking-widest rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              <LogIn className="w-4 h-4" />
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <input type={showPwd ? 'text' : 'password'} placeholder="Mot de passe" value={password}
+                onChange={e => setPassword(e.target.value)} required className={`${inputCls} pr-12`} />
+              <button type="button" onClick={() => setShowPwd(v => !v)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                {showPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+            <button type="submit" disabled={loading}
+              className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg disabled:opacity-50">
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>
           </form>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

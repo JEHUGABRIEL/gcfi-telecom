@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { Search, X, ShoppingBag, GraduationCap, Newspaper, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/shared/lib/utils';
@@ -24,7 +26,7 @@ interface GlobalSearchProps {
 }
 
 export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: GlobalSearchProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [internalIsOpen, setInternalIsOpen] = React.useState(false);
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
   
@@ -84,7 +86,7 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
     if (result.module) {
       // ✅ Passer l'ID pour permettre le scroll/highlight côté destination
       const base = MODULE_ROUTES[result.module] ?? '/';
-      navigate(`${base}?item=${result.id}`);
+      router.push(`${base}?item=${result.id}`);
     } else if (result.url) {
       window.open(result.url, '_blank');
     }

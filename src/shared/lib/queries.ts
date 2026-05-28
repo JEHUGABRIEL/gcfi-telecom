@@ -1,3 +1,4 @@
+'use client';
 // ================================================================
 // GCFI — Hooks TanStack Query centralisés
 // Cache intelligent : données servies instantanément après 1er chargement

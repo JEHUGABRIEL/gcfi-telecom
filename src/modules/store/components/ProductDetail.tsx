@@ -1,16 +1,16 @@
+'use client';
+
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { ArrowLeft, Star, ShoppingCart, Heart, Share2, Shield, Truck, RefreshCw, Package, Tag } from 'lucide-react';
 import { useProducts } from '@/shared/lib/queries';
 import { useAuth } from '@/shared/context/AuthContext';
-import { setStructuredData, productSchema } from '@/shared/lib/structured-data';
-import { trackProductView, trackAddToCart } from '@/shared/lib/analytics-service';
 import type { Product } from '@/shared/types';
 
 export default function ProductDetail() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const params = useParams(); const id = params.id as string;
+  const router = useRouter();
   const { data: products = [], isLoading } = useProducts();
   const { user, setShowAuthModal } = useAuth();
   const [added, setAdded] = React.useState(false);
@@ -18,23 +18,14 @@ export default function ProductDetail() {
 
   const product = products.find((p: Product) => p.id === id);
 
-  // ✅ Structured data + Analytics
   React.useEffect(() => {
-    if (product) {
-      setStructuredData(productSchema(product));
-      trackProductView(product.id, product.name);
-    }
-  }, [product]);
-
-  React.useEffect(() => {
-    if (!isLoading && !product) navigate('/boutique', { replace: true });
-  }, [product, isLoading, navigate]);
+    if (!isLoading && !product) router.replace('/boutique');
+  }, [product, isLoading, router]);
 
   const handleAddToCart = () => {
     if (!user) { setShowAuthModal(true); return; }
+    // Émet un événement pour que StoreModule mette à jour le panier
     window.dispatchEvent(new CustomEvent('gcfi:add-to-cart', { detail: product }));
-    // ✅ Track add to cart
-    trackAddToCart(product.id, product.name, product.price);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -58,10 +49,11 @@ export default function ProductDetail() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
+        {/* Retour */}
         <motion.button
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
-          onClick={() => navigate(-1)}
+          onClick={() => router.back()}
           className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#C1272D] transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" /> Retour à la boutique
@@ -69,6 +61,7 @@ export default function ProductDetail() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
 
+          {/* Image */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -76,33 +69,33 @@ export default function ProductDetail() {
           >
             <div className="aspect-square bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800">
               {product.image ? (
-                <img 
-                  src={product.image} 
-                  alt={product.name}
-                  loading="lazy"
-                  className="w-full h-full object-cover" 
-                />
+                <img src={product.image} alt={product.name}
+                  className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <Package className="w-24 h-24 text-slate-200" />
                 </div>
               )}
             </div>
+            {/* Badge catégorie */}
             <span className="absolute top-4 left-4 bg-[#C1272D] text-white text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
               {product.category}
             </span>
           </motion.div>
 
+          {/* Infos */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="flex flex-col justify-center"
           >
+            {/* Nom */}
             <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-3 leading-tight">
               {product.name}
             </h1>
 
+            {/* Rating */}
             {product.rating && (
               <div className="flex items-center gap-2 mb-5">
                 <div className="flex">
@@ -116,6 +109,7 @@ export default function ProductDetail() {
               </div>
             )}
 
+            {/* Prix */}
             <div className="flex items-baseline gap-3 mb-6">
               <span className="text-4xl font-black text-[#C1272D]">
                 {product.price.toLocaleString('fr-FR')}
@@ -123,10 +117,12 @@ export default function ProductDetail() {
               <span className="text-lg font-bold text-slate-500">FCFA</span>
             </div>
 
+            {/* Description */}
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-8 text-base">
               {product.description}
             </p>
 
+            {/* Stock */}
             {product.stock !== undefined && (
               <div className="flex items-center gap-2 mb-6">
                 <div className={`w-2.5 h-2.5 rounded-full ${product.stock > 0 ? 'bg-green-500' : 'bg-red-400'}`} />
@@ -136,6 +132,7 @@ export default function ProductDetail() {
               </div>
             )}
 
+            {/* Actions */}
             <div className="flex gap-3 mb-8">
               <motion.button
                 whileTap={{ scale: 0.97 }}
@@ -172,6 +169,7 @@ export default function ProductDetail() {
               </button>
             </div>
 
+            {/* Garanties */}
             <div className="grid grid-cols-3 gap-4">
               {[
                 { icon: Shield, label: 'Garantie', sub: '12 mois' },
@@ -188,6 +186,7 @@ export default function ProductDetail() {
           </motion.div>
         </div>
 
+        {/* Tags */}
         {product.category && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}

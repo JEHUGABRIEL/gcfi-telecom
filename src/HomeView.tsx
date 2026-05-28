@@ -1,14 +1,16 @@
+'use client';
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { useQuery } from '@tanstack/react-query';
 import { Star, Award, ChevronLeft, ChevronRight, X, Calendar, ExternalLink } from 'lucide-react';
 import { Hero, GcfiServices } from '@/modules/home';
 import { supabase } from '@/shared/lib/supabase';
 import { cn } from '@/shared/lib/utils';
-import { setStructuredData, organizationSchema, localBusinessSchema } from '@/shared/lib/structured-data';
 import type { Testimonial, Achievement, Partner } from '@/shared/types';
 
+// ── Données de secours (affichées si les tables sont vides) ──
 const fallbackTestimonials: Testimonial[] = [
   { id: '1', name: 'Jean-Pierre Ndombe',    role: 'Directeur IT, Bank of Africa RCA', content: 'GCFI a transformé notre infrastructure réseau avec un professionnalisme exemplaire.', avatar_url: 'https://i.pravatar.cc/150?u=jpn', rating: 5, status: 'approved' },
   { id: '2', name: 'Marie-Claire Touadera', role: 'Étudiante en Cybersécurité',        content: "La formation chez GCFI est d'un niveau international. J'ai trouvé un emploi avant même la fin de mon cursus.", avatar_url: 'https://i.pravatar.cc/150?u=mct', rating: 5, status: 'approved' },
@@ -26,58 +28,53 @@ const fallbackPartners: Partner[] = [
   { id: '4', name: 'Huawei',          logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Huawei_Logo.svg/1200px-Huawei_Logo.svg.png' },
 ];
 
-interface HomeViewProps { onContactOpen: () => void; }
-
-interface HomeData {
-  testimonials: Testimonial[];
-  achievements: Achievement[];
-  partners: Partner[];
+// ── Fetchers Supabase ──────────────────────────────────────────────────────
+async function fetchTestimonials(): Promise<Testimonial[]> {
+  const { data, error } = await supabase
+    .from('testimonials').select('*').eq('status', 'approved')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data?.length ? data : fallbackTestimonials) as Testimonial[];
 }
 
-async function fetchHomeData(): Promise<HomeData> {
-  const [
-    { data: testimonialData, error: e1 },
-    { data: achievementData, error: e2 },
-    { data: partnerData,     error: e3 },
-  ] = await Promise.all([
-    supabase.from('testimonials').select('*').eq('status', 'approved').order('created_at', { ascending: false }),
-    supabase.from('achievements').select('*').order('year', { ascending: false }),
-    supabase.from('partners').select('*').order('order_index', { ascending: true }),
-  ]);
-
-  if (e1) throw e1;
-  if (e2) throw e2;
-  if (e3) throw e3;
-
-  return {
-    testimonials: (testimonialData?.length ? testimonialData : fallbackTestimonials) as Testimonial[],
-    achievements: (achievementData?.length ? achievementData : fallbackAchievements) as Achievement[],
-    partners:     (partnerData?.length     ? partnerData     : fallbackPartners)     as Partner[],
-  };
+async function fetchAchievements(): Promise<Achievement[]> {
+  const { data, error } = await supabase
+    .from('achievements').select('*').order('year', { ascending: false });
+  if (error) throw error;
+  return (data?.length ? data : fallbackAchievements) as Achievement[];
 }
 
-export default function HomeView({ onContactOpen }: HomeViewProps) {
-  const navigate = useNavigate();
+async function fetchPartners(): Promise<Partner[]> {
+  const { data, error } = await supabase
+    .from('partners').select('*').order('order_index', { ascending: true });
+  if (error) throw error;
+  return (data?.length ? data : fallbackPartners) as Partner[];
+}
 
-  // ✅ NOUVEAU : Structured data
-  React.useEffect(() => {
-    setStructuredData(localBusinessSchema);
-  }, []);
+export default function HomeView() {
+  const router = useRouter();
 
-  const { data: homeData } = useQuery({
-    queryKey: ['home-data'],
-    queryFn: fetchHomeData,
-    staleTime: 1000 * 60 * 10,
-    placeholderData: {
-      testimonials: fallbackTestimonials,
-      achievements: fallbackAchievements,
-      partners: fallbackPartners,
-    },
+  // ✅ TanStack Query — cache intelligent + fallback données par défaut
+  const { data: testimonials = fallbackTestimonials } = useQuery({
+    queryKey: ['testimonials'],
+    queryFn: fetchTestimonials,
+    staleTime: 1000 * 60 * 10,   // 10 min
+    placeholderData: fallbackTestimonials,
   });
 
-  const testimonials = homeData?.testimonials ?? fallbackTestimonials;
-  const achievements = homeData?.achievements ?? fallbackAchievements;
-  const partners     = homeData?.partners     ?? fallbackPartners;
+  const { data: achievements = fallbackAchievements } = useQuery({
+    queryKey: ['achievements'],
+    queryFn: fetchAchievements,
+    staleTime: 1000 * 60 * 30,   // 30 min — données rarement modifiées
+    placeholderData: fallbackAchievements,
+  });
+
+  const { data: partners = fallbackPartners } = useQuery({
+    queryKey: ['partners'],
+    queryFn: fetchPartners,
+    staleTime: 1000 * 60 * 30,
+    placeholderData: fallbackPartners,
+  });
 
   const [testimonialIndex, setTestimonialIndex] = React.useState(0);
   const [selectedAchievement, setSelectedAchievement] = React.useState<Achievement | null>(null);
@@ -85,7 +82,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
 
   return (
     <>
-      <Hero onNavigate={navigate} />
+      <Hero onNavigate={(path) => router.push(path)} />
       <GcfiServices />
 
       {/* Piliers */}
@@ -93,25 +90,24 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Nos Piliers d'Excellence</h2>
-            <p className="text-slate-600 dark:text-slate-400">Formation, équipements et services télécom pour transformer l'économie numérique en RCA.</p>
+            <p className="text-slate-600 dark:text-slate-400">Trois domaines d'expertise pour transformer l'économie numérique et financière.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { path: '/formation', icon: '🎓', title: 'Formation',  desc: 'Programmes intensifs en télécom et cybersécurité.', cta: 'Découvrir' },
-              { path: '/boutique',  icon: '🛍️',  title: 'Boutique',   desc: 'Équipements réseaux et terminaux mobiles certifiés.', cta: 'Acheter' },
-              { path: '/services',  icon: '🔧',  title: 'Services',   desc: 'Déploiement réseau, maintenance et solutions télécom sur mesure.', cta: 'En savoir plus' },
+              { path: '/formation', icon: '🎓', title: 'Formation',    desc: 'Programmes intensifs en télécom et cybersécurité.', cta: 'Découvrir' },
+              { path: '/boutique', icon: '🛍️',  title: 'Boutique',    desc: 'Équipements réseaux et terminaux mobiles certifiés.', cta: 'Acheter' },
             ].map(item => (
-              <div key={item.path} onClick={() => navigate(item.path)}
-                className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 hover:border-(--accent) transition-all cursor-pointer group">
+              <div key={item.path} onClick={() => router.push(item.path)}
+                className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 hover:border-[#2563B0] transition-all cursor-pointer group">
                 <div className="text-4xl mb-6">{item.icon}</div>
                 <h3 className="text-2xl font-bold mb-4 dark:text-white">{item.title}</h3>
                 <p className="text-slate-500 dark:text-slate-400 mb-6">{item.desc}</p>
-                <span className="text-(--accent) font-bold flex items-center gap-2">{item.cta} <ChevronRight className="w-4 h-4" /></span>
+                <span className="text-[#2563B0] font-bold flex items-center gap-2">{item.cta} <ChevronRight className="w-4 h-4" /></span>
               </div>
             ))}
           </div>
 
-          {/* Réalisations */}
+          {/* ✅ Réalisations chargées depuis Supabase */}
           <div className="mt-32">
             <div className="flex items-end justify-between mb-12">
               <div>
@@ -137,7 +133,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
             </div>
           </div>
 
-          {/* Partenaires */}
+          {/* ✅ Partenaires chargés depuis Supabase */}
           <div className="mt-32 py-16 border-y border-slate-200 dark:border-slate-800 overflow-hidden">
             <p className="text-center text-xs font-bold uppercase tracking-[0.3em] text-slate-400 mb-12">Ils nous font confiance</p>
             <div className="flex w-fit">
@@ -153,7 +149,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
             </div>
           </div>
 
-          {/* Témoignages */}
+          {/* ✅ Témoignages chargés depuis Supabase */}
           <div className="mt-32">
             <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-16">
               <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white">
@@ -161,11 +157,11 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
               </h2>
               <div className="flex gap-4">
                 <button onClick={() => setTestimonialIndex(p => (p - 1 + testimonials.length) % testimonials.length)}
-                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#2563B0] hover:border-(--accent) hover:text-white transition-all">
+                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#2563B0] hover:border-[#2563B0] hover:text-white transition-all">
                   <ChevronLeft className="w-6 h-6" />
                 </button>
                 <button onClick={() => setTestimonialIndex(p => (p + 1) % testimonials.length)}
-                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#2563B0] hover:border-(--accent) hover:text-white transition-all">
+                  className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#2563B0] hover:border-[#2563B0] hover:text-white transition-all">
                   <ChevronRight className="w-6 h-6" />
                 </button>
               </div>
@@ -202,7 +198,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
       {/* Achievement Modal */}
       <AnimatePresence>
         {selectedAchievement && (
-          <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedAchievement(null)} className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" />
             <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl overflow-y-auto max-h-[90vh]">
@@ -210,7 +206,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
                 <X className="w-6 h-6" />
               </button>
               <div className="flex flex-col md:flex-row">
-                <div className="md:w-1/2 h-80 md:h-125">
+                <div className="md:w-1/2 h-80 md:h-[500px]">
                   <img src={selectedAchievement.image} alt={selectedAchievement.title} loading="lazy" className="w-full h-full object-cover" />
                 </div>
                 <div className="md:w-1/2 p-12">
@@ -238,7 +234,7 @@ export default function HomeView({ onContactOpen }: HomeViewProps) {
       {/* Fullscreen image */}
       <AnimatePresence>
         {fullscreenImage && (
-          <div className="fixed inset-0 z-110 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setFullscreenImage(null)} className="absolute inset-0 bg-black/95 backdrop-blur-xl" />
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="relative max-w-5xl w-full">
               <button onClick={() => setFullscreenImage(null)} className="absolute -top-16 right-0 p-4 text-white hover:text-red-500 transition-colors"><X className="w-8 h-8" /></button>

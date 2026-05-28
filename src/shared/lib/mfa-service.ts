@@ -1,3 +1,4 @@
+'use client';
 // ================================================================
 // GCFI — MFA via TOTP (Google Authenticator / Authy)
 // • Complètement gratuit — aucune API externe

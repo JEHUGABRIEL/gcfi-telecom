@@ -1,6 +1,6 @@
 import React from 'react';
 import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone, MapPin } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import GcfiLogo from './GcfiLogo';
 
 export default function Footer() {
@@ -34,7 +34,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="w-10 h-10 bg-slate-200 dark:bg-white/5 rounded-full flex items-center justify-center hover:bg-(--accent) hover:text-white transition-colors"
+                  className="w-10 h-10 bg-slate-200 dark:bg-white/5 rounded-full flex items-center justify-center hover:bg-[var(--accent)] hover:text-white transition-colors"
                 >
                   <Icon className="w-5 h-5" />
                 </a>
@@ -46,10 +46,10 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-bold mb-6 text-slate-900 dark:text-white">Nos Services</h3>
             <ul className="space-y-4 text-slate-500 dark:text-slate-400 text-sm">
-              <li><Link to="/formation" className="hover:text-(--accent) transition-colors">Formations Télécom</Link></li>
-              <li><Link to="/boutique" className="hover:text-(--accent) transition-colors">Boutique Équipements</Link></li>
-              <li><a href="mailto:gcfitelecom@gmail.com" className="hover:text-(--accent) transition-colors">Expertise & Devis</a></li>
-              <li><Link to="/" className="hover:text-(--accent) transition-colors">Réseaux LAN/WAN</Link></li>
+              <li><Link href="/formation" className="hover:text-[var(--accent)] transition-colors">Formations Télécom</Link></li>
+              <li><Link href="/boutique" className="hover:text-[var(--accent)] transition-colors">Boutique Équipements</Link></li>
+              <li><a href="mailto:gcfitelecom@gmail.com" className="hover:text-[var(--accent)] transition-colors">Expertise & Devis</a></li>
+              <li><Link href="/" className="hover:text-[var(--accent)] transition-colors">Réseaux LAN/WAN</Link></li>
             </ul>
           </div>
 
@@ -57,10 +57,10 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-bold mb-6 text-slate-900 dark:text-white">Liens Utiles</h3>
             <ul className="space-y-4 text-slate-500 dark:text-slate-400 text-sm">
-              <li><Link to="/" className="hover:text-(--accent) transition-colors">À propos de nous</Link></li>
-              <li><Link to="/" className="hover:text-(--accent) transition-colors">Actualités</Link></li>
-              <li><Link to="/boutique" className="hover:text-(--accent) transition-colors">Boutique</Link></li>
-              <li><Link to="/formation" className="hover:text-(--accent) transition-colors">Nos Formations</Link></li>
+              <li><Link href="/" className="hover:text-[var(--accent)] transition-colors">À propos de nous</Link></li>
+              <li><Link href="/" className="hover:text-[var(--accent)] transition-colors">Actualités</Link></li>
+              <li><Link href="/boutique" className="hover:text-[var(--accent)] transition-colors">Boutique</Link></li>
+              <li><Link href="/formation" className="hover:text-[var(--accent)] transition-colors">Nos Formations</Link></li>
             </ul>
           </div>
 
@@ -69,19 +69,19 @@ export default function Footer() {
             <h3 className="text-lg font-bold mb-6 text-slate-900 dark:text-white">Contact</h3>
             <ul className="space-y-4 text-slate-500 dark:text-slate-400 text-sm">
               <li className="flex items-start">
-                <MapPin className="w-5 h-5 mr-3 text-(--accent) shrink-0" />
+                <MapPin className="w-5 h-5 mr-3 text-[var(--accent)] shrink-0" />
                 <span>Rue du Marché Lakouanga (RCA)</span>
               </li>
               <li className="flex items-center">
-                <Phone className="w-5 h-5 mr-3 text-(--accent) shrink-0" />
+                <Phone className="w-5 h-5 mr-3 text-[var(--accent)] shrink-0" />
                 <div>
                   <p>+236 72 72 72 08</p>
                   <p>+236 75 50 03 24</p>
                 </div>
               </li>
               <li className="flex items-center">
-                <Mail className="w-5 h-5 mr-3 text-(--accent) shrink-0" />
-                <a href="mailto:gcfitelecom@gmail.com" className="hover:text-(--accent) transition-colors">
+                <Mail className="w-5 h-5 mr-3 text-[var(--accent)] shrink-0" />
+                <a href="mailto:gcfitelecom@gmail.com" className="hover:text-[var(--accent)] transition-colors">
                   gcfitelecom@gmail.com
                 </a>
               </li>
@@ -92,9 +92,9 @@ export default function Footer() {
         <div className="pt-10 border-t border-slate-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-400 text-xs">
           <p>© {new Date().getFullYear()} GCFI Centrafrique. Tous droits réservés.</p>
           <div className="flex space-x-6">
-            <Link to="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Confidentialité</Link>
-            <Link to="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Cookies</Link>
-            <Link to="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Conditions d'utilisation</Link>
+            <Link href="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Confidentialité</Link>
+            <Link href="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Cookies</Link>
+            <Link href="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Conditions d'utilisation</Link>
           </div>
         </div>
       </div>

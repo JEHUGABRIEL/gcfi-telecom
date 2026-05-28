@@ -4,6 +4,9 @@ import { logError } from '@/shared/lib/supabase-helpers';
 import { Plus, Trash2, RefreshCw, ShoppingBag, AlertTriangle, Edit, X } from 'lucide-react';
 import ImageUpload from '@/shared/components/ImageUpload';
 import { motion, AnimatePresence } from 'motion/react';
+import Pagination from '@/shared/components/ui/Pagination';
+
+const PAGE_SIZE = 10;
 
 /* ── Modal de confirmation suppression ───────────────────────── */
 function ConfirmModal({ message, onConfirm, onCancel }: {
@@ -41,6 +44,7 @@ const EMPTY_FORM = { name: '', description: '', price: '', category: '', image: 
 export default function ProductsTab() {
   const [products, setProducts]         = React.useState<any[]>([]);
   const [loading, setLoading]           = React.useState(true);
+  const [page, setPage]                 = React.useState(1);
   const [showForm, setShowForm]         = React.useState(false);
   const [saving, setSaving]             = React.useState(false);
   const [saveError, setSaveError]       = React.useState<string | null>(null);
@@ -136,7 +140,13 @@ export default function ProductsTab() {
     if (!deleteTarget) return;
     try {
       await supabase.from('products').delete().eq('id', deleteTarget.id);
-      setProducts(p => p.filter(x => x.id !== deleteTarget.id));
+      setProducts(prev => {
+        const next = prev.filter(x => x.id !== deleteTarget.id);
+        // Si la page courante devient vide, reculer d'une page
+        const newTotalPages = Math.ceil(next.length / PAGE_SIZE);
+        if (page > newTotalPages && newTotalPages > 0) setPage(newTotalPages);
+        return next;
+      });
       setDeleteTarget(null);
     } catch (err) {
       console.error('[ProductsTab] Delete error:', err);
@@ -224,7 +234,10 @@ export default function ProductsTab() {
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Produits ({products.length})</h3>
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+          Produits
+          {products.length > 0 && <span className="ml-2 text-sm font-normal text-slate-400">({products.length})</span>}
+        </h3>
         <div className="flex gap-2">
           <button onClick={fetch} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors">
             <RefreshCw className="w-4 h-4" />
@@ -237,36 +250,47 @@ export default function ProductsTab() {
       </div>
 
       {/* Liste */}
-      <div className="space-y-3">
-        {products.length === 0 ? (
-          <div className="text-center py-12 text-slate-400">
-            <ShoppingBag className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p>Aucun produit.</p>
-          </div>
-        ) : products.map(p => (
-          <div key={p.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-4">
-            {p.image && <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />}
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-slate-900 dark:text-white">{p.name}</p>
-              <div className="flex items-center gap-3 mt-1">
-                <span className="text-xs text-[#C1272D] font-bold">{p.price?.toLocaleString()} FCFA</span>
-                {p.category && <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full text-slate-600 dark:text-slate-300">{p.category}</span>}
-                <span className="text-xs text-slate-400">Stock : {p.stock ?? 0}</span>
+      {products.length === 0 ? (
+        <div className="text-center py-12 text-slate-400">
+          <ShoppingBag className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p>Aucun produit.</p>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-3">
+            {products.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(p => (
+              <div key={p.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-4">
+                {p.image && <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />}
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-slate-900 dark:text-white">{p.name}</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-xs text-[#C1272D] font-bold">{p.price?.toLocaleString()} FCFA</span>
+                    {p.category && <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full text-slate-600 dark:text-slate-300">{p.category}</span>}
+                    <span className="text-xs text-slate-400">Stock : {p.stock ?? 0}</span>
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  <button onClick={() => startEdit(p)}
+                    className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setDeleteTarget({ id: p.id, name: p.name })}
+                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className="flex gap-1">
-              <button onClick={() => startEdit(p)}
-                className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                <Edit className="w-4 h-4" />
-              </button>
-              <button onClick={() => setDeleteTarget({ id: p.id, name: p.name })}
-                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+          <Pagination
+            page={page}
+            totalPages={Math.ceil(products.length / PAGE_SIZE)}
+            totalItems={products.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        </>
+      )}
     </div>
   );
 }

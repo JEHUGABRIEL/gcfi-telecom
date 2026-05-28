@@ -10,7 +10,7 @@ export function formatAuthError(error: unknown): string {
 }
 
 export function logError(context: string, error: unknown): void {
-  if (import.meta.env.DEV) {
+  if (process.env.NODE_ENV === 'development') {
     console.error(`[${context}]`, error);
   }
 }

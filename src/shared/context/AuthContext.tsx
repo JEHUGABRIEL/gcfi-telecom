@@ -1,3 +1,4 @@
+'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, SupabaseUser } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
@@ -49,6 +50,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session } } = await supabase.auth.getSession();
         if (!mounted.current) return;
         const currentUser = session?.user ?? null;
+        // Reject sessions for users who haven't confirmed their email yet
+        if (currentUser && !currentUser.email_confirmed_at) {
+          await supabase.auth.signOut();
+          setLoading(false);
+          return;
+        }
         setUser(currentUser);
         if (currentUser) await fetchProfile(currentUser.id, currentUser);
         else setLoading(false);
@@ -63,6 +70,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted.current) return;
       const currentUser = session?.user ?? null;
+
+      // Block sessions for users who signed up but haven't confirmed their email yet.
+      // This is the code-level guard; the Supabase dashboard should also have
+      // Authentication → Providers → Email → "Confirm email" enabled.
+      if (currentUser && !currentUser.email_confirmed_at) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setProfile(null);
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
+
       setUser(currentUser);
       if (currentUser) {
         await fetchProfile(currentUser.id, currentUser);

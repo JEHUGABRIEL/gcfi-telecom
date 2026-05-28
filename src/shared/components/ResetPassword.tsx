@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { Lock, Eye, EyeOff, CheckCircle, Shield } from 'lucide-react';
 import { supabase } from '@/shared/lib/supabase';
@@ -7,7 +9,7 @@ import { supabase } from '@/shared/lib/supabase';
 type Step = 'loading' | 'form' | 'success' | 'invalid';
 
 export default function ResetPassword() {
-  const navigate  = useNavigate();
+  const router = useRouter();
   const [step, setStep]         = useState<Step>('loading');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm]   = useState('');
@@ -52,7 +54,7 @@ export default function ResetPassword() {
       if (error) throw error;
       setStep('success');
       // Rediriger vers l'accueil après 3 secondes
-      setTimeout(() => navigate('/'), 3000);
+      setTimeout(() => router.push('/'), 3000);
     } catch (err: any) {
       setError(err.message || 'Une erreur est survenue.');
     } finally {
@@ -87,7 +89,7 @@ export default function ResetPassword() {
               </div>
               <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">Lien invalide</h2>
               <p className="text-sm text-slate-500 mb-6">Ce lien de réinitialisation est expiré ou invalide. Faites une nouvelle demande.</p>
-              <button onClick={() => navigate('/')}
+              <button onClick={() => router.push('/')}
                 className="w-full py-3.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-2xl font-bold text-sm transition-colors">
                 Retour à l'accueil
               </button>

@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Newspaper, ChevronRight, ExternalLink, RefreshCw, Radio, TrendingUp, Cpu, Mail, CheckCircle2, X } from 'lucide-react';

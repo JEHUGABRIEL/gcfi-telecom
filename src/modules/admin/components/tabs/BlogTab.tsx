@@ -3,6 +3,9 @@ import { supabase } from '@/shared/lib/supabase';
 import { Plus, Trash2, RefreshCw, BookOpen, Edit, X, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import ImageUpload from '@/shared/components/ImageUpload';
 import { motion, AnimatePresence } from 'motion/react';
+import Pagination from '@/shared/components/ui/Pagination';
+
+const PAGE_SIZE = 10;
 
 function ConfirmModal({ message, onConfirm, onCancel }: { message: string; onConfirm: () => void; onCancel: () => void }) {
   return (
@@ -30,6 +33,7 @@ const EMPTY = { title: '', excerpt: '', content: '', category: '', author: '', t
 export default function BlogTab() {
   const [posts, setPosts]           = React.useState<any[]>([]);
   const [loading, setLoading]       = React.useState(true);
+  const [page, setPage]             = React.useState(1);
   const [showForm, setShowForm]     = React.useState(false);
   const [saving, setSaving]         = React.useState(false);
   const [saveError, setSaveError]   = React.useState<string | null>(null);
@@ -98,7 +102,12 @@ export default function BlogTab() {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     await supabase.from('blog_posts').delete().eq('id', deleteTarget.id);
-    setPosts(p => p.filter(x => x.id !== deleteTarget.id));
+    setPosts(prev => {
+      const next = prev.filter(x => x.id !== deleteTarget.id);
+      const newTotalPages = Math.ceil(next.length / PAGE_SIZE);
+      if (page > newTotalPages && newTotalPages > 0) setPage(newTotalPages);
+      return next;
+    });
     setDelete(null);
   };
 
@@ -202,45 +211,56 @@ export default function BlogTab() {
       </div>
 
       {/* Liste */}
-      <div className="space-y-3">
-        {posts.length === 0 ? (
-          <div className="text-center py-12 text-slate-400">
-            <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p>Aucun article. Créez votre premier post !</p>
-          </div>
-        ) : posts.map(p => (
-          <div key={p.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-4">
-            {p.image && <img src={p.image} alt={p.title} className="w-14 h-14 rounded-xl object-cover shrink-0" />}
-            {!p.image && <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0"><BookOpen className="w-6 h-6 text-slate-400" /></div>}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <p className="font-bold text-slate-900 dark:text-white truncate">{p.title}</p>
-                <span className={`shrink-0 text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${p.published ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                  {p.published ? 'Publié' : 'Brouillon'}
-                </span>
+      {posts.length === 0 ? (
+        <div className="text-center py-12 text-slate-400">
+          <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p>Aucun article. Créez votre premier post !</p>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-3">
+            {posts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(p => (
+              <div key={p.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-4">
+                {p.image && <img src={p.image} alt={p.title} className="w-14 h-14 rounded-xl object-cover shrink-0" />}
+                {!p.image && <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0"><BookOpen className="w-6 h-6 text-slate-400" /></div>}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className="font-bold text-slate-900 dark:text-white truncate">{p.title}</p>
+                    <span className={`shrink-0 text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${p.published ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                      {p.published ? 'Publié' : 'Brouillon'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1">
+                    {p.category && <span className="text-xs text-[#C1272D] font-bold">{p.category}</span>}
+                    <span className="text-xs text-slate-400">{p.author}</span>
+                    <span className="text-xs text-slate-400">{new Date(p.created_at).toLocaleDateString('fr-FR')}</span>
+                  </div>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <button onClick={() => togglePublish(p.id, p.published)}
+                    className="p-2 text-slate-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/10 rounded-lg transition-colors"
+                    title={p.published ? 'Dépublier' : 'Publier'}>
+                    {p.published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                  <button onClick={() => startEdit(p)} className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setDelete({ id: p.id, title: p.title })} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3 mt-1">
-                {p.category && <span className="text-xs text-[#C1272D] font-bold">{p.category}</span>}
-                <span className="text-xs text-slate-400">{p.author}</span>
-                <span className="text-xs text-slate-400">{new Date(p.created_at).toLocaleDateString('fr-FR')}</span>
-              </div>
-            </div>
-            <div className="flex gap-1 shrink-0">
-              <button onClick={() => togglePublish(p.id, p.published)}
-                className="p-2 text-slate-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/10 rounded-lg transition-colors"
-                title={p.published ? 'Dépublier' : 'Publier'}>
-                {p.published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-              <button onClick={() => startEdit(p)} className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                <Edit className="w-4 h-4" />
-              </button>
-              <button onClick={() => setDelete({ id: p.id, title: p.title })} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+          <Pagination
+            page={page}
+            totalPages={Math.ceil(posts.length / PAGE_SIZE)}
+            totalItems={posts.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        </>
+      )}
     </div>
   );
 }

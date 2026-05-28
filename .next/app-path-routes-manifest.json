@@ -1,0 +1,15 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/auth/callback/route": "/auth/callback",
+  "/admin-login/page": "/admin-login",
+  "/reset-password/page": "/reset-password",
+  "/(main)/blog/page": "/blog",
+  "/(main)/admin/page": "/admin",
+  "/(main)/boutique/page": "/boutique",
+  "/(main)/formation/[id]/page": "/formation/[id]",
+  "/(main)/boutique/[id]/page": "/boutique/[id]",
+  "/(main)/formation/page": "/formation",
+  "/(main)/page": "/",
+  "/(main)/services/page": "/services",
+  "/(main)/profil/page": "/profil"
+}

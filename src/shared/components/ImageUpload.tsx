@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import { Upload, X, Image, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
