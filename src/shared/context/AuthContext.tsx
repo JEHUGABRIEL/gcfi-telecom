@@ -51,18 +51,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function initializeAuth() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // getUser() validates the JWT token server-side on every load,
+        // unlike getSession() which only reads from local cache.
+        // This prevents "zombie sessions" persisting after signOut.
+        const { data: { user }, error } = await supabase.auth.getUser();
         if (!mounted.current) return;
-        const currentUser = session?.user ?? null;
+        if (error || !user) { setLoading(false); return; }
         // Reject sessions for users who haven't confirmed their email yet
-        if (currentUser && !currentUser.email_confirmed_at) {
-          await supabase.auth.signOut();
+        if (!user.email_confirmed_at) {
+          await supabase.auth.signOut({ scope: 'global' });
           setLoading(false);
           return;
         }
-        setUser(currentUser);
-        if (currentUser) await fetchProfile(currentUser.id, currentUser);
-        else setLoading(false);
+        setUser(user);
+        await fetchProfile(user.id, user);
       } catch (err) {
         logError('Auth init', err);
         if (mounted.current) setLoading(false);
@@ -77,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Block sessions for users who signed up but haven't confirmed their email yet.
       if (currentUser && !currentUser.email_confirmed_at) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'global' });
         setUser(null);
         setProfile(null);
         setIsAdmin(false);
@@ -89,12 +91,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (currentUser) {
         const isAdminUser = await fetchProfile(currentUser.id, currentUser);
 
-        // Redirect admin/superadmin to the dashboard on sign-in.
-        // We check the event so we only redirect on an actual login action,
-        // not on every page load with an existing session.
-        if (event === 'SIGNED_IN' && isAdminUser && mounted.current) {
-          router.push('/admin');
-          return;
+        if (isAdminUser && mounted.current) {
+          const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+          // On fresh login: always redirect admin to dashboard.
+          // On page load with existing session: redirect only if admin
+          // landed on a public page (home, profil, admin-login),
+          // not if they're intentionally browsing the catalogue.
+          const redirectPaths = ['/', '/profil', '/admin-login'];
+          const shouldRedirect =
+            event === 'SIGNED_IN' ||
+            (event === 'INITIAL_SESSION' && redirectPaths.includes(currentPath));
+
+          if (shouldRedirect) {
+            router.push('/admin');
+            return;
+          }
         }
 
         setPendingAction(prev => { if (prev) { prev(); setShowAuthModal(false); } return null; });
@@ -132,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const isBlockedTemp = !!profileData.blocked_until && new Date(profileData.blocked_until) > new Date();
 
         if (isBlockedPerm || isBlockedTemp) {
-          await supabase.auth.signOut();
+          await supabase.auth.signOut({ scope: 'global' });
           setUser(null); setProfile(null); setIsAdmin(false);
           window.dispatchEvent(new CustomEvent('gcfi:user-blocked', {
             detail: { permanent: isBlockedPerm, until: profileData.blocked_until }
@@ -205,10 +216,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
 
-      // MUST await: the session cookie must be cleared before the redirect,
-      // otherwise the middleware still sees a valid session and sends the
-      // user straight back to their previous page.
-      await supabase.auth.signOut();
+      // scope: 'global' revokes the refresh token server-side, not just
+      // locally. Without this, Supabase restores the session on the next
+      // page load via getUser() because the server-side token is still valid.
+      await supabase.auth.signOut({ scope: 'global' });
 
       window.location.replace('/');
     } catch (err) {
