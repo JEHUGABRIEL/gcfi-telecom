@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { ArrowLeft, Star, ShoppingCart, Heart, Share2, Shield, Truck, RefreshCw, Package, Tag } from 'lucide-react';
@@ -67,10 +68,9 @@ export default function ProductDetail() {
             animate={{ opacity: 1, y: 0 }}
             className="relative"
           >
-            <div className="aspect-square bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800">
+            <div className="aspect-square bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800 relative">
               {product.image ? (
-                <img src={product.image} alt={product.name}
-                  className="w-full h-full object-cover" />
+                <Image src={product.image} alt={product.name} fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 50vw" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <Package className="w-24 h-24 text-slate-200" />

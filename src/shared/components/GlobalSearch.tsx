@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Search, X, ShoppingBag, GraduationCap, Newspaper, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -154,13 +155,8 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
                         onClick={() => handleSelect(result)}
                         className="w-full flex items-center gap-4 p-4 hover:bg-white dark:hover:bg-slate-800/50 rounded-2xl border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all text-left group shadow-sm hover:shadow-md"
                       >
-                        <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-slate-100 dark:border-slate-800">
-                          <img 
-                            src={result.image || 'https://picsum.photos/seed/search/100/100'} 
-                            alt="" 
-                            className="w-full h-full object-cover" 
-                            referrerPolicy="no-referrer"
-                          />
+                        <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-slate-100 dark:border-slate-800 relative">
+                          <Image src={result.image || 'https://picsum.photos/seed/search/100/100'} alt="" fill className="object-cover" sizes="48px" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">

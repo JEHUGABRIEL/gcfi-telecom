@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { Star, Award, ChevronLeft, ChevronRight, X, Calendar, ExternalLink } from 'lucide-react';
@@ -78,7 +79,7 @@ export default function HomeView() {
               {achievements.map(item => (
                 <div key={item.id} className="group cursor-pointer" onClick={() => setSelectedAchievement(item)}>
                   <div className="h-64 rounded-3xl overflow-hidden mb-6 relative">
-                    <motion.img whileHover={{ scale: 1.1 }} transition={{ duration: 0.6 }} src={item.image} alt={item.title} loading="lazy" className="w-full h-full object-cover" />
+                    <Image src={item.image} alt={item.title} fill className="object-cover group-hover:scale-110 transition-transform duration-700" sizes="(max-width: 768px) 100vw, 33vw" />
                     <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <div className="bg-white/20 backdrop-blur-md p-4 rounded-full border border-white/30"><ExternalLink className="w-6 h-6 text-white" /></div>
                     </div>
@@ -99,7 +100,7 @@ export default function HomeView() {
                 className="flex gap-12 md:gap-24 px-12 items-center">
                 {[...partners, ...partners].map((p, idx) => (
                   <div key={`${p.id}-${idx}`} className="flex items-center gap-4 opacity-50 grayscale hover:grayscale-0 transition-all shrink-0">
-                    <img src={p.logo} alt={p.name} className="h-8 md:h-12 object-contain dark:invert dark:brightness-200" loading="lazy" />
+                    <Image src={p.logo} alt={p.name} width={0} height={0} sizes="(max-width: 768px) 80px, 120px" className="h-8 md:h-12 w-auto object-contain dark:invert dark:brightness-200" style={{ width: 'auto' }} />
                     <span className="font-bold text-slate-900 dark:text-white text-lg tracking-tight">{p.name}</span>
                   </div>
                 ))}
@@ -139,7 +140,7 @@ export default function HomeView() {
                     </div>
                     <p className="text-slate-700 dark:text-slate-300 italic mb-8 leading-relaxed h-24 line-clamp-4">"{t.content}"</p>
                     <div className="mt-auto flex items-center">
-                      <img src={avatarSrc} alt={t.name} loading="lazy" className="w-12 h-12 rounded-full mr-4 border-2 border-[#2563B0]/20" referrerPolicy="no-referrer" />
+                      <Image src={avatarSrc} alt={t.name} width={48} height={48} className="rounded-full mr-4 border-2 border-[#2563B0]/20 object-cover" />
                       <div>
                         <p className="font-bold text-slate-900 dark:text-white text-sm">{t.name}</p>
                         <p className="text-xs text-[#2563B0] font-medium tracking-wide uppercase">{t.role}</p>
@@ -164,8 +165,8 @@ export default function HomeView() {
                 <X className="w-6 h-6" />
               </button>
               <div className="flex flex-col md:flex-row">
-                <div className="md:w-1/2 h-80 md:h-[500px]">
-                  <img src={selectedAchievement.image} alt={selectedAchievement.title} loading="lazy" className="w-full h-full object-cover" />
+                <div className="md:w-1/2 h-80 md:h-[500px] relative">
+                  <Image src={selectedAchievement.image} alt={selectedAchievement.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
                 </div>
                 <div className="md:w-1/2 p-12">
                   <div className="flex items-center gap-3 text-[#2563B0] font-black uppercase tracking-widest text-xs mb-6">
@@ -176,8 +177,8 @@ export default function HomeView() {
                   {selectedAchievement.gallery && selectedAchievement.gallery.length > 0 && (
                     <div className="grid grid-cols-3 gap-4 mt-8">
                       {selectedAchievement.gallery.map((img, i) => (
-                        <motion.div key={i} whileHover={{ scale: 1.05 }} onClick={() => setFullscreenImage(img)} className="h-24 rounded-2xl overflow-hidden cursor-zoom-in">
-                          <img src={img} alt="" loading="lazy" className="w-full h-full object-cover" />
+                        <motion.div key={i} whileHover={{ scale: 1.05 }} onClick={() => setFullscreenImage(img)} className="h-24 rounded-2xl overflow-hidden cursor-zoom-in relative">
+                          <Image src={img} alt="" fill className="object-cover" sizes="33vw" />
                         </motion.div>
                       ))}
                     </div>
@@ -196,7 +197,7 @@ export default function HomeView() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setFullscreenImage(null)} className="absolute inset-0 bg-black/95 backdrop-blur-xl" />
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="relative max-w-5xl w-full">
               <button onClick={() => setFullscreenImage(null)} className="absolute -top-16 right-0 p-4 text-white hover:text-red-500 transition-colors"><X className="w-8 h-8" /></button>
-              <img src={fullscreenImage} alt="" loading="lazy" className="w-full h-auto rounded-3xl shadow-2xl" />
+              <Image src={fullscreenImage} alt="" width={0} height={0} sizes="100vw" className="w-full rounded-3xl shadow-2xl" style={{ width: '100%', height: 'auto' }} />
             </motion.div>
           </div>
         )}

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { motion } from 'motion/react';
 import { 
   Network, 
@@ -312,7 +313,7 @@ export default function GcfiServices() {
                     onClick={() => setActiveMedia(item)}
                   >
                     {item.type === 'image' ? (
-                      <img src={item.url} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <Image src={item.url} alt={item.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" />
                     ) : (
                       <div className="w-full h-full bg-slate-900 flex items-center justify-center">
                         <Film className="w-12 h-12 text-white/50" />
@@ -345,7 +346,7 @@ export default function GcfiServices() {
           </button>
           <div className="max-w-5xl w-full" onClick={e => e.stopPropagation()}>
             {activeMedia.type === 'image' ? (
-              <img src={activeMedia.url} alt="" className="w-full rounded-3xl" referrerPolicy="no-referrer" />
+              <Image src={activeMedia.url} alt="" width={0} height={0} sizes="(max-width: 768px) 100vw, 80vw" className="w-full rounded-3xl" style={{ width: '100%', height: 'auto' }} />
             ) : (
               <video src={activeMedia.url} controls autoPlay className="w-full rounded-3xl" />
             )}

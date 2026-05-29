@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { motion } from 'motion/react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
@@ -86,7 +87,7 @@ export default function BlogPage() {
                 className="group bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-800 hover:shadow-2xl transition-all cursor-pointer flex flex-col">
                 <div className="h-48 overflow-hidden bg-slate-100 dark:bg-slate-800 relative">
                   {post.image ? (
-                    <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <Image src={post.image} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-[var(--accent)] to-slate-800 flex items-center justify-center">
                       <BookOpen className="w-12 h-12 text-white/30" />
@@ -130,7 +131,7 @@ function ArticleDetail({ post, onBack }: { post: BlogPost; onBack: () => void })
         <button onClick={onBack} className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[var(--accent)] transition-colors mb-8">
           ← Retour au blog
         </button>
-        {post.image && <div className="aspect-video rounded-3xl overflow-hidden mb-8"><img src={post.image} alt={post.title} className="w-full h-full object-cover" /></div>}
+        {post.image && <div className="aspect-video rounded-3xl overflow-hidden mb-8 relative"><Image src={post.image} alt={post.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 768px" priority /></div>}
         {post.category && <span className="inline-block bg-[var(--accent-light)] text-[var(--accent)] text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full mb-4">{post.category}</span>}
         <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-4">{post.title}</h1>
         <div className="flex items-center gap-4 text-sm text-slate-400 mb-8 pb-8 border-b border-slate-100 dark:border-slate-800">

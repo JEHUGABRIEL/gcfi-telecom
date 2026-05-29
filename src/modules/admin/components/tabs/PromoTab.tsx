@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
@@ -65,8 +66,8 @@ function ItemRow({ item, label, onUpdate }: { item: Item; label: string; onUpdat
       isPromo ? "border-[#C1272D]/30 bg-red-50/50 dark:bg-red-900/10" : "border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800"
     )}>
       {/* Image */}
-      <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-700 shrink-0">
-        {item.image ? <img src={item.image} alt={label} className="w-full h-full object-cover" /> : (
+      <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-700 shrink-0 relative">
+        {item.image ? <Image src={item.image} alt={label} fill className="object-cover" sizes="48px" /> : (
           <div className="w-full h-full flex items-center justify-center text-slate-300">
             <ShoppingBag className="w-5 h-5" />
           </div>

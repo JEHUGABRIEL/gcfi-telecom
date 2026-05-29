@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import Fuse from 'fuse.js';
 import {
@@ -216,8 +217,8 @@ export default function StoreModule() {
                 {/* Images produits */}
                 <div className="hidden sm:flex gap-2 shrink-0">
                   {promoProducts.slice(0, 3).map(p => (
-                    <div key={p.id} className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 shrink-0">
-                      {p.image && <img src={p.image} alt={p.name} className="w-full h-full object-cover" />}
+                    <div key={p.id} className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 shrink-0 relative">
+                      {p.image && <Image src={p.image} alt={p.name} fill className="object-cover" sizes="64px" />}
                     </div>
                   ))}
                 </div>
@@ -285,7 +286,7 @@ export default function StoreModule() {
               {suggestions.map(s => (
                 <button key={s.id} onMouseDown={() => { setSearchQuery(s.name); setShowSuggestions(false); }}
                   className="w-full px-4 py-3 text-left text-sm flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                  <img src={s.image} alt={s.name} className="w-10 h-10 rounded-xl object-cover" />
+                  <Image src={s.image} alt={s.name} width={40} height={40} className="rounded-xl object-cover" />
                   <div>
                     <p className="font-bold text-slate-900 dark:text-white">{s.name}</p>
                     <p className="text-xs text-[var(--accent)] font-bold">{s.price.toLocaleString()} FCFA</p>
@@ -348,8 +349,7 @@ export default function StoreModule() {
                 className="group bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:shadow-2xl transition-all shadow-sm flex flex-col cursor-pointer"
                 onClick={() => setSelectedProduct(product)}>
                 <div className="relative h-48 overflow-hidden">
-                  <img src={product.image} alt={product.name} loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <Image src={product.image} alt={product.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" />
                   <button onClick={e => toggleWishlist(product.id, e)}
                     className={cn("absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-lg",
                       wishlist.includes(product.id) ? "bg-[var(--accent)] text-white" : "bg-white/90 dark:bg-slate-800/90 text-slate-400 hover:text-[var(--accent)]")}>
@@ -402,8 +402,8 @@ export default function StoreModule() {
               <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 z-10 p-2 bg-white/20 backdrop-blur-md rounded-full text-white md:text-slate-900 dark:md:text-white">
                 <X className="w-5 h-5" />
               </button>
-              <div className="md:w-5/12 h-64 md:h-auto">
-                <img src={selectedProduct.image} alt={selectedProduct.name} loading="lazy" className="w-full h-full object-cover" />
+              <div className="md:w-5/12 h-64 md:h-full relative">
+                <Image src={selectedProduct.image} alt={selectedProduct.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 400px" />
               </div>
               <div className="p-8 md:w-7/12">
                 <p className="text-xs font-black uppercase tracking-widest text-[var(--accent)] mb-2">{selectedProduct.category}</p>
@@ -457,7 +457,7 @@ export default function StoreModule() {
                   </div>
                 ) : cart.map(item => (
                   <div key={item.id} className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl">
-                    <img src={item.image} alt={item.name} loading="lazy" className="w-16 h-16 rounded-xl object-cover" />
+                    <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-xl object-cover" />
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{item.name}</p>
                       <p className="text-[var(--accent)] font-black text-sm">{(item.price * item.quantity).toLocaleString()} FCFA</p>

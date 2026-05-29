@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { ArrowLeft, Clock, Tag, GraduationCap, CheckCircle2, Phone, Share2, Users, Award } from 'lucide-react';
@@ -70,7 +71,7 @@ export default function CourseDetail() {
               {/* Image hero */}
               <div className="aspect-video bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800 mb-8 relative">
                 {course.image ? (
-                  <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
+                  <Image src={course.image} alt={course.title} fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 66vw" />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-[#C1272D] to-[#1E3A8A] flex items-center justify-center">
                     <GraduationCap className="w-24 h-24 text-white/30" />

@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
@@ -246,7 +247,7 @@ export default function TrainingsTab() {
           <div className="space-y-3">
             {trainings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(t => (
               <div key={t.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-4">
-                {t.image && <img src={t.image} alt={t.title} className="w-14 h-14 rounded-xl object-cover shrink-0" />}
+                {t.image && <Image src={t.image} alt={t.title} width={56} height={56} className="rounded-xl object-cover shrink-0" />}
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-slate-900 dark:text-white">{t.title}</p>
                   <div className="flex items-center gap-3 mt-1">

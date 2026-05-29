@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { Plus, Trash2, RefreshCw, BookOpen, Edit, X, Eye, EyeOff, AlertTriangle } from 'lucide-react';
@@ -218,7 +219,7 @@ export default function BlogTab() {
           <div className="space-y-3">
             {posts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(p => (
               <div key={p.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-4">
-                {p.image && <img src={p.image} alt={p.title} className="w-14 h-14 rounded-xl object-cover shrink-0" />}
+                {p.image && <Image src={p.image} alt={p.title} width={56} height={56} className="rounded-xl object-cover shrink-0" />}
                 {!p.image && <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0"><BookOpen className="w-6 h-6 text-slate-400" /></div>}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">

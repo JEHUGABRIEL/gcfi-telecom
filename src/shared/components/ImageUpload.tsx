@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
-import { Upload, X, Image, Loader2 } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import NextImage from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import { uploadToCloudinary } from '@/shared/lib/cloudinary';
 import { cn } from '@/shared/lib/utils';
@@ -98,7 +99,7 @@ const handleFile = async (file: File) => {
         {/* Aperçu image */}
         {value && !uploading && (
           <div className="w-full h-full relative group">
-            <img src={value} alt="Aperçu" className="w-full h-full object-cover" />
+            <NextImage src={value} alt="Aperçu" fill className="object-cover" sizes="(max-width: 768px) 100vw, 400px" />
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
               <span className="text-white text-sm font-bold">Changer</span>
             </div>
@@ -109,7 +110,7 @@ const handleFile = async (file: File) => {
         {!value && !uploading && (
           <div className="flex flex-col items-center justify-center h-full gap-2 p-4 text-center">
             <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
-              <Image className="w-5 h-5 text-slate-400" />
+              <ImageIcon className="w-5 h-5 text-slate-400" />
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400">{placeholder}</p>
             <p className="text-xs text-slate-400">JPG, PNG, WebP · max {maxSizeMB} Mo</p>

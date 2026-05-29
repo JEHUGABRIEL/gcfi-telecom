@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
@@ -144,12 +145,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
                   className="hidden md:flex items-center gap-2 pl-1 pr-3 py-1 rounded-full text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-all border border-slate-200 ml-1"
                 >
                   {profile?.avatar_url ? (
-                    <img
-                      src={profile.avatar_url}
-                      alt={displayName ?? ''}
-                      referrerPolicy="no-referrer"
-                      className="w-7 h-7 rounded-full object-cover ring-2 ring-[var(--accent)]/20"
-                    />
+                    <Image src={profile.avatar_url} alt={displayName ?? ''} width={28} height={28} className="rounded-full object-cover ring-2 ring-[var(--accent)]/20" />
                   ) : (
                     <div className="w-7 h-7 bg-[var(--accent)] rounded-full flex items-center justify-center shrink-0">
                       <span className="text-white text-xs font-black">{displayName?.charAt(0).toUpperCase()}</span>
@@ -231,12 +227,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
                   className="flex items-center gap-3 mx-4 mt-4 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
                 >
                   {profile?.avatar_url ? (
-                    <img
-                      src={profile.avatar_url}
-                      alt={displayName ?? ''}
-                      referrerPolicy="no-referrer"
-                      className="w-10 h-10 rounded-full object-cover ring-2 ring-[var(--accent)]/30 shrink-0"
-                    />
+                    <Image src={profile.avatar_url} alt={displayName ?? ''} width={40} height={40} className="rounded-full object-cover ring-2 ring-[var(--accent)]/30 shrink-0" />
                   ) : (
                     <div className="w-10 h-10 bg-[var(--accent)] rounded-full flex items-center justify-center shrink-0">
                       <span className="text-white text-sm font-black">{displayName?.charAt(0).toUpperCase()}</span>

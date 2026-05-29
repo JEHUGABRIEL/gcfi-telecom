@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
@@ -74,7 +75,7 @@ function UserDetailModal({ user, isSuperAdmin, onClose, onBlock, onUnblock, onRo
         <div className="bg-linear-to-r from-slate-900 to-slate-800 p-6 flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#C1272D] flex items-center justify-center shrink-0 text-white font-black text-xl">
             {user.avatar_url
-              ? <img src={user.avatar_url} className="w-full h-full object-cover rounded-2xl" alt="" />
+              ? <Image src={user.avatar_url} fill className="object-cover rounded-2xl" alt="" sizes="56px" />
               : (user.full_name?.[0] || user.email?.[0] || '?').toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
@@ -323,7 +324,7 @@ export default function UsersTab() {
                 )}>
                 {/* Avatar */}
                 <div className="w-10 h-10 rounded-full bg-[#C1272D] flex items-center justify-center shrink-0 text-white font-black text-sm overflow-hidden">
-                  {u.avatar_url ? <img src={u.avatar_url} className="w-full h-full object-cover" alt="" /> : (u.full_name?.[0] || u.email?.[0] || '?').toUpperCase()}
+                  {u.avatar_url ? <Image src={u.avatar_url} fill className="object-cover" alt="" sizes="40px" /> : (u.full_name?.[0] || u.email?.[0] || '?').toUpperCase()}
                 </div>
                 {/* Infos */}
                 <div className="flex-1 min-w-0">

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import { Newspaper, ChevronRight, ExternalLink, RefreshCw, Radio, TrendingUp, Cpu, Mail, CheckCircle2, X } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
@@ -225,7 +226,7 @@ export default function NewsFeed() {
                       className="bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border border-slate-100 dark:border-slate-800 group hover:border-[#C1272D]/30 hover:shadow-2xl transition-all"
                     >
                       <div className="relative h-56 overflow-hidden m-4 rounded-[2rem]">
-                        <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
+                        <Image src={item.image} alt={item.title} fill className="object-cover group-hover:scale-110 transition-transform duration-700" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                         <div className="absolute top-4 left-4">
                           <span className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-[#C1272D] flex items-center gap-2 shadow-lg">
                             <Icon className="w-3 h-3" />

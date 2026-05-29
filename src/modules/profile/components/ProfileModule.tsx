@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { User, LogOut, LogIn, Settings, Shield, CreditCard, Package, Mail, Lock, UserPlus, Heart, Clock, Truck, CheckCircle2, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/shared/lib/supabase';
@@ -228,7 +229,7 @@ export default function ProfileModule() {
             onClick={handleSignIn}
             className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-4 rounded-2xl font-bold hover:bg-white dark:hover:bg-slate-700/50 transition-colors flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-sm hover:border-[var(--accent)]/30"
           >
-            <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-3" />
+            <Image src="https://www.google.com/favicon.ico" alt="Google" width={20} height={20} className="mr-3" unoptimized />
             Google
           </button>
 
@@ -253,8 +254,8 @@ export default function ProfileModule() {
         <div className="lg:col-span-1">
           <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-lg border border-slate-100 dark:border-slate-700">
             <div className="text-center mb-8">
-              <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-[var(--accent)]/10 bg-slate-100">
-                <img src={profile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.full_name || user?.email || 'U')}&background=C1272D&color=fff`} alt={profile?.full_name || ''} className="w-full h-full object-cover" />
+              <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-[var(--accent)]/10 bg-slate-100 relative">
+                <Image src={profile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.full_name || user?.email || 'U')}&background=C1272D&color=fff`} alt={profile?.full_name || ''} fill className="object-cover" sizes="96px" />
               </div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">{profile?.full_name || user.email?.split('@')[0]}</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
@@ -454,8 +455,8 @@ export default function ProfileModule() {
                     {order.items && order.items.length > 0 && (
                       <div className="bg-white dark:bg-slate-900/50 rounded-2xl p-6 mt-16 flex items-center justify-between shadow-sm border border-slate-50 dark:border-transparent">
                         <div className="flex items-center gap-4">
-                          <div className="w-16 h-16 rounded-xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
-                            <img src={order.items[0].image} alt="" className="w-full h-full object-cover" />
+                          <div className="w-16 h-16 rounded-xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 relative">
+                            <Image src={order.items[0].image} alt="" fill className="object-cover" sizes="64px" />
                           </div>
                           <div>
                             <p className="text-sm font-bold text-slate-900 dark:text-white">{order.items[0].name}</p>
@@ -504,8 +505,8 @@ export default function ProfileModule() {
                         className="bg-white dark:bg-slate-800 p-4 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-xl group hover:shadow-2xl transition-all"
                       >
                         <div className="flex gap-4">
-                          <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0">
-                            <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                          <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0 relative">
+                            <Image src={product.image} alt={product.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" sizes="96px" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)] mb-1">{product.category}</p>

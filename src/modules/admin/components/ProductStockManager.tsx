@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { supabase } from '@/shared/lib/supabase';
 import { useNotifications } from '@/shared/context/NotificationContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -208,8 +209,8 @@ export default function ProductStockManager() {
                   <tr key={product.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors group">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-100 dark:border-slate-700">
-                          <img src={product.image} alt="" className="w-full h-full object-cover" />
+                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 relative">
+                          <Image src={product.image} alt="" fill className="object-cover" sizes="48px" />
                         </div>
                         <div>
                           <p className="font-bold text-slate-900 dark:text-white group-hover:text-[#C1272D] transition-colors">{product.name}</p>

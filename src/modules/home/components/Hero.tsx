@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { motion } from 'motion/react';
 import { ArrowRight, GraduationCap, ShoppingBag } from 'lucide-react';
 
@@ -69,8 +70,8 @@ export default function Hero({ onNavigate }: HeroProps) {
           >
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-4">
-                <div className="h-64 rounded-3xl overflow-hidden shadow-2xl">
-                  <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800" alt="Cybersecurity" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                <div className="h-64 rounded-3xl overflow-hidden shadow-2xl relative">
+                  <Image src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800" alt="Cybersecurity" fill className="object-cover" priority sizes="(max-width: 1024px) 50vw, 400px" />
                 </div>
                 <div className="h-48 bg-slate-900 dark:bg-slate-950 rounded-3xl flex flex-col justify-end p-6 text-white border border-white/5">
                   <GraduationCap className="w-8 h-8 mb-4 text-[var(--accent)]" />
@@ -84,8 +85,8 @@ export default function Hero({ onNavigate }: HeroProps) {
                   <h3 className="font-bold text-xl">Formation</h3>
                   <p className="text-sm opacity-80">Telecom & Cyber</p>
                 </div>
-                <div className="h-64 rounded-3xl overflow-hidden shadow-2xl">
-                  <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=800" alt="Telecom" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                <div className="h-64 rounded-3xl overflow-hidden shadow-2xl relative">
+                  <Image src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=800" alt="Telecom" fill className="object-cover" priority sizes="(max-width: 1024px) 50vw, 400px" />
                 </div>
               </div>
             </div>

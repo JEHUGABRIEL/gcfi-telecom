@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import { GraduationCap, Clock, ChevronRight, X, CheckCircle, Info } from 'lucide-react';
 import { Course } from '@/shared/types';
@@ -52,8 +53,8 @@ export default function TrainingModule() {
                 className="absolute top-6 right-6 z-10 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white border border-white/20">
                 <X className="w-6 h-6" />
               </button>
-              <div className="w-full md:w-5/12 h-64 md:h-auto">
-                <img src={selectedCourse.image} alt={selectedCourse.title} loading="lazy" className="w-full h-full object-cover" />
+              <div className="w-full md:w-5/12 h-64 md:h-full relative">
+                <Image src={selectedCourse.image} alt={selectedCourse.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 400px" />
               </div>
               <div className="p-8 md:w-7/12 overflow-y-auto max-h-[80vh]">
                 <div className="flex items-center gap-2 mb-4">
@@ -130,8 +131,7 @@ export default function TrainingModule() {
                 <motion.div key={course.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
                   className="group bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:shadow-2xl transition-all shadow-sm flex flex-col">
                   <div className="h-48 overflow-hidden relative">
-                    <img src={course.image} alt={course.title} loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <Image src={course.image} alt={course.title} fill className="object-cover group-hover:scale-110 transition-transform duration-500" sizes="(max-width: 640px) 100vw, 50vw" />
                     <div className="absolute top-4 left-4">
                       <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#C1272D] text-white">{course.category}</span>
                     </div>
