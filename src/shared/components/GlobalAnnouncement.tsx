@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Megaphone, X, ChevronRight } from 'lucide-react';
+import { Megaphone, X } from 'lucide-react';
 import { useNotifications } from '@/shared/context/NotificationContext';
 
 export default function GlobalAnnouncement() {
@@ -44,15 +44,13 @@ export default function GlobalAnnouncement() {
             </div>
           </div>
           <div className="flex items-center gap-4 flex-shrink-0">
-            <button 
-              onClick={() => {
-                alert(`${latestGlobal.title}\n\n${latestGlobal.message}`);
-              }}
-              className="hidden md:flex items-center gap-1 text-[10px] font-black uppercase tracking-widest hover:underline transition-all"
+            <button
+              onClick={handleDismiss}
+              className="text-[10px] font-black uppercase tracking-widest hidden md:block hover:underline transition-all opacity-80 hover:opacity-100"
             >
-              Détails <ChevronRight className="w-3 h-3" />
+              Fermer
             </button>
-            <button 
+            <button
               onClick={handleDismiss}
               className="p-1 hover:bg-white/20 rounded-full transition-colors"
             >

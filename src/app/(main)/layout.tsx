@@ -14,21 +14,25 @@ import FloatingContact from '@/shared/components/FloatingContact';
 import ContactModal from '@/shared/components/ContactModal';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading: authLoading } = useAuth();
   const { isContactOpen, openContact, closeContact } = useContact();
   const pathname = usePathname();
   const isAdminRoute = pathname.startsWith('/admin');
 
+  // Show AdminHeader on admin routes even while auth is still loading,
+  // to prevent the client header from flashing during page refresh.
+  const showAdminHeader = isAdmin || (authLoading && isAdminRoute);
+
   return (
     <div className="min-h-screen pb-20 md:pb-0 bg-white dark:bg-[var(--bg-primary)] font-sans transition-colors">
       <ScrollProgress />
-      {isAdmin ? (
+      {showAdminHeader ? (
         <AdminHeader />
       ) : (
         <Header onContactOpen={openContact} />
       )}
       <main>{children}</main>
-      {!isAdmin && (
+      {!showAdminHeader && (
         <>
           <Footer />
           <FloatingContact />

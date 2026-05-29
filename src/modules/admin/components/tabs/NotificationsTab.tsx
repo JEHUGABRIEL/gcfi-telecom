@@ -1,48 +1,50 @@
 import React from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Megaphone, Send, CheckCircle, Trash2 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
+import { useAdminToast, AdminToast } from '@/shared/components/AdminToast';
 
 interface Notification { id: string; title: string; message: string; type: string; created_at: string; }
 
 interface NotificationsTabProps {
   onDelete: (id: string, table: string) => void;
+  notifications: Notification[];
 }
 
-export default function NotificationsTab({ onDelete }: NotificationsTabProps) {
+export default function NotificationsTab({ onDelete, notifications: allNotifications }: NotificationsTabProps) {
+  const queryClient = useQueryClient();
+  const { toast, showToast, dismiss } = useAdminToast();
   const [msgTitle, setMsgTitle] = React.useState('');
   const [msgContent, setMsgContent] = React.useState('');
   const [category, setCategory] = React.useState('info');
   const [isSending, setIsSending] = React.useState(false);
   const [sendSuccess, setSendSuccess] = React.useState(false);
-  const [allNotifications, setAllNotifications] = React.useState<Notification[]>([]);
-
-  React.useEffect(() => {
-    supabase.from('global_notifications').select('*').order('created_at', { ascending: false })
-      .then(
-        ({ data }) => { if (data) setAllNotifications(data as Notification[]); },
-        err => logError('NotificationsTab', err)
-      );
-  }, []);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSending(true);
     try {
-      const { data, error } = await supabase.from('global_notifications').insert([{
+      const { error } = await supabase.from('global_notifications').insert([{
         title: msgTitle, message: msgContent, type: category
-      }]).select().single();
+      }]);
       if (error) throw error;
-      if (data) setAllNotifications(prev => [data as Notification, ...prev]);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'notifications'] });
       setSendSuccess(true);
       setMsgTitle(''); setMsgContent('');
+      showToast('Annonce diffusée avec succès');
       setTimeout(() => setSendSuccess(false), 3000);
-    } catch (err) { logError('NotificationsTab/send', err); }
+    } catch (err) {
+      logError('NotificationsTab/send', err);
+      showToast('Erreur lors de l\'envoi', 'error');
+    }
     finally { setIsSending(false); }
   };
 
   return (
+    <>
+    <AdminToast toast={toast} onDismiss={dismiss} />
     <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
       <div className="flex items-center gap-3 mb-6">
         <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-2xl">
@@ -115,5 +117,6 @@ export default function NotificationsTab({ onDelete }: NotificationsTabProps) {
         </div>
       </div>
     </div>
+    </>
   );
 }

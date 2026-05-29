@@ -1,9 +1,10 @@
+'use client';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion } from 'motion/react';
-import { Save, User, Bell, Lock } from 'lucide-react';
+import { Save, User, Bell, Lock, CheckCircle2, XCircle } from 'lucide-react';
 import Input from './ui/Input';
 import { supabase } from '@/shared/lib/supabase';
 import { cn } from '@/shared/lib/utils';
@@ -75,14 +76,12 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
   };
 
   const { requestPermission, addNotification } = useNotifications();
+  const [pushStatus, setPushStatus] = React.useState<'success' | 'denied' | null>(null);
 
   const handlePushActivation = async () => {
     const granted = await requestPermission();
-    if (granted) {
-      alert("Notifications activées avec succès !");
-    } else {
-      alert("L'autorisation de notification a été refusée ou n'est pas supportée.");
-    }
+    setPushStatus(granted ? 'success' : 'denied');
+    setTimeout(() => setPushStatus(null), 4000);
   };
 
   return (
@@ -162,12 +161,22 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">Notifications</h3>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Gérez vos préférences de notifications et activez les alertes push pour vos commandes.</p>
-          <button 
+          <button
             onClick={handlePushActivation}
             className="text-sm font-bold text-[#C1272D] hover:underline"
           >
             Activer les notifications push
           </button>
+          {pushStatus === 'success' && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-emerald-600 font-medium">
+              <CheckCircle2 className="w-4 h-4" /> Notifications activées avec succès.
+            </div>
+          )}
+          {pushStatus === 'denied' && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-red-500 font-medium">
+              <XCircle className="w-4 h-4" /> Autorisation refusée ou non supportée.
+            </div>
+          )}
         </div>
 
         <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-lg border border-slate-100 dark:border-slate-700 transition-colors">

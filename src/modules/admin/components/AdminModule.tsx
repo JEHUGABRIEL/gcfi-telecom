@@ -607,7 +607,7 @@ const AdminModule = () => {
         <div>
             {activeTab === 'overview' && <OverviewTab onNavigate={(tab) => setActiveTab(tab as any)} />}
             {activeTab === 'users' && <UsersTab />}
-            {activeTab === 'notifications' && <NotificationsTab onDelete={(id, table) => setDeleteConfirmation({ id, table })} />}
+            {activeTab === 'notifications' && <NotificationsTab onDelete={(id, table) => setDeleteConfirmation({ id, table })} notifications={allNotifications as any} />}
             {activeTab === 'orders' && <OrdersTab />}
             {activeTab === 'formations' && <TrainingsTab />}
             {activeTab === 'blog' && <BlogTab />}

@@ -25,6 +25,7 @@ export default function ProfileModule() {
   const [password, setPassword] = React.useState('');
   const [fullName, setFullName] = React.useState('');
   const [authError, setAuthError] = React.useState<string | null>(null);
+  const [authSuccess, setAuthSuccess] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [userOrders, setUserOrders] = React.useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = React.useState(false);
@@ -107,7 +108,7 @@ export default function ProfileModule() {
           }
         });
         if (error) throw error;
-        alert("Inscription réussie ! Veuillez vérifier votre email.");
+        setAuthSuccess("Inscription réussie ! Veuillez vérifier votre email.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email, password
@@ -129,7 +130,7 @@ export default function ProfileModule() {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
-      alert("Un lien de réinitialisation a été envoyé à votre adresse email.");
+      setAuthSuccess("Un lien de réinitialisation a été envoyé à votre adresse email.");
     } catch (error: any) {
       logError("ProfileModule/resetPassword", error);
       setAuthError(error.message || "Erreur lors de l'envoi de l'email de réinitialisation.");
@@ -172,6 +173,12 @@ export default function ProfileModule() {
             <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-2xl text-red-600 dark:text-red-400 text-sm font-bold flex items-center gap-3">
               <Shield className="w-4 h-4 shrink-0" />
               {authError}
+            </div>
+          )}
+          {authSuccess && (
+            <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl text-emerald-600 dark:text-emerald-400 text-sm font-bold flex items-center gap-3">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              {authSuccess}
             </div>
           )}
 
