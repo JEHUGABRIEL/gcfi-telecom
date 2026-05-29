@@ -94,7 +94,7 @@ export default function Footer() {
           <div className="flex space-x-6">
             <Link href="/confidentialite" className="hover:text-slate-900 dark:hover:text-white transition-colors">Confidentialité</Link>
             <Link href="/confidentialite#5-cookies-et-technologies-similaires" className="hover:text-slate-900 dark:hover:text-white transition-colors">Cookies</Link>
-            <Link href="/confidentialite" className="hover:text-slate-900 dark:hover:text-white transition-colors">Conditions d'utilisation</Link>
+            <Link href="/conditions" className="hover:text-slate-900 dark:hover:text-white transition-colors">Conditions d'utilisation</Link>
           </div>
         </div>
       </div>
