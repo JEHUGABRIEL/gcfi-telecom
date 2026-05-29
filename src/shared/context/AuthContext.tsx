@@ -176,26 +176,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isAdmin]);
 
-  // ✅ signOut robuste — fonctionne même si Supabase est lent
   const signOut = async () => {
     try {
-      // Vider l'état local immédiatement sans attendre Supabase
+      // Clear local state immediately
       setUser(null);
       setProfile(null);
       setIsAdmin(false);
       setShowSignOutModal(false);
 
-      // Nettoyer le localStorage
+      // Clear localStorage session keys
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('sb-') || key.includes('supabase') || key.includes('gcfi-auth')) {
           localStorage.removeItem(key);
         }
       });
 
-      // Appeler Supabase en arrière-plan (ne pas attendre)
-      supabase.auth.signOut().catch(err => logError('signOut', err));
+      // MUST await: the session cookie must be cleared before the redirect,
+      // otherwise the middleware still sees a valid session and sends the
+      // user straight back to their previous page.
+      await supabase.auth.signOut();
 
-      // Rediriger immédiatement
       window.location.replace('/');
     } catch (err) {
       logError('signOut', err);
