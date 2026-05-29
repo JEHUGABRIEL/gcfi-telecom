@@ -85,7 +85,7 @@ export default function AuthModal() {
         .maybeSingle();
 
       if (profile?.role === 'admin' || profile?.role === 'superadmin') {
-        setError('Les comptes administrateurs ne peuvent pas réinitialiser leur mot de passe via ce formulaire. Contactez jehubin@gmail.com.');
+        setError('Les comptes administrateurs ne peuvent pas réinitialiser leur mot de passe via ce formulaire. Contactez un super-administrateur.');
         setLoading(false);
         return;
       }

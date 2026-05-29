@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /profil
+
+Sitemap: https://www.gcfi-rca.com/sitemap.xml

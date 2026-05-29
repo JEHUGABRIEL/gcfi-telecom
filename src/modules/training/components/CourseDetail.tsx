@@ -21,7 +21,7 @@ export default function CourseDetail() {
 
   const handleContact = () => {
     window.open(
-      `https://wa.me/23761371449?text=Bonjour, je suis intéressé par la formation "${course?.title}"`,
+      `https://wa.me/237681371449?text=Bonjour, je suis intéressé par la formation "${course?.title}"`,
       '_blank'
     );
   };

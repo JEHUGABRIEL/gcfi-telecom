@@ -1,6 +1,7 @@
 // Server Component — 'use client' must NOT be here so that
 // dynamic = 'force-dynamic' is respected by Next.js.
 export const dynamic = 'force-dynamic';
+export const metadata = { robots: { index: false, follow: false } };
 
 import { Suspense } from 'react';
 import AdminLoginPage from '@/modules/admin/components/AdminLoginPage';

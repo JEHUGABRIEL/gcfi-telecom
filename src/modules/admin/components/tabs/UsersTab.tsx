@@ -15,7 +15,7 @@ const PAGE_SIZE = 15;
 import { cn } from '@/shared/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
-const SUPERADMIN_EMAIL = 'jehubin@gmail.com';
+const SUPERADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL ?? '';
 type Role = 'client' | 'admin' | 'superadmin';
 type BlockType = 'none' | '1h' | '24h' | '7d' | '30d' | 'permanent';
 
