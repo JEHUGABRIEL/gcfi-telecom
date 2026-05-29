@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    // Custom loader: Cloudinary images use native CDN transformations,
+    // avoiding Next.js server-side proxy and its timeout issues.
+    loader: 'custom',
+    loaderFile: './src/shared/lib/image-loader.ts',
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'res.cloudinary.com' },

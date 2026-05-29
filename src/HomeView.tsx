@@ -18,8 +18,8 @@ const fallbackTestimonials: Testimonial[] = [
 ];
 const fallbackAchievements: Achievement[] = [
   { id: '1', title: 'Déploiement Fibre Optique Bangui', description: 'Installation de plus de 50km de fibre optique pour les institutions publiques.', year: '2023', image: 'https://images.unsplash.com/photo-1551703599-6b3e8379aa8c?auto=format&fit=crop&q=80&w=800', gallery: ['https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=800'] },
-  { id: '2', title: 'Centre de Données National', description: 'Conception et mise en œuvre du premier datacenter haute disponibilité.', year: '2022', image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc51?auto=format&fit=crop&q=80&w=800', gallery: [] },
-  { id: '3', title: 'Sécurisation Réseau Bancaire', description: 'Audit et renforcement de la cybersécurité pour les banques locales.', year: '2023', image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=800', gallery: [] },
+  { id: '2', title: 'Centre de Données National', description: 'Conception et mise en œuvre du premier datacenter haute disponibilité.', year: '2022', image: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=800', gallery: [] },
+  { id: '3', title: 'Sécurisation Réseau Bancaire', description: 'Audit et renforcement de la cybersécurité pour les banques locales.', year: '2023', image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800', gallery: [] },
 ];
 const fallbackPartners: Partner[] = [
   { id: '1', name: 'Orange RCA',      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Orange_logo.svg/1200px-Orange_logo.svg.png' },
