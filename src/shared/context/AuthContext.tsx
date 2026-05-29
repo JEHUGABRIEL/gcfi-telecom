@@ -1,6 +1,8 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'motion/react';
+import { LogOut } from 'lucide-react';
 import { supabase, SupabaseUser } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 
@@ -227,35 +229,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       showSignOutModal, setShowSignOutModal
     }}>
       {children}
-      {/* ✅ Modal de confirmation de déconnexion */}
-      {showSignOutModal && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowSignOutModal(false)} />
-          <div className="relative bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center">
-            <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2">Se déconnecter ?</h3>
-            <p className="text-sm text-slate-500 mb-6">Vous devrez vous reconnecter pour accéder à votre compte.</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowSignOutModal(false)}
-                className="flex-1 py-3 rounded-2xl font-bold text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={signOut}
-                className="flex-1 py-3 rounded-2xl font-bold text-sm bg-red-500 text-white hover:bg-red-600 transition-colors"
-              >
-                Déconnecter
-              </button>
-            </div>
+      {/* Modal de confirmation de déconnexion */}
+      <AnimatePresence>
+        {showSignOutModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowSignOutModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 16 }}
+              animate={{ opacity: 1, scale: 1,   y: 0  }}
+              exit={{    opacity: 0, scale: 0.9, y: 16 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="relative bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center border border-slate-100 dark:border-slate-800"
+            >
+              <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                <LogOut className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Se déconnecter ?</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-7">
+                Vous devrez vous reconnecter pour accéder à votre compte.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowSignOutModal(false)}
+                  className="flex-1 py-3 rounded-2xl font-bold text-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={signOut}
+                  className="flex-1 py-3 rounded-2xl font-bold text-sm bg-red-500 text-white hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
+                >
+                  Déconnecter
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </AuthContext.Provider>
   );
 }

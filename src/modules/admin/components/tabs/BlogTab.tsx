@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import { useAdminToast, AdminToast } from '@/shared/components/AdminToast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { Plus, Trash2, RefreshCw, BookOpen, Edit, X, Eye, EyeOff, AlertTriangle } from 'lucide-react';
@@ -34,6 +35,7 @@ const EMPTY = { title: '', excerpt: '', content: '', category: '', author: '', t
 
 export default function BlogTab() {
   const queryClient = useQueryClient();
+  const { toast, showToast, dismiss } = useAdminToast();
   const [page, setPage]             = React.useState(1);
   const [showForm, setShowForm]     = React.useState(false);
   const [saving, setSaving]         = React.useState(false);
@@ -86,9 +88,11 @@ export default function BlogTab() {
         : await supabase.from('blog_posts').insert([payload]);
       if (error) {
         setSaveError(`Erreur Supabase: ${error.message} (code: ${error.code})`);
+        showToast(error.message, 'error');
       } else {
         resetForm();
         invalidate();
+        showToast(editing ? 'Article modifié avec succès' : 'Article créé avec succès');
       }
     } catch (err: any) {
       setSaveError(err.message || 'Erreur inconnue');
@@ -100,6 +104,7 @@ export default function BlogTab() {
   const togglePublish = async (id: string, current: boolean) => {
     await supabase.from('blog_posts').update({ published: !current }).eq('id', id);
     invalidate();
+    showToast(current ? 'Article dépublié' : 'Article publié');
   };
 
   const confirmDelete = async () => {
@@ -107,6 +112,7 @@ export default function BlogTab() {
     await supabase.from('blog_posts').delete().eq('id', deleteTarget.id);
     setDelete(null);
     invalidate();
+    showToast('Article supprimé');
   };
 
   const inputCls = "w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D]";
@@ -114,6 +120,8 @@ export default function BlogTab() {
   if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-slate-200 border-t-[#C1272D] rounded-full animate-spin" /></div>;
 
   return (
+    <>
+    <AdminToast toast={toast} onDismiss={dismiss} />
     <div className="space-y-4">
       <AnimatePresence>
         {deleteTarget && <ConfirmModal message={`Supprimer "${deleteTarget.title}" ?`} onConfirm={confirmDelete} onCancel={() => setDelete(null)} />}
@@ -260,5 +268,6 @@ export default function BlogTab() {
         </>
       )}
     </div>
+    </>
   );
 }

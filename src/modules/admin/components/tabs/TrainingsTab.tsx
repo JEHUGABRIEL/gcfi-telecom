@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import { useAdminToast, AdminToast } from '@/shared/components/AdminToast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
@@ -53,6 +54,7 @@ const EMPTY_FORM = {
 
 export default function TrainingsTab() {
   const queryClient = useQueryClient();
+  const { toast, showToast, dismiss } = useAdminToast();
   const [page, setPage] = React.useState(1);
   const [showForm, setShowForm] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -118,8 +120,8 @@ export default function TrainingsTab() {
       const { error } = editingTraining
         ? await supabase.from('trainings').update(payload).eq('id', editingTraining.id)
         : await supabase.from('trainings').insert([payload]);
-      if (error) { logError('TrainingsTab/save', error); setSaveError(error.message); }
-      else { resetForm(); invalidate(); }
+      if (error) { logError('TrainingsTab/save', error); setSaveError(error.message); showToast(error.message, 'error'); }
+      else { resetForm(); invalidate(); showToast(editingTraining ? 'Formation modifiée avec succès' : 'Formation ajoutée avec succès'); }
     } catch (err: any) {
       setSaveError(err?.message || 'Erreur lors de l\'enregistrement.');
     } finally {
@@ -133,8 +135,10 @@ export default function TrainingsTab() {
       await supabase.from('trainings').delete().eq('id', deleteTarget.id);
       setDeleteTarget(null);
       invalidate();
+      showToast('Formation supprimée');
     } catch (err) {
       logError('TrainingsTab/delete', err);
+      showToast('Erreur lors de la suppression', 'error');
     }
   };
 
@@ -145,6 +149,8 @@ export default function TrainingsTab() {
   );
 
   return (
+    <>
+    <AdminToast toast={toast} onDismiss={dismiss} />
     <div className="space-y-4">
       {/* Modal de confirmation suppression */}
       <AnimatePresence>
@@ -279,5 +285,6 @@ export default function TrainingsTab() {
         </>
       )}
     </div>
+    </>
   );
 }

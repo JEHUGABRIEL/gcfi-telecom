@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import { useAdminToast, AdminToast } from '@/shared/components/AdminToast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
@@ -45,6 +46,7 @@ const EMPTY_FORM = { name: '', description: '', price: '', category: '', image: 
 
 export default function ProductsTab() {
   const queryClient = useQueryClient();
+  const { toast, showToast, dismiss } = useAdminToast();
   const [page, setPage]                 = React.useState(1);
   const [showForm, setShowForm]         = React.useState(false);
   const [saving, setSaving]             = React.useState(false);
@@ -108,8 +110,8 @@ export default function ProductsTab() {
       const { error } = editingProduct
         ? await supabase.from('products').update(payload).eq('id', editingProduct.id)
         : await supabase.from('products').insert([{ ...payload, popularity: 0, rating: 0, reviews_count: 0 }]);
-      if (error) { logError('ProductsTab/save', error); setSaveError(error.message); }
-      else { resetForm(); invalidate(); }
+      if (error) { logError('ProductsTab/save', error); setSaveError(error.message); showToast(error.message, 'error'); }
+      else { resetForm(); invalidate(); showToast(editingProduct ? 'Produit modifié avec succès' : 'Produit ajouté avec succès'); }
     } catch (err: any) {
       setSaveError(err?.message || 'Erreur lors de l\'enregistrement.');
     } finally {
@@ -123,8 +125,10 @@ export default function ProductsTab() {
       await supabase.from('products').delete().eq('id', deleteTarget.id);
       setDeleteTarget(null);
       invalidate();
+      showToast('Produit supprimé');
     } catch (err) {
       logError('ProductsTab/delete', err);
+      showToast('Erreur lors de la suppression', 'error');
     }
   };
 
@@ -135,6 +139,8 @@ export default function ProductsTab() {
   );
 
   return (
+    <>
+    <AdminToast toast={toast} onDismiss={dismiss} />
     <div className="space-y-4">
       {/* Modal suppression */}
       <AnimatePresence>
@@ -267,5 +273,6 @@ export default function ProductsTab() {
         </>
       )}
     </div>
+    </>
   );
 }

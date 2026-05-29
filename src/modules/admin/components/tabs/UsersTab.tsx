@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import { useAdminToast, AdminToast } from '@/shared/components/AdminToast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
@@ -167,6 +168,7 @@ function RoleBadge({ role }: { role: Role }) {
 
 /* ── UsersTab principal ──────────────────────────────────────── */
 export default function UsersTab() {
+  const { toast, showToast, dismiss } = useAdminToast();
   const { user: currentUser, profile: currentProfile } = useAuth();
   const isSuperAdmin = currentProfile?.email === SUPERADMIN_EMAIL && currentProfile?.role === 'superadmin';
 
@@ -207,21 +209,24 @@ export default function UsersTab() {
       }
       await supabase.from('profiles').update(update).eq('id', userId);
     },
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); showToast('Utilisateur bloqué'); },
+    onError: () => showToast('Erreur lors du blocage', 'error'),
   });
 
   const unblockMutation = useMutation({
     mutationFn: async (userId: string) => {
       await supabase.from('profiles').update({ is_blocked: false, blocked_until: null, block_reason: null }).eq('id', userId);
     },
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); showToast('Utilisateur débloqué'); },
+    onError: () => showToast('Erreur lors du déblocage', 'error'),
   });
 
   const roleMutation = useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: Role }) => {
       await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
     },
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); showToast('Rôle modifié avec succès'); },
+    onError: () => showToast('Erreur lors du changement de rôle', 'error'),
   });
 
   const handleBlock      = (userId: string, type: BlockType) => blockMutation.mutate({ userId, type });
@@ -248,6 +253,8 @@ export default function UsersTab() {
   const stats = { total: users.length, clients: users.filter(u => u.role === 'client').length, admins: users.filter(u => u.role === 'admin').length, blocked: users.filter(u => getBlockStatus(u) !== 'active').length };
 
   return (
+    <>
+    <AdminToast toast={toast} onDismiss={dismiss} />
     <div className="space-y-6">
       <AnimatePresence>
         {selectedUser && (
@@ -355,5 +362,6 @@ export default function UsersTab() {
         </>
       )}
     </div>
+    </>
   );
 }

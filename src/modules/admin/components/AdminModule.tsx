@@ -53,12 +53,14 @@ import {
   useAdminUsers, useAdminOrders, useAdminTrainings,
   useAdminProducts, useAdminComments, useAdminNotifications,
 } from '@/shared/lib/queries';
+import { useAdminToast, AdminToast } from '@/shared/components/AdminToast';
 
 const VALID_TABS = ['overview','notifications','orders','users','formations','produits','stock','commentaires','devis','temoignages','realisations','partenaires','actualites','blog','promotions'] as const;
 type AdminTab = typeof VALID_TABS[number];
 
 const AdminModule = () => {
   const { addNotification } = useNotifications();
+  const { toast, showToast, dismiss } = useAdminToast();
   const { user: adminUser, isAdmin: isAuthorized, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = React.useState<AdminTab>(() => {
@@ -145,8 +147,10 @@ const AdminModule = () => {
       }
       setIsModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['admin'] });
+      showToast(editingItem ? 'Élément modifié avec succès' : 'Élément ajouté avec succès');
     } catch (err) {
-      logError("AdminModule: Error saving item", err)
+      logError("AdminModule: Error saving item", err);
+      showToast('Erreur lors de l\'enregistrement', 'error');
     }
   };
 
@@ -158,8 +162,10 @@ const AdminModule = () => {
       if (error) throw error;
       setDeleteConfirmation(null);
       queryClient.invalidateQueries({ queryKey: ['admin'] });
+      showToast('Élément supprimé');
     } catch (err) {
-      logError("AdminModule: Error deleting item", err)
+      logError("AdminModule: Error deleting item", err);
+      showToast('Erreur lors de la suppression', 'error');
     }
   };
 
@@ -168,8 +174,10 @@ const AdminModule = () => {
       const { error } = await supabase.from('comments').update({ status: 'approved' }).eq('id', id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] });
+      showToast('Commentaire approuvé');
     } catch (err) {
-      logError("AdminModule: Error approving comment", err)
+      logError("AdminModule: Error approving comment", err);
+      showToast('Erreur lors de l\'approbation', 'error');
     }
   };
 
@@ -178,8 +186,10 @@ const AdminModule = () => {
       const { error } = await supabase.from('comments').update({ status: 'rejected' }).eq('id', id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] });
+      showToast('Commentaire rejeté');
     } catch (err) {
-      logError("AdminModule: Error rejecting comment", err)
+      logError("AdminModule: Error rejecting comment", err);
+      showToast('Erreur lors du rejet', 'error');
     }
   };
 
@@ -400,6 +410,8 @@ const AdminModule = () => {
   ];
 
   return (
+    <>
+    <AdminToast toast={toast} onDismiss={dismiss} />
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pt-24 pb-12 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -812,6 +824,7 @@ const AdminModule = () => {
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 };
 
