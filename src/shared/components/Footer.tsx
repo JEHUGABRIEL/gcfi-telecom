@@ -92,9 +92,9 @@ export default function Footer() {
         <div className="pt-10 border-t border-slate-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-400 text-xs">
           <p>© {new Date().getFullYear()} GCFI Centrafrique. Tous droits réservés.</p>
           <div className="flex space-x-6">
-            <Link href="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Confidentialité</Link>
-            <Link href="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Cookies</Link>
-            <Link href="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">Conditions d'utilisation</Link>
+            <Link href="/confidentialite" className="hover:text-slate-900 dark:hover:text-white transition-colors">Confidentialité</Link>
+            <Link href="/confidentialite#5-cookies-et-technologies-similaires" className="hover:text-slate-900 dark:hover:text-white transition-colors">Cookies</Link>
+            <Link href="/confidentialite" className="hover:text-slate-900 dark:hover:text-white transition-colors">Conditions d'utilisation</Link>
           </div>
         </div>
       </div>
