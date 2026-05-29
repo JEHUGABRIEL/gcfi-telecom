@@ -1,4 +1,5 @@
 import React from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { useAuth } from '@/shared/context/AuthContext';
@@ -168,52 +169,63 @@ export default function UsersTab() {
   const { user: currentUser, profile: currentProfile } = useAuth();
   const isSuperAdmin = currentProfile?.email === SUPERADMIN_EMAIL && currentProfile?.role === 'superadmin';
 
-  const [users, setUsers]           = React.useState<any[]>([]);
-  const [loading, setLoading]       = React.useState(true);
+  const queryClient = useQueryClient();
   const [search, setSearch]         = React.useState('');
   const [page, setPage]             = React.useState(1);
   const [selectedUser, setSelected] = React.useState<any>(null);
   const [confirm, setConfirm]       = React.useState<any>(null);
 
-  const fetch = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, email, full_name, role, created_at, avatar_url, is_blocked, blocked_until, block_reason')
-      .order('created_at', { ascending: false });
-    if (error) logError('UsersTab', error);
-    else {
-      let filtered = data || [];
-      if (!isSuperAdmin) filtered = filtered.filter(u => u.email !== SUPERADMIN_EMAIL && u.role !== 'superadmin');
-      setUsers(filtered);
-    }
-    setLoading(false);
-  };
+  const { data: rawUsers = [], isLoading: loading } = useQuery({
+    queryKey: ['admin', 'users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, role, created_at, avatar_url, is_blocked, blocked_until, block_reason')
+        .order('created_at', { ascending: false });
+      if (error) { logError('UsersTab', error); return []; }
+      return data || [];
+    },
+    staleTime: 2 * 60 * 1000,
+  });
 
-  React.useEffect(() => { fetch(); }, [isSuperAdmin]);
+  const users = isSuperAdmin
+    ? rawUsers
+    : rawUsers.filter((u: any) => u.email !== SUPERADMIN_EMAIL && u.role !== 'superadmin');
 
-  const handleBlock = async (userId: string, type: BlockType) => {
-    let update: any = { block_reason: 'Bloqué par un administrateur', is_blocked: false, blocked_until: null };
-    if (type === 'permanent') {
-      update.is_blocked = true;
-    } else {
-      const durations: Record<string, number> = { '1h': 1, '24h': 24, '7d': 168, '30d': 720 };
-      const hours = durations[type] || 24;
-      update.blocked_until = new Date(Date.now() + hours * 3600_000).toISOString();
-    }
-    await supabase.from('profiles').update(update).eq('id', userId);
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...update } : u));
-  };
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
 
-  const handleUnblock = async (userId: string) => {
-    await supabase.from('profiles').update({ is_blocked: false, blocked_until: null, block_reason: null }).eq('id', userId);
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_blocked: false, blocked_until: null, block_reason: null } : u));
-  };
+  const blockMutation = useMutation({
+    mutationFn: async ({ userId, type }: { userId: string; type: BlockType }) => {
+      let update: any = { block_reason: 'Bloqué par un administrateur', is_blocked: false, blocked_until: null };
+      if (type === 'permanent') {
+        update.is_blocked = true;
+      } else {
+        const durations: Record<string, number> = { '1h': 1, '24h': 24, '7d': 168, '30d': 720 };
+        const hours = durations[type] || 24;
+        update.blocked_until = new Date(Date.now() + hours * 3600_000).toISOString();
+      }
+      await supabase.from('profiles').update(update).eq('id', userId);
+    },
+    onSuccess: invalidate,
+  });
 
-  const handleRoleChange = async (userId: string, newRole: Role) => {
-    await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
-  };
+  const unblockMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      await supabase.from('profiles').update({ is_blocked: false, blocked_until: null, block_reason: null }).eq('id', userId);
+    },
+    onSuccess: invalidate,
+  });
+
+  const roleMutation = useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: Role }) => {
+      await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
+    },
+    onSuccess: invalidate,
+  });
+
+  const handleBlock      = (userId: string, type: BlockType) => blockMutation.mutate({ userId, type });
+  const handleUnblock    = (userId: string) => unblockMutation.mutate(userId);
+  const handleRoleChange = (userId: string, newRole: Role) => roleMutation.mutate({ userId, newRole });
 
   const getBlockStatus = (u: any) => {
     if (u.is_blocked) return 'permanent';
@@ -280,7 +292,7 @@ export default function UsersTab() {
           onChange={e => setSearch(e.target.value)}
           className="w-full pl-10 pr-10 py-2.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-[#C1272D]" />
         {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"><X className="w-4 h-4" /></button>}
-        <button onClick={fetch} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#C1272D] transition-colors mr-2">
+        <button onClick={invalidate} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#C1272D] transition-colors mr-2">
           <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
         </button>
       </div>

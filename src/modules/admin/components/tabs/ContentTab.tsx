@@ -1,4 +1,5 @@
 import React from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import ImageUpload from '@/shared/components/ImageUpload';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
@@ -41,39 +42,42 @@ const CONFIG = {
 
 export default function ContentTab({ type }: ContentTabProps) {
   const cfg = CONFIG[type];
-  const [items, setItems] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const queryClient = useQueryClient();
   const [showForm, setShowForm] = React.useState(false);
   const [form, setForm] = React.useState<any>({ ...cfg.defaultItem });
   const [saving, setSaving] = React.useState(false);
 
-  const fetch = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.from(cfg.table).select('*').order('created_at', { ascending: false });
-    if (error) logError(`ContentTab/${type}`, error);
-    else setItems(data || []);
-    setLoading(false);
-  };
+  const queryKey = ['admin', 'content', type];
 
-  React.useEffect(() => { fetch(); }, [type]);
+  const { data: items = [], isLoading: loading } = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const { data, error } = await supabase.from(cfg.table).select('*').order('created_at', { ascending: false });
+      if (error) { logError(`ContentTab/${type}`, error); return []; }
+      return data || [];
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey });
 
   const save = async () => {
     setSaving(true);
     const { error } = await supabase.from(cfg.table).insert([form]);
     if (error) logError(`ContentTab/${type}/insert`, error);
-    else { setShowForm(false); setForm({ ...cfg.defaultItem }); fetch(); }
+    else { setShowForm(false); setForm({ ...cfg.defaultItem }); invalidate(); }
     setSaving(false);
   };
 
   const remove = async (id: string) => {
     if (!confirm('Supprimer cet élément ?')) return;
     await supabase.from(cfg.table).delete().eq('id', id);
-    setItems(i => i.filter(x => x.id !== id));
+    invalidate();
   };
 
   const approveTestimonial = async (id: string, status: 'approved' | 'rejected') => {
     await supabase.from('testimonials').update({ status }).eq('id', id);
-    setItems(i => i.map(x => x.id === id ? { ...x, status } : x));
+    invalidate();
   };
 
   if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-slate-200 border-t-[#C1272D] rounded-full animate-spin" /></div>;
@@ -83,7 +87,7 @@ export default function ContentTab({ type }: ContentTabProps) {
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">{cfg.label} ({items.length})</h3>
         <div className="flex gap-2">
-          <button onClick={fetch} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className="w-4 h-4" /></button>
+          <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className="w-4 h-4" /></button>
           <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-2 bg-[#C1272D] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#1E4D8C] transition-all">
             <Plus className="w-4 h-4" /> Ajouter
           </button>

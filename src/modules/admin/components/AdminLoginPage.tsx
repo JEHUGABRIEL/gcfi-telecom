@@ -20,15 +20,21 @@ export default function AdminLoginPage() {
     try {
       const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) throw authError;
-      const role = data.user?.app_metadata?.role;
-      if (role !== 'admin' && role !== 'superadmin') {
+
+      // Role is stored in the profiles table, NOT in app_metadata
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError || (profile?.role !== 'admin' && profile?.role !== 'superadmin')) {
         await supabase.auth.signOut();
         throw new Error('Accès refusé. Compte administrateur requis.');
       }
-      router.replace('/admin');
+      // AuthContext.onAuthStateChange (SIGNED_IN) handles router.push('/admin')
     } catch (err: any) {
       setError(err.message || 'Erreur de connexion.');
-    } finally {
       setLoading(false);
     }
   };

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { Plus, Trash2, RefreshCw, GraduationCap, Edit, X, AlertTriangle } from 'lucide-react';
@@ -50,8 +51,7 @@ const EMPTY_FORM = {
 };
 
 export default function TrainingsTab() {
-  const [trainings, setTrainings] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const queryClient = useQueryClient();
   const [page, setPage] = React.useState(1);
   const [showForm, setShowForm] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -63,25 +63,17 @@ export default function TrainingsTab() {
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const fetch = async () => {
-    setLoading(true);
-    try {
+  const { data: trainings = [], isLoading: loading } = useQuery({
+    queryKey: ['admin', 'trainings'],
+    queryFn: async () => {
       const { data, error } = await supabase.from('trainings').select('*').order('created_at', { ascending: false });
-      if (error) {
-        logError('TrainingsTab/fetch', error);
-        setTrainings([]);
-      } else {
-        setTrainings(data || []);
-      }
-    } catch (err) {
-      console.error('[TrainingsTab] Fetch error:', err);
-      setTrainings([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (error) { logError('TrainingsTab/fetch', error); return []; }
+      return data || [];
+    },
+    staleTime: 2 * 60 * 1000,
+  });
 
-  React.useEffect(() => { fetch(); }, []);
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin', 'trainings'] });
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
@@ -106,15 +98,12 @@ export default function TrainingsTab() {
   };
 
   const save = async () => {
-    // ✅ Validation cohérente
     if (!form.title.trim() || !form.price.trim()) {
       setSaveError('Le titre et le prix sont obligatoires.');
       return;
     }
-
     setSaving(true);
     setSaveError(null);
-
     try {
       const payload = {
         title: form.title.trim(),
@@ -125,33 +114,14 @@ export default function TrainingsTab() {
         image: form.image || null,
         tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(t => t) : [],
       };
-
-      let result;
-      if (editingTraining) {
-        result = await supabase
-          .from('trainings')
-          .update(payload)
-          .eq('id', editingTraining.id);
-      } else {
-        result = await supabase
-          .from('trainings')
-          .insert([payload]);
-      }
-
-      // ✅ Meilleure vérification d'erreur
-      if (result.error) {
-        logError('TrainingsTab/save', result.error);
-        setSaveError(result.error.message || 'Erreur lors de l\'enregistrement.');
-      } else {
-        resetForm();
-        // ✅ Rafraîchir après succès
-        await fetch();
-      }
+      const { error } = editingTraining
+        ? await supabase.from('trainings').update(payload).eq('id', editingTraining.id)
+        : await supabase.from('trainings').insert([payload]);
+      if (error) { logError('TrainingsTab/save', error); setSaveError(error.message); }
+      else { resetForm(); invalidate(); }
     } catch (err: any) {
-      console.error('[TrainingsTab] Save error:', err);
       setSaveError(err?.message || 'Erreur lors de l\'enregistrement.');
     } finally {
-      // ✅ TOUJOURS arrêter le chargement
       setSaving(false);
     }
   };
@@ -160,15 +130,10 @@ export default function TrainingsTab() {
     if (!deleteTarget) return;
     try {
       await supabase.from('trainings').delete().eq('id', deleteTarget.id);
-      setTrainings(prev => {
-        const next = prev.filter(x => x.id !== deleteTarget.id);
-        const newTotalPages = Math.ceil(next.length / PAGE_SIZE);
-        if (page > newTotalPages && newTotalPages > 0) setPage(newTotalPages);
-        return next;
-      });
       setDeleteTarget(null);
+      invalidate();
     } catch (err) {
-      console.error('[TrainingsTab] Delete error:', err);
+      logError('TrainingsTab/delete', err);
     }
   };
 
@@ -260,7 +225,7 @@ export default function TrainingsTab() {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">Formations ({trainings.length})</h3>
         <div className="flex gap-2">
-          <button onClick={fetch} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors">
+          <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button onClick={() => { resetForm(); setShowForm(true); }}

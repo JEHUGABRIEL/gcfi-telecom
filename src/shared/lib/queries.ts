@@ -174,3 +174,111 @@ export function useOrders(userId: string | undefined) {
 
 // ── Alias useCourses → useTrainings (pour CourseDetail) ───────
 export const useCourses = useTrainings;
+
+// ================================================================
+// Admin queries — full table access, enabled only for admin users
+// ================================================================
+export const ADMIN_QUERY_KEYS = {
+  users:         ['admin', 'users']         as const,
+  orders:        ['admin', 'orders']        as const,
+  trainings:     ['admin', 'trainings']     as const,
+  products:      ['admin', 'products']      as const,
+  comments:      ['admin', 'comments']      as const,
+  notifications: ['admin', 'notifications'] as const,
+};
+
+export function useAdminUsers(enabled = true) {
+  return useQuery({
+    queryKey: ADMIN_QUERY_KEYS.users,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useAdminOrders(enabled = true) {
+  return useQuery({
+    queryKey: ADMIN_QUERY_KEYS.orders,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useAdminTrainings(enabled = true) {
+  return useQuery({
+    queryKey: ADMIN_QUERY_KEYS.trainings,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('trainings')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useAdminProducts(enabled = true) {
+  return useQuery({
+    queryKey: ADMIN_QUERY_KEYS.products,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useAdminComments(enabled = true) {
+  return useQuery({
+    queryKey: ADMIN_QUERY_KEYS.comments,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useAdminNotifications(enabled = true) {
+  return useQuery({
+    queryKey: ADMIN_QUERY_KEYS.notifications,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('global_notifications')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled,
+    staleTime: 2 * 60 * 1000,
+  });
+}

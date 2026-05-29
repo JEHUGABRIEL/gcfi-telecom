@@ -1,4 +1,5 @@
 import React from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { Tag, Percent, RefreshCw, Search, ShoppingBag, GraduationCap, AlertTriangle, X } from 'lucide-react';
@@ -124,33 +125,35 @@ function ItemRow({ item, label, onUpdate }: { item: Item; label: string; onUpdat
 
 /* ── PromoTab principal ──────────────────────────────────────── */
 export default function PromoTab() {
+  const queryClient = useQueryClient();
   const [section, setSection] = React.useState<PromoSection>('produits');
-  const [items, setItems] = React.useState<Item[]>([]);
-  const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState('');
   const [filterPromo, setFilterPromo] = React.useState(false);
   const [resetTarget, setResetTarget] = React.useState<'all' | null>(null);
 
   const table = section === 'produits' ? 'products' : 'trainings';
+  const queryKey = ['admin', 'promo', section];
 
-  const fetch = async () => {
-    setLoading(true);
-    const { data } = await supabase.from(table).select('id, name, title, category, price, discount, is_promo, image').order('name', { ascending: true });
-    setItems((data || []) as Item[]);
-    setLoading(false);
-  };
+  const { data: items = [], isLoading: loading } = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const { data } = await supabase.from(table).select('id, name, title, category, price, discount, is_promo, image').order('name', { ascending: true });
+      return (data || []) as Item[];
+    },
+    staleTime: 2 * 60 * 1000,
+  });
 
-  React.useEffect(() => { fetch(); }, [section]);
+  const invalidate = () => queryClient.invalidateQueries({ queryKey });
 
   const updateItem = async (id: string, discount: number, is_promo: boolean) => {
     await supabase.from(table).update({ discount, is_promo }).eq('id', id);
-    setItems(prev => prev.map(i => i.id === id ? { ...i, discount, is_promo } : i));
+    invalidate();
   };
 
   const resetAll = async () => {
     await supabase.from(table).update({ discount: 0, is_promo: false }).neq('id', '00000000-0000-0000-0000-000000000000');
     setResetTarget(null);
-    fetch();
+    invalidate();
   };
 
   const filtered = items.filter(i => {
@@ -183,7 +186,7 @@ export default function PromoTab() {
           <p className="text-sm text-slate-500 mt-0.5">{promoCount} article{promoCount > 1 ? 's' : ''} en promotion actuellement</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={fetch} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors">
+          <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button onClick={() => setResetTarget('all')}

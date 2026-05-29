@@ -1,5 +1,6 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase, SupabaseUser } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 
@@ -27,6 +28,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -89,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // We check the event so we only redirect on an actual login action,
         // not on every page load with an existing session.
         if (event === 'SIGNED_IN' && isAdminUser && mounted.current) {
-          window.location.replace('/admin');
+          router.push('/admin');
           return;
         }
 

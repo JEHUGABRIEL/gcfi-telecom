@@ -1,4 +1,5 @@
 import React from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { Plus, Trash2, RefreshCw, ShoppingBag, AlertTriangle, Edit, X } from 'lucide-react';
@@ -42,8 +43,7 @@ function ConfirmModal({ message, onConfirm, onCancel }: {
 const EMPTY_FORM = { name: '', description: '', price: '', category: '', image: '', stock: '0' };
 
 export default function ProductsTab() {
-  const [products, setProducts]         = React.useState<any[]>([]);
-  const [loading, setLoading]           = React.useState(true);
+  const queryClient = useQueryClient();
   const [page, setPage]                 = React.useState(1);
   const [showForm, setShowForm]         = React.useState(false);
   const [saving, setSaving]             = React.useState(false);
@@ -55,25 +55,17 @@ export default function ProductsTab() {
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const fetch = async () => {
-    setLoading(true);
-    try {
+  const { data: products = [], isLoading: loading } = useQuery({
+    queryKey: ['admin', 'products'],
+    queryFn: async () => {
       const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-      if (error) {
-        logError('ProductsTab/fetch', error);
-        setProducts([]);
-      } else {
-        setProducts(data || []);
-      }
-    } catch (err) {
-      console.error('[ProductsTab] Fetch error:', err);
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (error) { logError('ProductsTab/fetch', error); return []; }
+      return data || [];
+    },
+    staleTime: 2 * 60 * 1000,
+  });
 
-  React.useEffect(() => { fetch(); }, []);
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
@@ -101,10 +93,8 @@ export default function ProductsTab() {
       setSaveError('Le nom et le prix sont obligatoires.');
       return;
     }
-
     setSaving(true);
     setSaveError(null);
-    
     try {
       const payload = {
         name: form.name,
@@ -114,24 +104,14 @@ export default function ProductsTab() {
         image: form.image,
         stock: Number(form.stock),
       };
-
       const { error } = editingProduct
         ? await supabase.from('products').update(payload).eq('id', editingProduct.id)
         : await supabase.from('products').insert([{ ...payload, popularity: 0, rating: 0, reviews_count: 0 }]);
-
-      if (error) {
-        logError('ProductsTab/save', error);
-        setSaveError(error.message || 'Erreur lors de l\'enregistrement.');
-      } else {
-        resetForm();
-        // ✅ Rafraîchir après succès
-        await fetch();
-      }
+      if (error) { logError('ProductsTab/save', error); setSaveError(error.message); }
+      else { resetForm(); invalidate(); }
     } catch (err: any) {
-      console.error('[ProductsTab] Save error:', err);
       setSaveError(err?.message || 'Erreur lors de l\'enregistrement.');
     } finally {
-      // ✅ TOUJOURS arrêter le chargement
       setSaving(false);
     }
   };
@@ -140,16 +120,10 @@ export default function ProductsTab() {
     if (!deleteTarget) return;
     try {
       await supabase.from('products').delete().eq('id', deleteTarget.id);
-      setProducts(prev => {
-        const next = prev.filter(x => x.id !== deleteTarget.id);
-        // Si la page courante devient vide, reculer d'une page
-        const newTotalPages = Math.ceil(next.length / PAGE_SIZE);
-        if (page > newTotalPages && newTotalPages > 0) setPage(newTotalPages);
-        return next;
-      });
       setDeleteTarget(null);
+      invalidate();
     } catch (err) {
-      console.error('[ProductsTab] Delete error:', err);
+      logError('ProductsTab/delete', err);
     }
   };
 
@@ -239,7 +213,7 @@ export default function ProductsTab() {
           {products.length > 0 && <span className="ml-2 text-sm font-normal text-slate-400">({products.length})</span>}
         </h3>
         <div className="flex gap-2">
-          <button onClick={fetch} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors">
+          <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button onClick={() => { resetForm(); setShowForm(true); }}

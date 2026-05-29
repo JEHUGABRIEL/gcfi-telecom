@@ -1,4 +1,5 @@
 import React from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { Plus, Trash2, RefreshCw, BookOpen, Edit, X, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import ImageUpload from '@/shared/components/ImageUpload';
@@ -31,8 +32,7 @@ function ConfirmModal({ message, onConfirm, onCancel }: { message: string; onCon
 const EMPTY = { title: '', excerpt: '', content: '', category: '', author: '', tags: '', image: '', read_time: '5', published: false };
 
 export default function BlogTab() {
-  const [posts, setPosts]           = React.useState<any[]>([]);
-  const [loading, setLoading]       = React.useState(true);
+  const queryClient = useQueryClient();
   const [page, setPage]             = React.useState(1);
   const [showForm, setShowForm]     = React.useState(false);
   const [saving, setSaving]         = React.useState(false);
@@ -44,14 +44,16 @@ export default function BlogTab() {
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const fetch = async () => {
-    setLoading(true);
-    const { data } = await supabase.from('blog_posts').select('*').order('created_at', { ascending: false });
-    setPosts(data || []);
-    setLoading(false);
-  };
+  const { data: posts = [], isLoading: loading } = useQuery({
+    queryKey: ['admin', 'blog_posts'],
+    queryFn: async () => {
+      const { data } = await supabase.from('blog_posts').select('*').order('created_at', { ascending: false });
+      return data || [];
+    },
+    staleTime: 2 * 60 * 1000,
+  });
 
-  React.useEffect(() => { fetch(); }, []);
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin', 'blog_posts'] });
 
   const resetForm = () => { setForm(EMPTY); setEditing(null); setShowForm(false); };
 
@@ -85,7 +87,7 @@ export default function BlogTab() {
         setSaveError(`Erreur Supabase: ${error.message} (code: ${error.code})`);
       } else {
         resetForm();
-        fetch();
+        invalidate();
       }
     } catch (err: any) {
       setSaveError(err.message || 'Erreur inconnue');
@@ -96,19 +98,14 @@ export default function BlogTab() {
 
   const togglePublish = async (id: string, current: boolean) => {
     await supabase.from('blog_posts').update({ published: !current }).eq('id', id);
-    setPosts(p => p.map(x => x.id === id ? { ...x, published: !current } : x));
+    invalidate();
   };
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     await supabase.from('blog_posts').delete().eq('id', deleteTarget.id);
-    setPosts(prev => {
-      const next = prev.filter(x => x.id !== deleteTarget.id);
-      const newTotalPages = Math.ceil(next.length / PAGE_SIZE);
-      if (page > newTotalPages && newTotalPages > 0) setPage(newTotalPages);
-      return next;
-    });
     setDelete(null);
+    invalidate();
   };
 
   const inputCls = "w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D]";
@@ -202,7 +199,7 @@ export default function BlogTab() {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">Articles de blog ({posts.length})</h3>
         <div className="flex gap-2">
-          <button onClick={fetch} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className="w-4 h-4" /></button>
+          <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className="w-4 h-4" /></button>
           <button onClick={() => { resetForm(); setShowForm(true); }}
             className="flex items-center gap-2 bg-[#C1272D] text-white px-4 py-2 rounded-xl text-sm font-bold hover:opacity-90">
             <Plus className="w-4 h-4" /> Nouvel article

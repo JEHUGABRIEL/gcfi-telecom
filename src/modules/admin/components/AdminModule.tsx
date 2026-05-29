@@ -48,6 +48,11 @@ import BlogTab from './tabs/BlogTab';
 import PromoTab from './tabs/PromoTab';
 import NotificationsTab from './tabs/NotificationsTab';
 import { useSearchParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useAdminUsers, useAdminOrders, useAdminTrainings,
+  useAdminProducts, useAdminComments, useAdminNotifications,
+} from '@/shared/lib/queries';
 
 const VALID_TABS = ['overview','notifications','orders','users','formations','produits','stock','commentaires','devis','temoignages','realisations','partenaires','actualites','blog','promotions'] as const;
 type AdminTab = typeof VALID_TABS[number];
@@ -66,13 +71,13 @@ const AdminModule = () => {
   const [isSending, setIsSending] = React.useState(false);
   const [sendSuccess, setSendSuccess] = React.useState(false);
   
-  const [users, setUsers] = React.useState<any[]>([]);
-  const [orders, setOrders] = React.useState<any[]>([]);
-  const [trainings, setTrainings] = React.useState<any[]>([]);
-  const [products, setProducts] = React.useState<any[]>([]);
-  const [comments, setComments] = React.useState<any[]>([]);
-  const [allNotifications, setAllNotifications] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const queryClient = useQueryClient();
+  const { data: users = [] }            = useAdminUsers(isAuthorized);
+  const { data: orders = [] }           = useAdminOrders(isAuthorized);
+  const { data: trainings = [] }        = useAdminTrainings(isAuthorized);
+  const { data: products = [] }         = useAdminProducts(isAuthorized);
+  const { data: comments = [] }         = useAdminComments(isAuthorized);
+  const { data: allNotifications = [] } = useAdminNotifications(isAuthorized);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = React.useState(false);
@@ -88,45 +93,9 @@ const AdminModule = () => {
   // Delete Confirmation State
   const [deleteConfirmation, setDeleteConfirmation] = React.useState<{ id: string, table: string } | null>(null);
 
-  const fetchData = React.useCallback(async () => {
-    if (!isAuthorized) return;
-    setLoading(true);
-    try {
-      // Fetch all needed data for stats regardless of activeTab
-      const [
-        { data: profilesData },
-        { data: ordersData },
-        { data: trainingsData },
-        { data: productsData },
-        { data: commentsData },
-        { data: globalNotifsData }
-      ] = await Promise.all([
-        supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-        supabase.from('orders').select('*').order('created_at', { ascending: false }),
-        supabase.from('trainings').select('*').order('created_at', { ascending: false }),
-        supabase.from('products').select('*').order('created_at', { ascending: false }),
-        supabase.from('comments').select('*').order('created_at', { ascending: false }),
-        supabase.from('global_notifications').select('*').order('created_at', { ascending: false })
-      ]);
-
-      setUsers(profilesData || []);
-      setOrders(ordersData || []);
-      setTrainings(trainingsData || []);
-      setProducts(productsData || []);
-      setComments(commentsData || []);
-      setAllNotifications(globalNotifsData || []);
-    } catch (error) {
-      logError("AdminModule: Error fetching data", error)
-    } finally {
-      setLoading(false);
-    }
-  }, [isAuthorized]);
-
-  React.useEffect(() => {
-    if (isAuthorized) {
-      fetchData();
-    }
-  }, [activeTab, isAuthorized, fetchData]);
+  const refreshAll = React.useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['admin'] });
+  }, [queryClient]);
 
   React.useEffect(() => {
     if (!isAuthorized) return;
@@ -148,8 +117,8 @@ const AdminModule = () => {
             type: 'info'
           });
 
-          // Refresh data
-          fetchData();
+          // Refresh orders cache
+          queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] });
         }
       )
       .subscribe();
@@ -157,7 +126,7 @@ const AdminModule = () => {
     return () => {
       supabase.removeChannel(ordersSubscription);
     };
-  }, [isAuthorized, addNotification, fetchData]);
+  }, [isAuthorized, addNotification, queryClient]);
 
   const handleCreateOrUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,7 +144,7 @@ const AdminModule = () => {
         if (error) throw error;
       }
       setIsModalOpen(false);
-      fetchData();
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
     } catch (err) {
       logError("AdminModule: Error saving item", err)
     }
@@ -188,7 +157,7 @@ const AdminModule = () => {
       const { error } = await supabase.from(table).delete().eq('id', id);
       if (error) throw error;
       setDeleteConfirmation(null);
-      fetchData();
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
     } catch (err) {
       logError("AdminModule: Error deleting item", err)
     }
@@ -198,7 +167,7 @@ const AdminModule = () => {
     try {
       const { error } = await supabase.from('comments').update({ status: 'approved' }).eq('id', id);
       if (error) throw error;
-      fetchData();
+      queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] });
     } catch (err) {
       logError("AdminModule: Error approving comment", err)
     }
@@ -208,7 +177,7 @@ const AdminModule = () => {
     try {
       const { error } = await supabase.from('comments').update({ status: 'rejected' }).eq('id', id);
       if (error) throw error;
-      fetchData();
+      queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] });
     } catch (err) {
       logError("AdminModule: Error rejecting comment", err)
     }
@@ -243,7 +212,7 @@ const AdminModule = () => {
         type: 'info'
       });
 
-      fetchData();
+      queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] });
     } catch (err) {
       logError("AdminModule: Error completing order", err)
     }
@@ -383,7 +352,7 @@ const AdminModule = () => {
       setMsgTitle('');
       setMsgContent('');
       setCategory('info');
-      fetchData();
+      queryClient.invalidateQueries({ queryKey: ['admin', 'notifications'] });
       setTimeout(() => setSendSuccess(false), 3000);
     } catch (error) {
       logError("AdminModule: Error sending notification", error)
@@ -443,7 +412,7 @@ const AdminModule = () => {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={fetchData}
+              onClick={refreshAll}
               className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300"
             >
               <RefreshCw className="w-4 h-4" /> Actualiser

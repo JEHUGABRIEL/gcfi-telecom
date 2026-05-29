@@ -1,4 +1,5 @@
 import React from 'react';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { Order } from '@/shared/types';
@@ -16,34 +17,29 @@ const STATUS_COLORS: Record<Order['status'], string> = {
 };
 
 export default function OrdersTab() {
-  const [orders, setOrders]         = React.useState<Order[]>([]);
-  const [totalItems, setTotalItems] = React.useState(0);
-  const [page, setPage]             = React.useState(1);
-  const [loading, setLoading]       = React.useState(true);
+  const queryClient = useQueryClient();
+  const [page, setPage] = React.useState(1);
 
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['admin', 'orders', page],
+    queryFn: async () => {
+      const from = (page - 1) * PAGE_SIZE;
+      const to   = from + PAGE_SIZE - 1;
+      const { data, error, count } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
+      if (error) { logError('OrdersTab/fetch', error); return { orders: [], total: 0 }; }
+      return { orders: (data || []) as Order[], total: count ?? 0 };
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const orders     = data?.orders ?? [];
+  const totalItems = data?.total  ?? 0;
   const totalPages = Math.ceil(totalItems / PAGE_SIZE);
-
-  const fetchOrders = React.useCallback(async (p: number) => {
-    setLoading(true);
-    const from = (p - 1) * PAGE_SIZE;
-    const to   = from + PAGE_SIZE - 1;
-
-    const { data, error, count } = await supabase
-      .from('orders')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(from, to);
-
-    if (error) {
-      logError('OrdersTab/fetch', error);
-    } else {
-      setOrders((data || []) as Order[]);
-      setTotalItems(count ?? 0);
-    }
-    setLoading(false);
-  }, []);
-
-  React.useEffect(() => { fetchOrders(page); }, [page, fetchOrders]);
 
   const handlePageChange = (p: number) => {
     setPage(p);
@@ -60,7 +56,7 @@ export default function OrdersTab() {
           )}
         </h3>
         <button
-          onClick={() => fetchOrders(page)}
+          onClick={() => queryClient.invalidateQueries({ queryKey: ['admin', 'orders', page] })}
           className="text-xs text-slate-500 hover:text-[#C1272D] flex items-center gap-1 transition-colors"
         >
           <RefreshCw className={cn('w-3 h-3', loading && 'animate-spin')} /> Actualiser
