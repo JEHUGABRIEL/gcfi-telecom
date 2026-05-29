@@ -388,191 +388,168 @@ const AdminModule = () => {
     }
   };
 
+  const sidebarGroups = [
+    {
+      label: 'Tableau de bord',
+      items: [
+        { id: 'overview' as AdminTab, label: "Vue d'ensemble", icon: BarChart3 },
+      ],
+    },
+    {
+      label: 'Gestion',
+      items: [
+        { id: 'users' as AdminTab,      label: 'Utilisateurs',  icon: Users },
+        { id: 'orders' as AdminTab,     label: 'Commandes',     icon: ShoppingBag },
+        { id: 'formations' as AdminTab, label: 'Formations',    icon: GraduationCap },
+        { id: 'produits' as AdminTab,   label: 'Produits',      icon: ShoppingBag },
+        { id: 'stock' as AdminTab,      label: 'Stock',         icon: Package },
+        { id: 'promotions' as AdminTab, label: 'Promotions',    icon: Tag },
+      ],
+    },
+    {
+      label: 'Contenu',
+      items: [
+        { id: 'blog' as AdminTab,          label: 'Blog',           icon: FileText },
+        { id: 'commentaires' as AdminTab,  label: 'Commentaires',   icon: MessageSquare },
+        { id: 'devis' as AdminTab,         label: 'Devis reçus',    icon: FileText },
+        { id: 'temoignages' as AdminTab,   label: 'Témoignages',    icon: Star },
+        { id: 'realisations' as AdminTab,  label: 'Réalisations',   icon: Award },
+        { id: 'partenaires' as AdminTab,   label: 'Partenaires',    icon: Users },
+        { id: 'actualites' as AdminTab,    label: 'Actualités',     icon: Megaphone },
+      ],
+    },
+    {
+      label: 'Communication',
+      items: [
+        { id: 'notifications' as AdminTab, label: 'Notifications', icon: Megaphone },
+      ],
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pt-24 pb-12 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Admin Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div>
-            <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-2">Panel <span className="text-[#C1272D]">Administration</span></h1>
-            <p className="text-slate-600 dark:text-slate-400">Gérez le contenu, les utilisateurs et les opérations de GCFI.</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#C1272D] mb-1">Tableau de bord</p>
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white">Panel <span className="text-[#C1272D]">Administration</span></h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Gérez le contenu, les utilisateurs et les opérations de GCFI.</p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700">
-              <BarChart3 className="w-4 h-4" /> Rapport mensuel
+            <button
+              onClick={fetchData}
+              className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300"
+            >
+              <RefreshCw className="w-4 h-4" /> Actualiser
             </button>
-            <div className="w-10 h-10 rounded-full bg-[#C1272D] flex items-center justify-center text-white font-black">
-              {adminUser?.email?.[0].toUpperCase() || 'A'}
+            <button className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300">
+              <BarChart3 className="w-4 h-4" /> Rapport
+            </button>
+            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="w-8 h-8 rounded-full bg-[#C1272D] flex items-center justify-center text-white text-sm font-black shrink-0">
+                {adminUser?.email?.[0].toUpperCase() || 'A'}
+              </div>
+              <div className="hidden sm:block">
+                <p className="text-xs font-black text-slate-900 dark:text-white leading-none">{adminUser?.email?.split('@')[0]}</p>
+                <p className="text-[10px] text-[#C1272D] font-bold mt-0.5">Administrateur</p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
           {dynamicStats.map((stat, idx) => (
-            <motion.div 
+            <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700"
+              transition={{ delay: idx * 0.08 }}
+              className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className={cn(
-                  "p-3 rounded-2xl",
-                  stat.color === 'blue' && "bg-blue-50 text-blue-600 dark:bg-blue-900/20",
-                  stat.color === 'emerald' && "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20",
-                  stat.color === 'red' && "bg-red-50 text-red-600 dark:bg-red-900/20",
-                  stat.color === 'amber' && "bg-amber-50 text-amber-600 dark:bg-amber-900/20"
-                )}>
-                  <stat.icon className="w-6 h-6" />
+              {/* Colored top accent bar */}
+              <div className={cn(
+                "h-1",
+                stat.color === 'blue'    && "bg-blue-500",
+                stat.color === 'emerald' && "bg-emerald-500",
+                stat.color === 'red'     && "bg-[#C1272D]",
+                stat.color === 'amber'   && "bg-amber-500",
+              )} />
+              <div className="p-5">
+                <div className="flex items-start justify-between mb-3">
+                  <div className={cn(
+                    "p-2.5 rounded-xl",
+                    stat.color === 'blue'    && "bg-blue-50 text-blue-600 dark:bg-blue-900/20",
+                    stat.color === 'emerald' && "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20",
+                    stat.color === 'red'     && "bg-red-50 text-[#C1272D] dark:bg-red-900/20",
+                    stat.color === 'amber'   && "bg-amber-50 text-amber-600 dark:bg-amber-900/20",
+                  )}>
+                    <stat.icon className="w-5 h-5" />
+                  </div>
+                  <span className={cn(
+                    "text-[10px] font-black uppercase px-2 py-0.5 rounded-full",
+                    stat.change.startsWith('+') ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20" : "bg-slate-100 text-slate-500 dark:bg-slate-700",
+                  )}>
+                    {stat.change}
+                  </span>
                 </div>
-                <span className="text-xs font-black uppercase text-emerald-500">{stat.change}</span>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-0.5">{stat.label}</p>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{stat.value}</h3>
               </div>
-              <p className="text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest">{stat.label}</p>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white">{stat.value}</h3>
             </motion.div>
           ))}
         </div>
 
         {/* Main Content Area */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          <div className="lg:col-span-3">
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col gap-2">
-              <button 
-                onClick={() => setActiveTab('overview')}
-                className={cn(
-                   "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'overview' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <BarChart3 className="w-4 h-4" /> <span>Vue d&apos;ensemble</span>
-              </button>
-              <button 
-                onClick={() => setActiveTab('users')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'users' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Users className="w-4 h-4" /> Utilisateurs
-              </button>
-              <button 
-                onClick={() => setActiveTab('notifications')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'notifications' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Megaphone className="w-4 h-4" /> Notifications
-              </button>
-              <button 
-                onClick={() => setActiveTab('orders')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'orders' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <ShoppingBag className="w-4 h-4" /> Commandes
-              </button>
-              <button 
-                onClick={() => setActiveTab('formations')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'formations' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <GraduationCap className="w-4 h-4" /> Formations
-              </button>
-              <button 
-                onClick={() => setActiveTab('produits')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'produits' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <ShoppingBag className="w-4 h-4" /> Produits
-              </button>
-              <button 
-                onClick={() => setActiveTab('blog')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'blog' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <FileText className="w-4 h-4" /> Blog
-              </button>
-              <button 
-                onClick={() => setActiveTab('promotions')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'promotions' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Tag className="w-4 h-4" /> Promotions
-              </button>
-              <button 
-                onClick={() => setActiveTab('stock')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'stock' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Package className="w-4 h-4" /> Gestion Stock
-              </button>
-              <button 
-                onClick={() => setActiveTab('commentaires')}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'commentaires' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <MessageSquare className="w-4 h-4" /> Commentaires
-              </button>
 
-              {/* ── Nouveaux onglets priorité 3 ── */}
-              <button
-                onClick={() => setActiveTab('devis')}
-                className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'devis' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <FileText className="w-4 h-4" /> Devis reçus
-              </button>
-              <button
-                onClick={() => setActiveTab('temoignages')}
-                className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'temoignages' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Star className="w-4 h-4" /> Témoignages
-              </button>
-              <button
-                onClick={() => setActiveTab('realisations')}
-                className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'realisations' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Award className="w-4 h-4" /> Réalisations
-              </button>
-              <button
-                onClick={() => setActiveTab('partenaires')}
-                className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'partenaires' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Users className="w-4 h-4" /> Partenaires
-              </button>
-              <button
-                onClick={() => setActiveTab('actualites')}
-                className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                  activeTab === 'actualites' ? "bg-blue-50 text-[#C1272D] dark:bg-blue-900/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                )}
-              >
-                <Megaphone className="w-4 h-4" /> Actualités
-              </button>
+          {/* Sidebar */}
+          <div className="lg:col-span-3">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden sticky top-24">
+              {/* Sidebar header */}
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Navigation</p>
+              </div>
+
+              <div className="p-2 max-h-[calc(100vh-12rem)] overflow-y-auto">
+                {sidebarGroups.map((group, groupIdx) => (
+                  <div key={group.label} className={cn(groupIdx > 0 && "mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/60")}>
+                    <p className="px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                      {group.label}
+                    </p>
+                    {group.items.map(item => {
+                      const active = activeTab === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => setActiveTab(item.id)}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-left mb-0.5",
+                            active
+                              ? "bg-red-50 text-[#C1272D] dark:bg-red-900/20 font-bold"
+                              : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white"
+                          )}
+                        >
+                          <span className={cn(
+                            "p-1.5 rounded-lg shrink-0 transition-all",
+                            active
+                              ? "bg-[#C1272D] text-white shadow-sm shadow-[#C1272D]/30"
+                              : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                          )}>
+                            <item.icon className="w-3.5 h-3.5" />
+                          </span>
+                          <span className="truncate">{item.label}</span>
+                          {active && (
+                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#C1272D] shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
