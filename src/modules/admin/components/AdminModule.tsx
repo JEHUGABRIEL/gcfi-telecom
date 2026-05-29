@@ -3,17 +3,17 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Users, 
-  ShoppingBag, 
-  GraduationCap, 
+  Users,
+  ShoppingBag,
+  GraduationCap,
   Megaphone,
   FileText,
   Star,
-  Award, 
-  TrendingUp, 
-  ChevronRight, 
-  CheckCircle, 
-  Clock, 
+  Award,
+  TrendingUp,
+  ChevronRight,
+  CheckCircle,
+  Clock,
   AlertCircle,
   Plus,
   Send,
@@ -23,6 +23,7 @@ import {
   Trash2,
   Edit,
   X,
+  Menu,
   MessageSquare,
   Lock,
   Package,
@@ -77,6 +78,9 @@ const AdminModule = () => {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [editingItem, setEditingItem] = React.useState<any>(null);
   const [formType, setFormType] = React.useState<'product' | 'training' | null>(null);
+
+  // Sidebar drawer state
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
   // Search State
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -502,59 +506,124 @@ const AdminModule = () => {
           ))}
         </div>
 
-        {/* Main Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-          {/* Sidebar */}
-          <div className="lg:col-span-3">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden sticky top-24">
-              {/* Sidebar header */}
-              <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Navigation</p>
+        {/* Nav bar: hamburger + active tab label */}
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300"
+          >
+            <Menu className="w-4 h-4" />
+            Navigation
+          </button>
+          {/* Breadcrumb showing the current tab */}
+          {(() => {
+            const current = sidebarGroups.flatMap(g => g.items).find(i => i.id === activeTab);
+            if (!current) return null;
+            return (
+              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                <ChevronRight className="w-4 h-4" />
+                <span className="font-bold text-slate-900 dark:text-white">{current.label}</span>
               </div>
+            );
+          })()}
+        </div>
 
-              <div className="p-2 max-h-[calc(100vh-12rem)] overflow-y-auto">
-                {sidebarGroups.map((group, groupIdx) => (
-                  <div key={group.label} className={cn(groupIdx > 0 && "mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/60")}>
-                    <p className="px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                      {group.label}
-                    </p>
-                    {group.items.map(item => {
-                      const active = activeTab === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => setActiveTab(item.id)}
-                          className={cn(
-                            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-left mb-0.5",
-                            active
-                              ? "bg-red-50 text-[#C1272D] dark:bg-red-900/20 font-bold"
-                              : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white"
-                          )}
-                        >
-                          <span className={cn(
-                            "p-1.5 rounded-lg shrink-0 transition-all",
-                            active
-                              ? "bg-[#C1272D] text-white shadow-sm shadow-[#C1272D]/30"
-                              : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
-                          )}>
-                            <item.icon className="w-3.5 h-3.5" />
-                          </span>
-                          <span className="truncate">{item.label}</span>
-                          {active && (
-                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#C1272D] shrink-0" />
-                          )}
-                        </button>
-                      );
-                    })}
+        {/* Sidebar Drawer */}
+        <AnimatePresence>
+          {isSidebarOpen && (
+            <>
+              <motion.div
+                key="admin-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm"
+                onClick={() => setIsSidebarOpen(false)}
+              />
+              <motion.div
+                key="admin-drawer"
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                className="fixed top-0 left-0 bottom-0 z-50 w-72 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+              >
+                {/* Drawer header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#C1272D]">Administration</p>
+                    <p className="text-sm font-black text-slate-900 dark:text-white">Navigation</p>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
+                  <button
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
 
-          {/* Tab Content */}
-          <div className="lg:col-span-9">
+                {/* Groups */}
+                <div className="flex-1 overflow-y-auto p-3">
+                  {sidebarGroups.map((group, groupIdx) => (
+                    <div key={group.label} className={cn(groupIdx > 0 && "mt-3 pt-3 border-t border-slate-100 dark:border-slate-800")}>
+                      <p className="px-3 pb-1 text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                        {group.label}
+                      </p>
+                      {group.items.map((item, idx) => {
+                        const active = activeTab === item.id;
+                        return (
+                          <motion.button
+                            key={item.id}
+                            initial={{ opacity: 0, x: -16 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.03 }}
+                            onClick={() => { setActiveTab(item.id); setIsSidebarOpen(false); }}
+                            className={cn(
+                              "w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all text-left mb-0.5",
+                              active
+                                ? "bg-red-50 text-[#C1272D] dark:bg-red-900/20 font-bold"
+                                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
+                            )}
+                          >
+                            <span className={cn(
+                              "p-2 rounded-xl shrink-0 transition-all",
+                              active
+                                ? "bg-[#C1272D] text-white shadow-sm shadow-[#C1272D]/30"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                            )}>
+                              <item.icon className="w-4 h-4" />
+                            </span>
+                            <span className="truncate">{item.label}</span>
+                            {active && (
+                              <span className="ml-auto w-2 h-2 rounded-full bg-[#C1272D] shrink-0" />
+                            )}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Admin info at bottom */}
+                <div className="px-4 py-4 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2.5">
+                    <div className="w-9 h-9 rounded-full bg-[#C1272D] flex items-center justify-center text-white text-sm font-black shrink-0">
+                      {adminUser?.email?.[0].toUpperCase() || 'A'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-slate-900 dark:text-white truncate">{adminUser?.email?.split('@')[0]}</p>
+                      <p className="text-[10px] text-[#C1272D] font-bold">Administrateur</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Full-width Tab Content */}
+        <div>
             {activeTab === 'overview' && <OverviewTab onNavigate={(tab) => setActiveTab(tab as any)} />}
             {activeTab === 'users' && <UsersTab />}
             {activeTab === 'notifications' && <NotificationsTab onDelete={(id, table) => setDeleteConfirmation({ id, table })} />}
@@ -606,7 +675,6 @@ const AdminModule = () => {
                 <ContentTab type="news" />
               </div>
             )}
-          </div>
         </div>
       </div>
 
