@@ -25,31 +25,7 @@ const sortOptions = [
 export default function StoreModule() {
   const { user, profile, requireAuth } = useAuth();
 
-  // ✅ Produits chargés depuis Supabase — plus de fichier statique
-  const [allProducts, setAllProducts] = React.useState<Product[]>([]);
-  const [productsLoading, setProductsLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    // Timeout de sécurité — afficher la boutique même si Supabase est lent
-    const timeout = setTimeout(() => setProductsLoading(false), 8000);
-    async function fetchProducts() {
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .order('popularity', { ascending: false });
-        if (error) throw error;
-        setAllProducts((data || []) as Product[]);
-      } catch (err) {
-        logError('StoreModule/fetchProducts', err);
-      } finally {
-        clearTimeout(timeout);
-        setProductsLoading(false);
-      }
-    }
-    fetchProducts();
-    return () => clearTimeout(timeout);
-  }, []);
+  const { data: allProducts = [], isLoading: productsLoading } = useProducts();
 
   const categories = React.useMemo(() =>
     ['Tous', ...Array.from(new Set(allProducts.map(p => p.category).filter(Boolean)))],
