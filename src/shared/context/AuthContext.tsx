@@ -93,13 +93,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (isAdminUser && mounted.current) {
           const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
-          // On page load with existing session: redirect only if admin
-          // landed on a public page (home, profil, admin-login).
-          // On SIGNED_IN: AdminLoginPage already calls router.push('/admin')
-          // explicitly, so we skip it here to avoid a double-navigation race.
+          // On fresh login (SIGNED_IN): always redirect to dashboard.
+          // fetchProfile has already completed here so isAdmin is true
+          // before the navigation starts — no flash of "Accès Refusé".
+          // On existing session load (INITIAL_SESSION): only redirect from
+          // public pages so admins can still browse the catalogue.
           const redirectPaths = ['/', '/profil', '/admin-login'];
           const shouldRedirect =
-            event === 'INITIAL_SESSION' && redirectPaths.includes(currentPath);
+            event === 'SIGNED_IN' ||
+            (event === 'INITIAL_SESSION' && redirectPaths.includes(currentPath));
 
           if (shouldRedirect) {
             router.push('/admin');

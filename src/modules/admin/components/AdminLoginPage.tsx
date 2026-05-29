@@ -29,15 +29,13 @@ export default function AdminLoginPage() {
         .single();
 
       if (profileError || (profile?.role !== 'admin' && profile?.role !== 'superadmin')) {
-        // Sign out without firing onAuthStateChange side-effects that could
-        // race with a concurrent SIGNED_IN handler still in flight.
+        // Use scope:'local' to avoid firing a SIGNED_OUT event that could
+        // race with the concurrent SIGNED_IN handler in AuthContext.
         await supabase.auth.signOut({ scope: 'local' });
         throw new Error('Accès refusé. Compte administrateur requis.');
       }
-
-      // Explicit redirect — do not rely on onAuthStateChange to avoid race
-      // conditions between the SIGNED_IN handler and this profile check.
-      router.push('/admin');
+      // onAuthStateChange('SIGNED_IN') handles router.push('/admin') after
+      // fetchProfile completes — isAdmin is guaranteed true before navigation.
     } catch (err: any) {
       setError(err.message || 'Erreur de connexion.');
       setLoading(false);
