@@ -113,7 +113,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setProfile(null);
         setIsAdmin(false);
-        setLoading(false);
+        // INITIAL_SESSION with no session fires before initializeAuth()'s
+        // getUser() resolves. Setting loading=false here would race and show
+        // "Accès Refusé" while initializeAuth is still in flight.
+        // Let initializeAuth be the authoritative setter for the initial load.
+        if (event !== 'INITIAL_SESSION') setLoading(false);
       }
     });
 
@@ -209,24 +213,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setShowSignOutModal(false);
 
     try {
-      // Proactively wipe all Supabase-related cookies and localStorage keys
-      // BEFORE the server call so the session is gone even if the network
-      // request fails (prevents zombie sessions on reload).
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('sb-') || key.includes('supabase') || key.includes('gcfi-auth')) {
-          localStorage.removeItem(key);
-        }
-      });
-      document.cookie.split(';').forEach(c => {
-        const name = c.split('=')[0].trim();
-        if (name.startsWith('sb-') || name.includes('supabase')) {
-          document.cookie = `${name}=; Max-Age=0; path=/`;
-        }
-      });
-
-      // Revoke the refresh token server-side; ignore network failures since
-      // the local session is already cleared above.
-      await supabase.auth.signOut({ scope: 'global' }).catch(() => {});
+      // scope:'global' revokes the refresh token server-side AND clears local
+      // cookies/storage via the client's internal _removeSession() — this
+      // happens before the network request, so the local session is wiped
+      // even if the server call fails.
+      await supabase.auth.signOut({ scope: 'global' });
     } catch (err) {
       logError('signOut', err);
     } finally {

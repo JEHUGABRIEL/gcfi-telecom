@@ -274,7 +274,9 @@ const AdminModule = () => {
     setSearchQuery('');
   }, [activeTab]);
 
-  if (authLoading) {
+  if (authLoading || (!adminUser && !isAuthorized)) {
+    // Show spinner while auth is resolving OR when there is no user yet
+    // (INITIAL_SESSION race before initializeAuth completes).
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 pt-24">
         <div className="flex flex-col items-center gap-4">
