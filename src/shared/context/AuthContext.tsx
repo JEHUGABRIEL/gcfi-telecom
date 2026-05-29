@@ -67,13 +67,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted.current) return;
       const currentUser = session?.user ?? null;
 
       // Block sessions for users who signed up but haven't confirmed their email yet.
-      // This is the code-level guard; the Supabase dashboard should also have
-      // Authentication → Providers → Email → "Confirm email" enabled.
       if (currentUser && !currentUser.email_confirmed_at) {
         await supabase.auth.signOut();
         setUser(null);
@@ -85,9 +83,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(currentUser);
       if (currentUser) {
-        await fetchProfile(currentUser.id, currentUser);
+        const isAdminUser = await fetchProfile(currentUser.id, currentUser);
 
-        // ✅ Admin connecté via n'importe quel formulaire → redirigé par AdminRedirect vers /admin
+        // Redirect admin/superadmin to the dashboard on sign-in.
+        // We check the event so we only redirect on an actual login action,
+        // not on every page load with an existing session.
+        if (event === 'SIGNED_IN' && isAdminUser && mounted.current) {
+          window.location.replace('/admin');
+          return;
+        }
+
         setPendingAction(prev => { if (prev) { prev(); setShowAuthModal(false); } return null; });
       } else {
         setProfile(null);
@@ -99,7 +104,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => { mounted.current = false; subscription.unsubscribe(); clearTimeout(timeout); };
   }, []);
 
-  async function fetchProfile(uid: string, currentUser?: SupabaseUser) {
+  // Returns true if the resolved profile has admin/superadmin role.
+  async function fetchProfile(uid: string, currentUser?: SupabaseUser): Promise<boolean> {
     try {
       const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
 
@@ -114,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }]).select().single();
           if (newProfile) { setProfile(newProfile as Profile); setIsAdmin(false); }
         }
+        return false;
       } else if (data) {
         // ✅ Vérifier si l'utilisateur est bloqué
         const profileData = data as Profile & { is_blocked?: boolean; blocked_until?: string };
@@ -126,17 +133,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           window.dispatchEvent(new CustomEvent('gcfi:user-blocked', {
             detail: { permanent: isBlockedPerm, until: profileData.blocked_until }
           }));
-          return;
+          return false;
         }
 
         setProfile(data as Profile);
-        setIsAdmin(data.role === 'admin' || data.role === 'superadmin');
+        const admin = data.role === 'admin' || data.role === 'superadmin';
+        setIsAdmin(admin);
+        return admin;
       }
     } catch (err) {
       logError('fetchProfile', err);
     } finally {
       if (mounted.current) setLoading(false);
     }
+    return false;
   }
 
   // ✅ Auto-logout admin après 15 minutes d'inactivité
