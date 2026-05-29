@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic';
 import TrainingModule from '@/modules/training/components/TrainingModule';
 
 export const metadata = { title: 'Formations' };

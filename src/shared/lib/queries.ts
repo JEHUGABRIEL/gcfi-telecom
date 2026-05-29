@@ -113,6 +113,7 @@ export function useTestimonials() {
       const { data, error } = await supabase
         .from('testimonials')
         .select('*')
+        .eq('status', 'approved')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];

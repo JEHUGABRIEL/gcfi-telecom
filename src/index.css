@@ -65,9 +65,10 @@ body:not(.dark) textarea:focus {
   outline: none;
 }
 
-/* Transitions globales */
-*, *::before, *::after {
-  transition-property: background-color, border-color, color, box-shadow;
+/* Transitions uniquement sur les éléments interactifs */
+a, button, input, select, textarea,
+[class*="hover:"], [class*="focus:"] {
+  transition-property: background-color, border-color, color, box-shadow, opacity;
   transition-duration: 200ms;
   transition-timing-function: ease;
 }

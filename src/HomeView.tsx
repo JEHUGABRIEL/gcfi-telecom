@@ -3,10 +3,9 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
-import { useQuery } from '@tanstack/react-query';
 import { Star, Award, ChevronLeft, ChevronRight, X, Calendar, ExternalLink } from 'lucide-react';
 import { Hero, GcfiServices } from '@/modules/home';
-import { supabase } from '@/shared/lib/supabase';
+import { useTestimonials, useAchievements, usePartners } from '@/shared/lib/queries';
 import { cn } from '@/shared/lib/utils';
 import type { Testimonial, Achievement, Partner } from '@/shared/types';
 
@@ -28,53 +27,12 @@ const fallbackPartners: Partner[] = [
   { id: '4', name: 'Huawei',          logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Huawei_Logo.svg/1200px-Huawei_Logo.svg.png' },
 ];
 
-// ── Fetchers Supabase ──────────────────────────────────────────────────────
-async function fetchTestimonials(): Promise<Testimonial[]> {
-  const { data, error } = await supabase
-    .from('testimonials').select('*').eq('status', 'approved')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data?.length ? data : fallbackTestimonials) as Testimonial[];
-}
-
-async function fetchAchievements(): Promise<Achievement[]> {
-  const { data, error } = await supabase
-    .from('achievements').select('*').order('year', { ascending: false });
-  if (error) throw error;
-  return (data?.length ? data : fallbackAchievements) as Achievement[];
-}
-
-async function fetchPartners(): Promise<Partner[]> {
-  const { data, error } = await supabase
-    .from('partners').select('*').order('order_index', { ascending: true });
-  if (error) throw error;
-  return (data?.length ? data : fallbackPartners) as Partner[];
-}
-
 export default function HomeView() {
   const router = useRouter();
 
-  // ✅ TanStack Query — cache intelligent + fallback données par défaut
-  const { data: testimonials = fallbackTestimonials } = useQuery({
-    queryKey: ['testimonials'],
-    queryFn: fetchTestimonials,
-    staleTime: 1000 * 60 * 10,   // 10 min
-    placeholderData: fallbackTestimonials,
-  });
-
-  const { data: achievements = fallbackAchievements } = useQuery({
-    queryKey: ['achievements'],
-    queryFn: fetchAchievements,
-    staleTime: 1000 * 60 * 30,   // 30 min — données rarement modifiées
-    placeholderData: fallbackAchievements,
-  });
-
-  const { data: partners = fallbackPartners } = useQuery({
-    queryKey: ['partners'],
-    queryFn: fetchPartners,
-    staleTime: 1000 * 60 * 30,
-    placeholderData: fallbackPartners,
-  });
+  const { data: testimonials = fallbackTestimonials } = useTestimonials() as { data: Testimonial[] };
+  const { data: achievements = fallbackAchievements } = useAchievements() as { data: Achievement[] };
+  const { data: partners = fallbackPartners } = usePartners() as { data: Partner[] };
 
   const [testimonialIndex, setTestimonialIndex] = React.useState(0);
   const [selectedAchievement, setSelectedAchievement] = React.useState<Achievement | null>(null);

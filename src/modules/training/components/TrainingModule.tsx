@@ -6,38 +6,16 @@ import { GraduationCap, Clock, ChevronRight, X, CheckCircle, Info } from 'lucide
 import { Course } from '@/shared/types';
 import { cn } from '@/shared/lib/utils';
 import { useAuth } from '@/shared/context/AuthContext';
-import { supabase } from '@/shared/lib/supabase';
 import { useTrainings } from '@/shared/lib/queries';
-import { logError } from '@/shared/lib/supabase-helpers';
 import { useContact } from '@/shared/context/ContactContext';
 
 export default function TrainingModule() {
   const { openContact: onContactOpen } = useContact();
   const { user, profile, requireAuth } = useAuth();
 
-  // ✅ Formations chargées depuis Supabase — plus de fichier statique
-  const [courses, setCourses] = React.useState<Course[]>([]);
-  const [coursesLoading, setCoursesLoading] = React.useState(true);
+  const { data: courses = [], isLoading: coursesLoading } = useTrainings() as { data: Course[], isLoading: boolean };
   const [selectedTag, setSelectedTag] = React.useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = React.useState<Course | null>(null);
-
-  React.useEffect(() => {
-    async function fetchCourses() {
-      try {
-        const { data, error } = await supabase
-          .from('trainings')
-          .select('*')
-          .order('created_at', { ascending: true });
-        if (error) throw error;
-        setCourses((data || []) as Course[]);
-      } catch (err) {
-        logError('TrainingModule/fetchCourses', err);
-      } finally {
-        setCoursesLoading(false);
-      }
-    }
-    fetchCourses();
-  }, []);
 
   const filteredCourses = selectedTag
     ? courses.filter(c => c.tags?.includes(selectedTag))

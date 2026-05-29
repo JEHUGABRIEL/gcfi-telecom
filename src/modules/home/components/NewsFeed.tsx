@@ -6,7 +6,6 @@ import { Newspaper, ChevronRight, ExternalLink, RefreshCw, Radio, TrendingUp, Cp
 import { cn } from '@/shared/lib/utils';
 import { supabase } from '@/shared/lib/supabase';
 import { useNews } from '@/shared/lib/queries';
-import { logError } from '@/shared/lib/supabase-helpers';
 import type { NewsItem } from '@/shared/types';
 
 // ── Bloc d'abonnement newsletter ──────────────────────────────
@@ -165,31 +164,10 @@ const fallbackNews: NewsItem[] = [
 ];
 
 export default function NewsFeed() {
-  const [news, setNews] = React.useState<NewsItem[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-
-  const fetchNews = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data, error: err } = await supabase
-        .from('news')
-        .select('*')
-        .order('published_at', { ascending: false })
-        .limit(3);
-      if (err) throw err;
-      setNews(data && data.length > 0 ? (data as NewsItem[]) : fallbackNews);
-    } catch (err) {
-      logError('NewsFeed/fetchNews', err);
-      setNews(fallbackNews);
-      setError('Impossible de charger les actualités depuis la base de données.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  React.useEffect(() => { fetchNews(); }, []);
+  const { data: rawNews, isLoading: loading, isError, refetch } = useNews();
+  const news: NewsItem[] = rawNews?.length ? (rawNews as NewsItem[]).slice(0, 3) : fallbackNews;
+  const error = isError ? 'Impossible de charger les actualités depuis la base de données.' : null;
+  const fetchNews = () => { refetch(); };
 
   const categoryIcons = { telecom: Radio, it: Cpu };
 

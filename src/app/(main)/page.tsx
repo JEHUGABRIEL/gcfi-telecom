@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic';
 import HomeView from '@/HomeView';
 
 export const metadata = { title: 'Accueil' };
