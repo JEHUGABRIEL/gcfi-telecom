@@ -104,6 +104,12 @@ export default function StoreModule() {
   const [toast, setToast] = React.useState<{ name: string; type: 'add' | 'remove' } | null>(null);
   const [cartBump, setCartBump] = React.useState(false);
   const loaderRef = React.useRef<HTMLDivElement>(null);
+  const toastTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bumpTimer  = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => () => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    if (bumpTimer.current)  clearTimeout(bumpTimer.current);
+  }, []);
 
   const filteredProducts = React.useMemo(() => {
     let result = allProducts;
@@ -140,19 +146,27 @@ export default function StoreModule() {
     });
     setToast({ name: product.name, type: 'add' });
     setCartBump(true);
-    setTimeout(() => setCartBump(false), 300);
-    setTimeout(() => setToast(null), 3000);
+    if (bumpTimer.current)  clearTimeout(bumpTimer.current);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    bumpTimer.current  = setTimeout(() => setCartBump(false), 300);
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
   };
 
   const removeFromCart = (productId: string) => {
     const item = cart.find(i => i.id === productId);
-    if (item) { setToast({ name: item.name, type: 'remove' }); setTimeout(() => setToast(null), 3000); }
+    if (item) {
+      setToast({ name: item.name, type: 'remove' });
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
+    }
     setCart(prev => {
       const next = prev.filter(i => i.id !== productId);
       saveCart(next);
       return next;
     });
-    setCartBump(true); setTimeout(() => setCartBump(false), 300);
+    setCartBump(true);
+    if (bumpTimer.current) clearTimeout(bumpTimer.current);
+    bumpTimer.current = setTimeout(() => setCartBump(false), 300);
     setItemToDelete(null);
   };
 

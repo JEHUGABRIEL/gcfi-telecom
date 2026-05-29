@@ -161,7 +161,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       supabase.removeChannel(globalChannel);
       supabase.removeChannel(privateChannel);
     };
-  }, [userId]);
+  }, [userId, isAdmin]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -260,7 +260,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     if (userId && Notification.permission === 'granted') {
       requestPermission();
     }
-  }, [userId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]); // requestPermission is stable (no deps) — intentionally excluded
 
   return (
     <NotificationContext.Provider value={{ 

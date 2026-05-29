@@ -23,12 +23,15 @@ export default function ProductDetail() {
     if (!isLoading && !product) router.replace('/boutique');
   }, [product, isLoading, router]);
 
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+
   const handleAddToCart = () => {
     if (!user) { setShowAuthModal(true); return; }
-    // Émet un événement pour que StoreModule mette à jour le panier
     window.dispatchEvent(new CustomEvent('gcfi:add-to-cart', { detail: product }));
     setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setAdded(false), 2000);
   };
 
   const handleShare = () => {

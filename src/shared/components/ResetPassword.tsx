@@ -54,7 +54,8 @@ export default function ResetPassword() {
       if (error) throw error;
       setStep('success');
       // Rediriger vers l'accueil après 3 secondes
-      setTimeout(() => router.push('/'), 3000);
+      const t = setTimeout(() => router.push('/'), 3000);
+      return () => clearTimeout(t);
     } catch (err: any) {
       setError(err.message || 'Une erreur est survenue.');
     } finally {
