@@ -93,14 +93,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (isAdminUser && mounted.current) {
           const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
-          // On fresh login: always redirect admin to dashboard.
           // On page load with existing session: redirect only if admin
-          // landed on a public page (home, profil, admin-login),
-          // not if they're intentionally browsing the catalogue.
+          // landed on a public page (home, profil, admin-login).
+          // On SIGNED_IN: AdminLoginPage already calls router.push('/admin')
+          // explicitly, so we skip it here to avoid a double-navigation race.
           const redirectPaths = ['/', '/profil', '/admin-login'];
           const shouldRedirect =
-            event === 'SIGNED_IN' ||
-            (event === 'INITIAL_SESSION' && redirectPaths.includes(currentPath));
+            event === 'INITIAL_SESSION' && redirectPaths.includes(currentPath);
 
           if (shouldRedirect) {
             router.push('/admin');
@@ -202,28 +201,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [isAdmin]);
 
   const signOut = async () => {
-    try {
-      // Clear local state immediately
-      setUser(null);
-      setProfile(null);
-      setIsAdmin(false);
-      setShowSignOutModal(false);
+    setUser(null);
+    setProfile(null);
+    setIsAdmin(false);
+    setShowSignOutModal(false);
 
-      // Clear localStorage session keys
+    try {
+      // Proactively wipe all Supabase-related cookies and localStorage keys
+      // BEFORE the server call so the session is gone even if the network
+      // request fails (prevents zombie sessions on reload).
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('sb-') || key.includes('supabase') || key.includes('gcfi-auth')) {
           localStorage.removeItem(key);
         }
       });
+      document.cookie.split(';').forEach(c => {
+        const name = c.split('=')[0].trim();
+        if (name.startsWith('sb-') || name.includes('supabase')) {
+          document.cookie = `${name}=; Max-Age=0; path=/`;
+        }
+      });
 
-      // scope: 'global' revokes the refresh token server-side, not just
-      // locally. Without this, Supabase restores the session on the next
-      // page load via getUser() because the server-side token is still valid.
-      await supabase.auth.signOut({ scope: 'global' });
-
-      window.location.replace('/');
+      // Revoke the refresh token server-side; ignore network failures since
+      // the local session is already cleared above.
+      await supabase.auth.signOut({ scope: 'global' }).catch(() => {});
     } catch (err) {
       logError('signOut', err);
+    } finally {
       window.location.replace('/');
     }
   };
