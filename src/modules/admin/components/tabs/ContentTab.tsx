@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import ImageUpload from '@/shared/components/ImageUpload';
+import ConfirmModal from '@/shared/components/ConfirmModal';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { Plus, Trash2, Check, X, Star, RefreshCw, Globe } from 'lucide-react';
@@ -46,6 +47,7 @@ export default function ContentTab({ type }: ContentTabProps) {
   const [showForm, setShowForm] = React.useState(false);
   const [form, setForm] = React.useState<any>({ ...cfg.defaultItem });
   const [saving, setSaving] = React.useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = React.useState<string | null>(null);
 
   const queryKey = ['admin', 'content', type];
 
@@ -69,9 +71,10 @@ export default function ContentTab({ type }: ContentTabProps) {
     setSaving(false);
   };
 
-  const remove = async (id: string) => {
-    if (!confirm('Supprimer cet élément ?')) return;
-    await supabase.from(cfg.table).delete().eq('id', id);
+  const remove = async () => {
+    if (!pendingDeleteId) return;
+    await supabase.from(cfg.table).delete().eq('id', pendingDeleteId);
+    setPendingDeleteId(null);
     invalidate();
   };
 
@@ -83,6 +86,13 @@ export default function ContentTab({ type }: ContentTabProps) {
   if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-slate-200 border-t-[#C1272D] rounded-full animate-spin" /></div>;
 
   return (
+    <>
+      <ConfirmModal
+        open={!!pendingDeleteId}
+        message={`Cette action est irréversible. Voulez-vous vraiment supprimer cet élément de "${cfg.label}" ?`}
+        onConfirm={remove}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     <div>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">{cfg.label} ({items.length})</h3>
@@ -183,11 +193,12 @@ export default function ContentTab({ type }: ContentTabProps) {
                   <button onClick={() => approveTestimonial(item.id, 'rejected')} title="Rejeter" className="p-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"><X className="w-4 h-4" /></button>
                 </>
               )}
-              <button onClick={() => remove(item.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => setPendingDeleteId(item.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>
         ))}
       </div>
     </div>
+    </>
   );
 }
