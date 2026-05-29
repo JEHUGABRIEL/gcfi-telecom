@@ -26,19 +26,27 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session if expired — required by @supabase/ssr
-  const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
+
+  // getUser() validates the JWT with the Supabase server.
+  // Wrapped in try/catch: if Supabase is unreachable or the token
+  // is malformed, we treat the user as unauthenticated rather than
+  // crashing the middleware and returning 500.
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    // Supabase unreachable — treat as unauthenticated
+  }
 
   // /profil requires authentication
   if (pathname.startsWith('/profil') && !user) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // /admin routes (except /admin-login) require authentication only.
-  // Role-based access (admin vs superadmin vs client) is enforced by
-  // the AdminModule component itself, which reads the role from the
-  // profiles table — the only reliable source for this project.
+  // /admin routes (except /admin-login) require authentication.
+  // Role-based access is enforced by AdminModule (reads from profiles table).
   if (pathname.startsWith('/admin') && !pathname.startsWith('/admin-login')) {
     if (!user) return NextResponse.redirect(new URL('/admin-login', request.url));
   }
