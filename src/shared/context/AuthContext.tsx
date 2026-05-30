@@ -49,30 +49,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }, 15000);
 
-    async function initializeAuth() {
-      try {
-        // getUser() validates the JWT token server-side on every load,
-        // unlike getSession() which only reads from local cache.
-        // This prevents "zombie sessions" persisting after signOut.
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (!mounted.current) return;
-        if (error || !user) { setLoading(false); return; }
-        // Reject sessions for users who haven't confirmed their email yet
-        if (!user.email_confirmed_at) {
-          await supabase.auth.signOut({ scope: 'global' });
-          setLoading(false);
-          return;
-        }
-        setUser(user);
-        await fetchProfile(user.id, user);
-      } catch (err) {
-        logError('Auth init', err);
-        if (mounted.current) setLoading(false);
-      }
-    }
-
-    initializeAuth();
-
+    // onAuthStateChange is the single source of truth for auth state.
+    // A separate initializeAuth() calling getUser() concurrently caused
+    // GoTrueClient's internal request lock to block fetchProfile indefinitely
+    // on page refresh, keeping loading=true until the 15s safety timeout.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted.current) return;
       const currentUser = session?.user ?? null;
@@ -113,11 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setProfile(null);
         setIsAdmin(false);
-        // INITIAL_SESSION with no session fires before initializeAuth()'s
-        // getUser() resolves. Setting loading=false here would race and show
-        // "Accès Refusé" while initializeAuth is still in flight.
-        // Let initializeAuth be the authoritative setter for the initial load.
-        if (event !== 'INITIAL_SESSION') setLoading(false);
+        setLoading(false);
       }
     });
 
