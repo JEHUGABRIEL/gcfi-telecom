@@ -34,7 +34,9 @@ export default function NotificationCenter({
     return () => document.removeEventListener('keydown', handler);
   }, [isOpen, onClose]);
 
-  // ✅ Portal — rendu dans document.body, échappe au stacking context du header
+  // Portal rendered into document.body to escape header stacking context.
+  // Guard against SSR where document is not available.
+  if (typeof document === 'undefined') return null;
   return ReactDOM.createPortal(
     <AnimatePresence>
       {isOpen && (
