@@ -55,6 +55,7 @@ export default function HomeView() {
             {[
               { path: '/formation', icon: '🎓', title: 'Formation',    desc: 'Programmes intensifs en télécom et cybersécurité.', cta: 'Découvrir' },
               { path: '/boutique', icon: '🛍️',  title: 'Boutique',    desc: 'Équipements réseaux et terminaux mobiles certifiés.', cta: 'Acheter' },
+              { path: '/services', icon: '🌐',  title: 'Nos Services', desc: 'Solutions télécoms, IT et connectivité pour entreprises.', cta: 'Voir les services' },
             ].map(item => (
               <div key={item.path} onClick={() => router.push(item.path)}
                 className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 hover:border-[#2563B0] transition-all cursor-pointer group">
