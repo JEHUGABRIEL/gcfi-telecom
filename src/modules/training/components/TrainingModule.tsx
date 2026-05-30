@@ -230,6 +230,11 @@ export default function TrainingModule() {
                     <div className="absolute top-4 left-4">
                       <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#C1272D] text-white">{course.category}</span>
                     </div>
+                    {(course.discount ?? 0) > 0 && (
+                      <span className="absolute top-4 right-4 bg-amber-400 text-white text-[10px] font-black px-2 py-1 rounded-full shadow">
+                        -{course.discount}%
+                      </span>
+                    )}
                   </div>
                   <div className="p-8 flex-1 flex flex-col">
                     <div className="flex items-center text-slate-500 dark:text-slate-400 text-sm mb-4">
@@ -250,7 +255,16 @@ export default function TrainingModule() {
                         className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-[#C1272D] transition-colors flex items-center gap-1">
                         <Info className="w-3 h-3" /> Détails
                       </button>
-                      <span className="text-lg font-bold text-[#C1272D]">{course.price.toLocaleString()} FCFA</span>
+                      {(course.discount ?? 0) > 0 ? (
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <span className="text-lg font-bold text-[#C1272D]">
+                            {Math.round(course.price * (1 - (course.discount ?? 0) / 100)).toLocaleString()} FCFA
+                          </span>
+                          <span className="text-sm text-slate-400 line-through">{course.price.toLocaleString()}</span>
+                        </div>
+                      ) : (
+                        <span className="text-lg font-bold text-[#C1272D]">{course.price.toLocaleString()} FCFA</span>
+                      )}
                     </div>
                     <div className="mt-4">
                       <button onClick={() => handleEnroll(course.title, course.price)}

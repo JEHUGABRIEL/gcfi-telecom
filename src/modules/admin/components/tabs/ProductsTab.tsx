@@ -42,7 +42,7 @@ function ConfirmModal({ message, onConfirm, onCancel }: {
   );
 }
 
-const EMPTY_FORM = { name: '', description: '', price: '', category: '', image: '', stock: '0' };
+const EMPTY_FORM = { name: '', description: '', price: '', category: '', image: '', stock: '0', discount: '0' };
 
 export default function ProductsTab() {
   const queryClient = useQueryClient();
@@ -86,6 +86,7 @@ export default function ProductsTab() {
       category: p.category ?? '',
       image: p.image ?? '',
       stock: p.stock?.toString() ?? '0',
+      discount: p.discount?.toString() ?? '0',
     });
     setSaveError(null);
     setShowForm(true);
@@ -99,6 +100,7 @@ export default function ProductsTab() {
     setSaving(true);
     setSaveError(null);
     try {
+      const discountVal = Math.min(100, Math.max(0, Number(form.discount) || 0));
       const payload = {
         name: form.name,
         description: form.description,
@@ -106,6 +108,8 @@ export default function ProductsTab() {
         category: form.category,
         image: form.image,
         stock: Number(form.stock),
+        discount: discountVal,
+        is_promo: discountVal > 0,
       };
       const { error } = editingProduct
         ? await supabase.from('products').update(payload).eq('id', editingProduct.id)
@@ -192,6 +196,34 @@ export default function ProductsTab() {
                     <textarea value={form.description} onChange={set('description')} rows={2}
                       className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D]" />
                   </div>
+
+                  {/* ── Promotion (optionnelle) ── */}
+                  <div className="sm:col-span-2 rounded-2xl border border-dashed border-amber-300 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-700 p-4 space-y-3">
+                    <p className="text-xs font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Promotion (optionnelle)</p>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <label className="text-xs font-bold text-slate-500 mb-1 block">Réduction (%)</label>
+                        <input value={form.discount} onChange={set('discount')} type="number" min="0" max="100" placeholder="0"
+                          className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-amber-400" />
+                      </div>
+                      {Number(form.discount) > 0 && Number(form.price) > 0 && (
+                        <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl p-3 border border-amber-200">
+                          <p className="text-[10px] text-slate-400 mb-1">Aperçu prix</p>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-base font-black text-[#C1272D]">
+                              {Math.round(Number(form.price) * (1 - Number(form.discount) / 100)).toLocaleString()} FCFA
+                            </span>
+                            <span className="text-xs text-slate-400 line-through">{Number(form.price).toLocaleString()}</span>
+                            <span className="text-[10px] font-black bg-[#C1272D] text-white px-1.5 py-0.5 rounded-full">-{form.discount}%</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {Number(form.discount) === 0 && (
+                      <p className="text-xs text-slate-400">Laissez à 0 pour ne pas afficher de promotion.</p>
+                    )}
+                  </div>
+
                   <div className="sm:col-span-2">
                     <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block">Image</label>
                     <ImageUpload value={form.image} onChange={url => setForm(f => ({ ...f, image: url }))} folder="gcfi/products" />

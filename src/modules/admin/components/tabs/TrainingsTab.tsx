@@ -50,6 +50,7 @@ const EMPTY_FORM = {
   duration: '',
   image: '',
   tags: '',
+  discount: '0',
 };
 
 export default function TrainingsTab() {
@@ -95,6 +96,7 @@ export default function TrainingsTab() {
       duration: training.duration ?? '',
       image: training.image ?? '',
       tags: (training.tags || []).join(', '),
+      discount: training.discount?.toString() ?? '0',
     });
     setSaveError(null);
     setShowForm(true);
@@ -108,6 +110,7 @@ export default function TrainingsTab() {
     setSaving(true);
     setSaveError(null);
     try {
+      const discountVal = Math.min(100, Math.max(0, Number(form.discount) || 0));
       const payload = {
         title: form.title.trim(),
         description: form.description.trim() || null,
@@ -116,6 +119,8 @@ export default function TrainingsTab() {
         duration: form.duration.trim() || null,
         image: form.image || null,
         tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(t => t) : [],
+        discount: discountVal,
+        is_promo: discountVal > 0,
       };
       const { error } = editingTraining
         ? await supabase.from('trainings').update(payload).eq('id', editingTraining.id)
@@ -207,6 +212,34 @@ export default function TrainingsTab() {
                     <input value={form.tags} onChange={set('tags')} type="text" placeholder="ex: Web, React, JavaScript"
                       className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D]" />
                   </div>
+
+                  {/* ── Promotion (optionnelle) ── */}
+                  <div className="sm:col-span-2 rounded-2xl border border-dashed border-amber-300 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-700 p-4 space-y-3">
+                    <p className="text-xs font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Promotion (optionnelle)</p>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <label className="text-xs font-bold text-slate-500 mb-1 block">Réduction (%)</label>
+                        <input value={form.discount} onChange={set('discount')} type="number" min="0" max="100" placeholder="0"
+                          className="w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-amber-400" />
+                      </div>
+                      {Number(form.discount) > 0 && Number(form.price) > 0 && (
+                        <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl p-3 border border-amber-200">
+                          <p className="text-[10px] text-slate-400 mb-1">Aperçu prix</p>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-base font-black text-[#C1272D]">
+                              {Math.round(Number(form.price) * (1 - Number(form.discount) / 100)).toLocaleString()} FCFA
+                            </span>
+                            <span className="text-xs text-slate-400 line-through">{Number(form.price).toLocaleString()}</span>
+                            <span className="text-[10px] font-black bg-[#C1272D] text-white px-1.5 py-0.5 rounded-full">-{form.discount}%</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {Number(form.discount) === 0 && (
+                      <p className="text-xs text-slate-400">Laissez à 0 pour ne pas afficher de promotion.</p>
+                    )}
+                  </div>
+
                   <div className="sm:col-span-2">
                     <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block">Image</label>
                     <ImageUpload value={form.image} onChange={url => setForm(f => ({ ...f, image: url }))} folder="gcfi/trainings" />

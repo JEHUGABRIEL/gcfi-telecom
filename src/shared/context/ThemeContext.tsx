@@ -11,15 +11,13 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('theme') as Theme;
-      if (saved) return saved;
-      // ✅ Light mode par défaut
-      return 'light';
-    }
-    return 'light';
-  });
+  const [theme, setTheme] = useState<Theme>('light');
+
+  // Lecture de localStorage après hydratation uniquement — évite le mismatch SSR/client.
+  useEffect(() => {
+    const saved = localStorage.getItem('theme') as Theme;
+    if (saved === 'dark' || saved === 'light') setTheme(saved);
+  }, []);
 
   useEffect(() => {
     const root = window.document.documentElement;

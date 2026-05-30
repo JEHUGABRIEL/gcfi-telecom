@@ -11,12 +11,16 @@ import type { NewsItem } from '@/shared/types';
 
 // ── Bloc d'abonnement newsletter ──────────────────────────────
 function SubscribeBlock() {
-  const [subscribed] = React.useState(() =>
-    localStorage.getItem('gcfi-newsletter-subscribed') === 'true'
-  );
+  const [subscribed, setSubscribed] = React.useState(false);
   const [showForm, setShowForm] = React.useState(false);
   const [email, setEmail] = React.useState('');
-  const [done, setDone] = React.useState(subscribed);
+  const [done, setDone] = React.useState(false);
+  // Lecture de localStorage après hydratation uniquement — évite le mismatch SSR/client.
+  React.useEffect(() => {
+    const isSubscribed = localStorage.getItem('gcfi-newsletter-subscribed') === 'true';
+    setSubscribed(isSubscribed);
+    setDone(isSubscribed);
+  }, []);
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState('');
   // ✅ Honeypot anti-bot

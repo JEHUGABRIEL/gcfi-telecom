@@ -39,9 +39,11 @@ export default function StoreModule() {
     () => allProducts.filter(p => (p as any).is_promo || (p as any).discount > 0).slice(0, 4),
     [allProducts]
   );
-  const [wishlist, setWishlist] = React.useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem('wishlist') || '[]'); } catch { return []; }
-  });
+  const [wishlist, setWishlist] = React.useState<string[]>([]);
+  // Hydratation : localStorage lu après montage uniquement pour éviter le mismatch SSR/client.
+  React.useEffect(() => {
+    try { setWishlist(JSON.parse(localStorage.getItem('wishlist') || '[]')); } catch { /* ignore */ }
+  }, []);
   React.useEffect(() => { localStorage.setItem('wishlist', JSON.stringify(wishlist)); }, [wishlist]);
 
   const toggleWishlist = (productId: string, e: React.MouseEvent) => {
@@ -364,6 +366,11 @@ export default function StoreModule() {
                 onClick={() => setSelectedProduct(product)}>
                 <div className="relative h-48 overflow-hidden">
                   <Image src={product.image} alt={product.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" />
+                  {(product as any).discount > 0 && (
+                    <span className="absolute top-3 left-3 bg-[var(--accent)] text-white text-[10px] font-black px-2 py-1 rounded-full shadow">
+                      -{(product as any).discount}%
+                    </span>
+                  )}
                   <button onClick={e => toggleWishlist(product.id, e)}
                     className={cn("absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-lg",
                       wishlist.includes(product.id) ? "bg-[var(--accent)] text-white" : "bg-white/90 dark:bg-slate-800/90 text-slate-400 hover:text-[var(--accent)]")}>

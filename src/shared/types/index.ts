@@ -17,6 +17,8 @@ export interface CartItem extends Product { quantity: number; }
 export interface Course {
   id: string; title: string; category: string; duration: string;
   price: number; description: string; image: string; tags?: string[];
+  discount?: number;
+  is_promo?: boolean;
 }
 
 export interface Profile {
