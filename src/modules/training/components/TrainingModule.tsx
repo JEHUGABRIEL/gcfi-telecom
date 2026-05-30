@@ -3,26 +3,57 @@
 import React from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
-import { GraduationCap, Clock, ChevronRight, X, CheckCircle, Info } from 'lucide-react';
+import { GraduationCap, Clock, ChevronRight, X, CheckCircle, Info, Search, Filter, ArrowUpDown } from 'lucide-react';
+import Fuse from 'fuse.js';
 import { Course } from '@/shared/types';
 import { cn } from '@/shared/lib/utils';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useTrainings } from '@/shared/lib/queries';
 import { useContact } from '@/shared/context/ContactContext';
 
+const sortOptions = [
+  { label: 'Par défaut',       value: 'default' },
+  { label: 'Prix croissant',   value: 'price-asc' },
+  { label: 'Prix décroissant', value: 'price-desc' },
+  { label: 'Durée',            value: 'duration' },
+];
+
 export default function TrainingModule() {
   const { openContact: onContactOpen } = useContact();
   const { user, profile, requireAuth } = useAuth();
 
   const { data: courses = [], isLoading: coursesLoading } = useTrainings() as { data: Course[], isLoading: boolean };
-  const [selectedTag, setSelectedTag] = React.useState<string | null>(null);
+  const [selectedTag, setSelectedTag]   = React.useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = React.useState<Course | null>(null);
+  const [searchQuery, setSearchQuery]   = React.useState('');
+  const [isFilterOpen, setIsFilterOpen] = React.useState(false);
+  const [sortBy, setSortBy]             = React.useState('default');
 
-  const filteredCourses = selectedTag
-    ? courses.filter(c => c.tags?.includes(selectedTag))
-    : courses;
+  const allTags = React.useMemo(
+    () => Array.from(new Set(courses.flatMap(c => c.tags || []))),
+    [courses]
+  );
 
-  const allTags = Array.from(new Set(courses.flatMap(c => c.tags || [])));
+  const fuse = React.useMemo(() => new Fuse(courses, {
+    keys: ['title', 'description', 'category', 'tags'],
+    threshold: 0.35,
+    minMatchCharLength: 2,
+  }), [courses]);
+
+  const filteredCourses = React.useMemo(() => {
+    let result = searchQuery.trim().length >= 2
+      ? fuse.search(searchQuery).map(r => r.item)
+      : [...courses];
+
+    if (selectedTag) result = result.filter(c => c.tags?.includes(selectedTag));
+
+    return result.sort((a, b) => {
+      if (sortBy === 'price-asc')  return a.price - b.price;
+      if (sortBy === 'price-desc') return b.price - a.price;
+      if (sortBy === 'duration')   return (a.duration || '').localeCompare(b.duration || '');
+      return 0;
+    });
+  }, [courses, searchQuery, selectedTag, sortBy, fuse]);
 
   const handleEnroll = (courseTitle: string, price: number) => {
     requireAuth(() => {
@@ -95,34 +126,98 @@ export default function TrainingModule() {
       </AnimatePresence>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <h2 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">Centre de Formation GCFI</h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-10">
-              Des formations certifiantes conçues pour répondre aux défis technologiques du continent.
-            </p>
-            <div className="flex flex-wrap justify-center gap-3">
-              <button onClick={() => setSelectedTag(null)}
-                className={cn("px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all",
-                  selectedTag === null ? "bg-[#C1272D] text-white shadow-lg shadow-blue-500/20" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200")}>
-                Tous les cours
-              </button>
-              {allTags.map(tag => (
-                <button key={tag} onClick={() => setSelectedTag(tag)}
-                  className={cn("px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all",
-                    selectedTag === tag ? "bg-[#C1272D] text-white shadow-lg shadow-blue-500/20" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200")}>
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </motion.div>
+
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+          <div>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Centre de Formation GCFI</h2>
+            <p className="text-slate-500 dark:text-slate-400">Formations certifiantes en télécom et cybersécurité.</p>
+          </div>
+          <button onClick={() => setIsFilterOpen(v => !v)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 rounded-2xl text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors self-start md:self-auto">
+            <Filter className="w-4 h-4" /> Filtres
+            {(selectedTag || sortBy !== 'default') && (
+              <span className="w-2 h-2 rounded-full bg-[#C1272D]" />
+            )}
+          </button>
         </div>
 
-        {courses.length === 0 ? (
+        {/* Search */}
+        <div className="relative mb-6">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Rechercher une formation..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#C1272D] transition-all"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Filter panel */}
+        <AnimatePresence>
+          {isFilterOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden mb-8">
+              <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Thématique */}
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Thématique</label>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => setSelectedTag(null)}
+                      className={cn("px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                        selectedTag === null ? "bg-[#C1272D] text-white" : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100")}>
+                      Tous
+                    </button>
+                    {allTags.map(tag => (
+                      <button key={tag} onClick={() => setSelectedTag(tag)}
+                        className={cn("px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                          selectedTag === tag ? "bg-[#C1272D] text-white" : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100")}>
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Tri */}
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Trier par</label>
+                  <div className="flex flex-wrap gap-2">
+                    {sortOptions.map(opt => (
+                      <button key={opt.value} onClick={() => setSortBy(opt.value)}
+                        className={cn("px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 transition-all",
+                          sortBy === opt.value ? "bg-[#C1272D] text-white" : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100")}>
+                        <ArrowUpDown className="w-3 h-3" /> {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {filteredCourses.length === 0 ? (
           <div className="text-center py-20">
             <GraduationCap className="w-16 h-16 text-slate-200 dark:text-slate-700 mx-auto mb-4" />
-            <p className="text-slate-500 dark:text-slate-400 font-bold">Aucune formation disponible pour le moment.</p>
-            <p className="text-slate-400 dark:text-slate-500 text-sm mt-2">Contactez-nous pour connaître le planning.</p>
+            <p className="text-slate-500 dark:text-slate-400 font-bold">
+              {courses.length === 0 ? 'Aucune formation disponible pour le moment.' : 'Aucune formation trouvée.'}
+            </p>
+            {courses.length === 0
+              ? <p className="text-slate-400 dark:text-slate-500 text-sm mt-2">Contactez-nous pour connaître le planning.</p>
+              : <button onClick={() => { setSearchQuery(''); setSelectedTag(null); setSortBy('default'); }}
+                  className="mt-4 text-sm text-[#C1272D] font-bold hover:underline">
+                  Réinitialiser les filtres
+                </button>
+            }
           </div>
         ) : (
           <div className="grid md:grid-cols-3 gap-8">
