@@ -54,3 +54,7 @@ out/
 
 # ── Claude worktrees ──────────────────────────────────────────
 .claude/worktrees/
+.vercel
+
+# ── Supabase CLI temp files ────────────────────────────────────
+supabase/.temp/

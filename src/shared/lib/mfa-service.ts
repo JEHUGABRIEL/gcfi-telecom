@@ -94,7 +94,7 @@ export async function disableMFAForUser(userId: string): Promise<void> {
 export async function getUserMFASettings(userId: string) {
   const { data } = await supabase
     .from('user_mfa_settings')
-    .select('enabled, secret')
+    .select('enabled')
     .eq('user_id', userId)
     .single();
   return data;

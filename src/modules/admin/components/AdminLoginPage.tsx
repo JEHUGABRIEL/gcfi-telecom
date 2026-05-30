@@ -1,17 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { ShieldCheck, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/shared/lib/supabase';
+import { isMFAEnabled } from '@/shared/lib/mfa-service';
+import MFAVerification from '@/shared/components/MFAVerification';
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [requiresMFA, setRequiresMFA] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,10 +31,19 @@ export default function AdminLoginPage() {
         .single();
 
       if (profileError || (profile?.role !== 'admin' && profile?.role !== 'superadmin')) {
-        // Use scope:'local' to avoid firing a SIGNED_OUT event that could
-        // race with the concurrent SIGNED_IN handler in AuthContext.
         await supabase.auth.signOut({ scope: 'local' });
         throw new Error('Accès refusé. Compte administrateur requis.');
+      }
+
+      // Check MFA while session is still active
+      const mfaActive = await isMFAEnabled(data.user.id);
+      if (mfaActive) {
+        // Sign out locally to block AuthContext from navigating before MFA is verified
+        await supabase.auth.signOut({ scope: 'local' });
+        setPendingUserId(data.user.id);
+        setRequiresMFA(true);
+        setLoading(false);
+        return;
       }
       // onAuthStateChange('SIGNED_IN') handles router.push('/admin') after
       // fetchProfile completes — isAdmin is guaranteed true before navigation.
@@ -42,7 +53,41 @@ export default function AdminLoginPage() {
     }
   };
 
+  const handleMFASuccess = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) throw authError;
+      setRequiresMFA(false);
+      setPendingUserId(null);
+      // onAuthStateChange handles navigation to /admin
+    } catch (err: any) {
+      setError(err.message || 'Erreur de reconnexion.');
+      setRequiresMFA(false);
+      setPendingUserId(null);
+      setLoading(false);
+    }
+  };
+
+  const handleMFACancel = async () => {
+    setRequiresMFA(false);
+    setPendingUserId(null);
+    setError(null);
+  };
+
   const inputCls = 'w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-slate-900 dark:text-white transition-all shadow-sm text-sm';
+
+  if (requiresMFA && pendingUserId) {
+    return (
+      <MFAVerification
+        userId={pendingUserId}
+        phone=""
+        onSuccess={handleMFASuccess}
+        onCancel={handleMFACancel}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4">

@@ -77,23 +77,15 @@ export default function AuthModal() {
     e.preventDefault();
     setError(null); setLoading(true);
     try {
-      // ✅ Vérifier si le compte est admin — les admins ne peuvent pas réinitialiser eux-mêmes
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('email', email)
-        .maybeSingle();
-
-      if (profile?.role === 'admin' || profile?.role === 'superadmin') {
-        setError('Les comptes administrateurs ne peuvent pas réinitialiser leur mot de passe via ce formulaire. Contactez un super-administrateur.');
-        setLoading(false);
-        return;
-      }
-
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      // Vérification du rôle et envoi du lien gérés côté serveur —
+      // la protection admin ne peut pas être contournée depuis le navigateur.
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
       });
-      if (error) throw error;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Erreur lors de la demande');
       setSuccess('Lien envoyé ! Consultez votre boîte email pour réinitialiser votre mot de passe.');
     } catch (err: any) {
       setError(translateError(err.message));

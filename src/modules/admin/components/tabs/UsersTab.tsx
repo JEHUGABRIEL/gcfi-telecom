@@ -15,7 +15,6 @@ const PAGE_SIZE = 15;
 import { cn } from '@/shared/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
-const SUPERADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL ?? '';
 type Role = 'client' | 'admin' | 'superadmin';
 type BlockType = 'none' | '1h' | '24h' | '7d' | '30d' | 'permanent';
 
@@ -108,7 +107,7 @@ function UserDetailModal({ user, isSuperAdmin, onClose, onBlock, onUnblock, onRo
           </div>
 
           {/* Changer le rôle */}
-          {user.email !== SUPERADMIN_EMAIL && (isSuperAdmin || user.role === 'client') && (
+          {user.role !== 'superadmin' && (isSuperAdmin || user.role === 'client') && (
             <div className="space-y-2">
               <p className="text-xs font-black uppercase tracking-widest text-slate-400">Changer le rôle</p>
               <div className="flex gap-2">
@@ -170,7 +169,7 @@ function RoleBadge({ role }: { role: Role }) {
 export default function UsersTab() {
   const { toast, showToast, dismiss } = useAdminToast();
   const { user: currentUser, profile: currentProfile } = useAuth();
-  const isSuperAdmin = currentProfile?.email === SUPERADMIN_EMAIL && currentProfile?.role === 'superadmin';
+  const isSuperAdmin = currentProfile?.role === 'superadmin';
 
   const queryClient = useQueryClient();
   const [search, setSearch]         = React.useState('');
@@ -193,40 +192,41 @@ export default function UsersTab() {
 
   const users = isSuperAdmin
     ? rawUsers
-    : rawUsers.filter((u: any) => u.email !== SUPERADMIN_EMAIL && u.role !== 'superadmin');
+    : rawUsers.filter((u: any) => u.role !== 'superadmin');
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
 
+  const adminFetch = async (userId: string, body: Record<string, unknown>) => {
+    const res = await fetch(`/api/admin/users/${userId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Erreur serveur');
+    }
+  };
+
   const blockMutation = useMutation({
-    mutationFn: async ({ userId, type }: { userId: string; type: BlockType }) => {
-      let update: any = { block_reason: 'Bloqué par un administrateur', is_blocked: false, blocked_until: null };
-      if (type === 'permanent') {
-        update.is_blocked = true;
-      } else {
-        const durations: Record<string, number> = { '1h': 1, '24h': 24, '7d': 168, '30d': 720 };
-        const hours = durations[type] || 24;
-        update.blocked_until = new Date(Date.now() + hours * 3600_000).toISOString();
-      }
-      await supabase.from('profiles').update(update).eq('id', userId);
-    },
+    mutationFn: ({ userId, type }: { userId: string; type: BlockType }) =>
+      adminFetch(userId, { action: 'block', blockType: type }),
     onSuccess: () => { invalidate(); showToast('Utilisateur bloqué'); },
-    onError: () => showToast('Erreur lors du blocage', 'error'),
+    onError: (err: Error) => showToast(err.message || 'Erreur lors du blocage', 'error'),
   });
 
   const unblockMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      await supabase.from('profiles').update({ is_blocked: false, blocked_until: null, block_reason: null }).eq('id', userId);
-    },
+    mutationFn: (userId: string) =>
+      adminFetch(userId, { action: 'unblock' }),
     onSuccess: () => { invalidate(); showToast('Utilisateur débloqué'); },
-    onError: () => showToast('Erreur lors du déblocage', 'error'),
+    onError: (err: Error) => showToast(err.message || 'Erreur lors du déblocage', 'error'),
   });
 
   const roleMutation = useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string; newRole: Role }) => {
-      await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
-    },
+    mutationFn: ({ userId, newRole }: { userId: string; newRole: Role }) =>
+      adminFetch(userId, { action: 'setRole', role: newRole }),
     onSuccess: () => { invalidate(); showToast('Rôle modifié avec succès'); },
-    onError: () => showToast('Erreur lors du changement de rôle', 'error'),
+    onError: (err: Error) => showToast(err.message || 'Erreur lors du changement de rôle', 'error'),
   });
 
   const handleBlock      = (userId: string, type: BlockType) => blockMutation.mutate({ userId, type });

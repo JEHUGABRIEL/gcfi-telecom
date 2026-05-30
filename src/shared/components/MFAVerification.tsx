@@ -2,7 +2,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Smartphone, Lock, ArrowRight } from 'lucide-react';
-import { verifyTOTPCode } from '@/shared/lib/mfa-service';
 
 interface MFAVerificationProps {
   userId: string;
@@ -26,14 +25,21 @@ export default function MFAVerification({ userId, phone, onSuccess, onCancel }: 
     setError(null);
 
     try {
-      const valid = await verifyTOTPCode(userId, code);
-      if (valid) {
+      // Vérification côté serveur — le secret TOTP ne transite jamais dans le navigateur.
+      const res = await fetch('/api/auth/verify-mfa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, token: code }),
+      });
+
+      if (res.ok) {
         onSuccess();
       } else {
-        setError('Code incorrect ou expiré');
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || 'Code incorrect ou expiré');
         setCode('');
       }
-    } catch (err) {
+    } catch {
       setError('Erreur de vérification');
     } finally {
       setVerifying(false);
