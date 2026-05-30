@@ -40,65 +40,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const mounted = React.useRef(true);
 
-  useEffect(() => {
-    mounted.current = true;
+  // Stores the last auth event type so the profile-fetch effect can decide
+  // whether to redirect after resolving the admin role.
+  const lastAuthEvent = React.useRef<string | null>(null);
 
+  // Safety timeout: if loading stays true for 15s something went wrong.
+  useEffect(() => {
     const timeout = setTimeout(() => {
       if (mounted.current) {
         setLoading(prev => { if (prev) logError('Auth', 'Safety timeout'); return false; });
       }
     }, 15000);
+    return () => clearTimeout(timeout);
+  }, []);
 
-    // onAuthStateChange is the single source of truth for auth state.
-    // A separate initializeAuth() calling getUser() concurrently caused
-    // GoTrueClient's internal request lock to block fetchProfile indefinitely
-    // on page refresh, keeping loading=true until the 15s safety timeout.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+  // Effect 1 — subscribe to auth state changes.
+  // IMPORTANT: the callback is kept SYNCHRONOUS (no async/await inside).
+  // Calling fetchProfile() inside an async onAuthStateChange callback causes
+  // GoTrueClient's internal request lock to block the PostgREST fetch
+  // indefinitely on page refresh. Profile fetching is delegated to Effect 2.
+  useEffect(() => {
+    mounted.current = true;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted.current) return;
       const currentUser = session?.user ?? null;
+      lastAuthEvent.current = event;
 
-      // Block sessions for users who signed up but haven't confirmed their email yet.
       if (currentUser && !currentUser.email_confirmed_at) {
-        await supabase.auth.signOut({ scope: 'global' });
-        setUser(null);
-        setProfile(null);
-        setIsAdmin(false);
-        setLoading(false);
+        // Fire-and-forget: don't await inside the synchronous callback.
+        supabase.auth.signOut({ scope: 'global' }).catch(() => {});
+        setUser(null); setProfile(null); setIsAdmin(false); setLoading(false);
         return;
       }
 
       setUser(currentUser);
-      if (currentUser) {
-        const isAdminUser = await fetchProfile(currentUser.id, currentUser);
-
-        if (isAdminUser && mounted.current) {
-          const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
-          // On fresh login (SIGNED_IN): always redirect to dashboard.
-          // fetchProfile has already completed here so isAdmin is true
-          // before the navigation starts — no flash of "Accès Refusé".
-          // On existing session load (INITIAL_SESSION): only redirect from
-          // public pages so admins can still browse the catalogue.
-          const redirectPaths = ['/', '/profil', '/admin-login'];
-          const shouldRedirect =
-            event === 'SIGNED_IN' ||
-            (event === 'INITIAL_SESSION' && redirectPaths.includes(currentPath));
-
-          if (shouldRedirect) {
-            router.push('/admin');
-            return;
-          }
-        }
-
-        setPendingAction(prev => { if (prev) { prev(); setShowAuthModal(false); } return null; });
-      } else {
+      if (!currentUser) {
         setProfile(null);
         setIsAdmin(false);
         setLoading(false);
       }
+      // Profile fetch triggered by Effect 2 reacting to the user state change.
     });
-
-    return () => { mounted.current = false; subscription.unsubscribe(); clearTimeout(timeout); };
+    return () => { mounted.current = false; subscription.unsubscribe(); };
   }, []);
+
+  // Effect 2 — fetch profile whenever the authenticated user changes.
+  // Runs OUTSIDE the onAuthStateChange callback so GoTrueClient is free
+  // to process PostgREST requests without internal locking interference.
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+
+    async function doFetch() {
+      const isAdminUser = await fetchProfile(user!.id, user!);
+      if (!active || !mounted.current) return;
+
+      if (isAdminUser) {
+        const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+        const redirectPaths = ['/', '/profil', '/admin-login'];
+        const event = lastAuthEvent.current;
+        const shouldRedirect =
+          event === 'SIGNED_IN' ||
+          (event === 'INITIAL_SESSION' && redirectPaths.includes(currentPath));
+        if (shouldRedirect) { router.push('/admin'); return; }
+      } else {
+        setPendingAction(prev => { if (prev) { prev(); setShowAuthModal(false); } return null; });
+      }
+    }
+
+    doFetch();
+    return () => { active = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // Returns true if the resolved profile has admin/superadmin role.
   async function fetchProfile(uid: string, currentUser?: SupabaseUser): Promise<boolean> {
