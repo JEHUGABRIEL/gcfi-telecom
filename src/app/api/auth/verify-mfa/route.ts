@@ -4,10 +4,10 @@ import * as OTPAuth from 'otpauth';
 import { createHmac } from 'crypto';
 
 const APP_NAME = 'GCFI Telecom';
-export const COOKIE_NAME = 'mfa_verified';
+const COOKIE_NAME = 'mfa_verified';
 const COOKIE_TTL_SEC = 8 * 3600; // 8 heures
 
-export function buildMFACookieValue(userId: string): string {
+function buildMFACookieValue(userId: string): string {
   const expiresAt = Date.now() + COOKIE_TTL_SEC * 1000;
   const payload = `${userId}|${expiresAt}`;
   const sig = createHmac('sha256', process.env.MFA_COOKIE_SECRET!)
