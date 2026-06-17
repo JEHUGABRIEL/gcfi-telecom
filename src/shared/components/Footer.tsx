@@ -1,5 +1,5 @@
 import React from 'react';
-import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import GcfiLogo from './GcfiLogo';
 
@@ -23,11 +23,11 @@ export default function Footer() {
             <div className="flex space-x-4">
               {/* Liens sociaux — remplacer # par les vraies URLs */}
               {[
-                { Icon: Facebook, href: 'https://facebook.com', label: 'Facebook' },
-                { Icon: Twitter,  href: 'https://twitter.com',  label: 'Twitter' },
-                { Icon: Linkedin, href: 'https://linkedin.com', label: 'LinkedIn' },
-                { Icon: Instagram,href: 'https://instagram.com',label: 'Instagram' },
-              ].map(({ Icon, href, label }) => (
+                { href: 'https://facebook.com', label: 'Facebook', svg: 'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z' },
+                { href: 'https://twitter.com',  label: 'Twitter', svg: 'M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z' },
+                { href: 'https://linkedin.com', label: 'LinkedIn', svg: 'M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2zM4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z' },
+                { href: 'https://instagram.com',label: 'Instagram', svg: 'M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 0 2.5 1.25 1.25 0 0 1 0-2.5M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10m0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z' },
+              ].map(({ href, label, svg }) => (
                 <a
                   key={label}
                   href={href}
@@ -36,7 +36,9 @@ export default function Footer() {
                   aria-label={label}
                   className="w-10 h-10 bg-slate-200 dark:bg-white/5 rounded-full flex items-center justify-center hover:bg-[var(--accent)] hover:text-white transition-colors"
                 >
-                  <Icon className="w-5 h-5" />
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d={svg} />
+                  </svg>
                 </a>
               ))}
             </div>

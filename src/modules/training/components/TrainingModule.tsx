@@ -23,6 +23,13 @@ export default function TrainingModule() {
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
   const [sortBy, setSortBy]             = React.useState('default');
 
+  const sortOptions = [
+    { value: 'default', label: 'Par défaut' },
+    { value: 'price-asc', label: 'Prix croissant' },
+    { value: 'price-desc', label: 'Prix décroissant' },
+    { value: 'duration', label: 'Durée' },
+  ];
+
   const allTags = React.useMemo(
     () => Array.from(new Set(courses.flatMap(c => c.tags || []))),
     [courses]
