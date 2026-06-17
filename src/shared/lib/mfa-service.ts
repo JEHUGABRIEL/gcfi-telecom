@@ -108,15 +108,4 @@ export async function isMFAEnabled(userId: string): Promise<boolean> {
   return settings?.enabled === true;
 }
 
-// Gardés pour compatibilité avec l'ancien code (non utilisés avec TOTP)
-export async function generateMFACode(_userId: string): Promise<string> {
-  throw new Error('generateMFACode est remplacé par setupTOTP. Utilisez verifyTOTPCode.');
-}
 
-export async function sendMFAViaWhatsApp(_phone: string, _code: string): Promise<void> {
-  throw new Error('WhatsApp MFA remplacé par TOTP (Google Authenticator). Gratuit et plus sécurisé.');
-}
-
-export async function cleanExpiredMFACodes(): Promise<void> {
-  // TOTP n'utilise pas de codes en base de données — rien à nettoyer
-}
