@@ -135,7 +135,7 @@ export default function PromoTab() {
   const table = section === 'produits' ? 'products' : 'trainings';
   const queryKey = ['admin', 'promo', section];
 
-  const { data: items = [], isLoading: loading } = useQuery({
+  const { data: items = [], isLoading: loading, isFetching } = useQuery({
     queryKey,
     queryFn: async () => {
       const { data } = await supabase.from(table).select('id, name, title, category, price, discount, is_promo, image').order('name', { ascending: true });
@@ -188,7 +188,7 @@ export default function PromoTab() {
         </div>
         <div className="flex gap-2">
           <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors">
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={cn('w-4 h-4', isFetching && 'animate-spin')} />
           </button>
           <button onClick={() => setResetTarget('all')}
             className="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-500 rounded-xl text-xs font-bold hover:bg-red-50 transition-colors">

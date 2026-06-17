@@ -20,7 +20,7 @@ export default function OrdersTab() {
   const queryClient = useQueryClient();
   const [page, setPage] = React.useState(1);
 
-  const { data, isLoading: loading } = useQuery({
+  const { data, isLoading: loading, isFetching } = useQuery({
     queryKey: ['admin', 'orders', page],
     queryFn: async () => {
       const from = (page - 1) * PAGE_SIZE;
@@ -59,7 +59,7 @@ export default function OrdersTab() {
           onClick={() => queryClient.invalidateQueries({ queryKey: ['admin', 'orders', page] })}
           className="text-xs text-slate-500 hover:text-[#C1272D] flex items-center gap-1 transition-colors"
         >
-          <RefreshCw className={cn('w-3 h-3', loading && 'animate-spin')} /> Actualiser
+          <RefreshCw className={cn('w-3 h-3', isFetching && 'animate-spin')} /> Actualiser
         </button>
       </div>
 

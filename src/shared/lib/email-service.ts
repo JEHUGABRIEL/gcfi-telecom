@@ -7,44 +7,6 @@ export interface EmailTemplate {
   text?: string;
 }
 
-export async function sendWelcomeEmail(email: string, name: string): Promise<void> {
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: linear-gradient(135deg, #C1272D 0%, #1E4D8C 100%); padding: 40px; text-align: center; color: white;">
-        <h1 style="margin: 0;">Bienvenue chez GCFI Telecom</h1>
-      </div>
-      <div style="padding: 40px; background: #f9fafb;">
-        <p style="font-size: 16px; color: #333;">Bonjour ${name},</p>
-        <p style="font-size: 14px; color: #666; line-height: 1.6;">
-          Merci de vous être inscrit chez GCFI Telecom ! Nous sommes ravis de vous accueillir dans notre communauté.
-        </p>
-        <p style="font-size: 14px; color: #666; line-height: 1.6;">
-          Vous avez maintenant accès à :
-        </p>
-        <ul style="font-size: 14px; color: #666; line-height: 1.8;">
-          <li>✓ Accès complet à notre boutique en ligne</li>
-          <li>✓ Inscription aux formations en télécommunication et cybersécurité</li>
-          <li>✓ Suivi de vos commandes et factures</li>
-          <li>✓ Support client prioritaire</li>
-        </ul>
-        <div style="margin: 30px 0; text-align: center;">
-          <a href="https://www.gcfi-rca.com/#/profil" style="background: #C1272D; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-            Accéder à mon compte
-          </a>
-        </div>
-        <p style="font-size: 12px; color: #999; text-align: center; margin-top: 40px;">
-          Si vous avez des questions, contactez-nous à contact@gcfi-rca.com
-        </p>
-      </div>
-    </div>
-  `;
-
-  await sendEmail({
-    to: email,
-    subject: 'Bienvenue chez GCFI Telecom !',
-    html,
-  });
-}
 
 export async function sendOrderConfirmationEmail(
   email: string,
@@ -187,39 +149,6 @@ export async function sendCourseEnrollmentEmail(
   await sendEmail({
     to: email,
     subject: `Bienvenue à ${courseData.courseName}`,
-    html,
-  });
-}
-
-export async function sendResetPasswordEmail(email: string, resetLink: string): Promise<void> {
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: linear-gradient(135deg, #C1272D 0%, #1E4D8C 100%); padding: 40px; text-align: center; color: white;">
-        <h1 style="margin: 0;">Réinitialisation de mot de passe</h1>
-      </div>
-      <div style="padding: 40px; background: #f9fafb;">
-        <p style="font-size: 16px; color: #333;">Bonjour,</p>
-        <p style="font-size: 14px; color: #666; line-height: 1.6;">
-          Vous avez demandé la réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour continuer.
-        </p>
-        
-        <div style="margin: 30px 0; text-align: center;">
-          <a href="${resetLink}" style="background: #C1272D; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-            Réinitialiser mon mot de passe
-          </a>
-        </div>
-
-        <p style="font-size: 12px; color: #999; line-height: 1.6;">
-          Ce lien expire dans 1 heure.<br>
-          Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.
-        </p>
-      </div>
-    </div>
-  `;
-
-  await sendEmail({
-    to: email,
-    subject: 'Réinitialisation de votre mot de passe GCFI',
     html,
   });
 }

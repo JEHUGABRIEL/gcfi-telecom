@@ -177,7 +177,7 @@ export default function UsersTab() {
   const [selectedUser, setSelected] = React.useState<any>(null);
   const [confirm, setConfirm]       = React.useState<any>(null);
 
-  const { data: rawUsers = [], isLoading: loading } = useQuery({
+  const { data: rawUsers = [], isLoading: loading, isFetching } = useQuery({
     queryKey: ['admin', 'users'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -301,7 +301,7 @@ export default function UsersTab() {
           className="w-full pl-10 pr-10 py-2.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-[#C1272D]" />
         {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"><X className="w-4 h-4" /></button>}
         <button onClick={invalidate} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#C1272D] transition-colors mr-2">
-          <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
+          <RefreshCw className={cn('w-4 h-4', isFetching && 'animate-spin')} />
         </button>
       </div>
 

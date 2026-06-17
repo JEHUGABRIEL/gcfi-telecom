@@ -7,10 +7,13 @@ import { Newspaper, ChevronRight, ExternalLink, RefreshCw, Radio, TrendingUp, Cp
 import { cn } from '@/shared/lib/utils';
 import { supabase } from '@/shared/lib/supabase';
 import { useNews } from '@/shared/lib/queries';
+import { useLang } from '@/shared/context/LanguageContext';
 import type { NewsItem } from '@/shared/types';
 
 // ── Bloc d'abonnement newsletter ──────────────────────────────
 function SubscribeBlock() {
+  const { t } = useLang();
+  const n = t.news_feed;
   const [subscribed, setSubscribed] = React.useState(false);
   const [showForm, setShowForm] = React.useState(false);
   const [email, setEmail] = React.useState('');
@@ -43,11 +46,11 @@ function SubscribeBlock() {
     // ✅ Honeypot check
     if (honeypot) { setDone(true); return; }
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      setError('Veuillez entrer une adresse email valide.');
+      setError(n.error_invalid_email);
       return;
     }
     if (!checkNewsletterRate()) {
-      setError('Trop de tentatives. Réessayez dans une heure.');
+      setError(n.error_rate_limit);
       return;
     }
     setSubmitting(true);
@@ -71,7 +74,7 @@ function SubscribeBlock() {
         <div className="inline-flex items-center gap-3 px-6 py-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-full">
           <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
           <span className="text-sm font-bold text-green-700 dark:text-green-400">
-            Vous êtes abonné aux actualités GCFI !
+            {n.success_text}
           </span>
         </div>
       </motion.div>
@@ -90,13 +93,13 @@ function SubscribeBlock() {
             className="inline-flex items-center gap-4 p-2 pl-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-full shadow-lg"
           >
             <span className="text-sm font-bold text-slate-600 dark:text-slate-400">
-              Restez informé de l&apos;actualité locale
+              {n.subscribe_cta}
             </span>
             <button
               onClick={() => setShowForm(true)}
               className="bg-[#C1272D] text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest hover:bg-[#1E4D8C] transition-all flex items-center gap-2"
             >
-              <Mail className="w-3 h-3" /> S&apos;abonner
+              <Mail className="w-3 h-3" /> {n.subscribe_btn}
             </button>
           </motion.div>
         ) : (
@@ -115,10 +118,10 @@ function SubscribeBlock() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                  Newsletter GCFI
+                  {n.form_title}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Recevez les dernières actualités télécom & IT.
+                  {n.form_subtitle}
                 </p>
               </div>
               <button
@@ -135,7 +138,7 @@ function SubscribeBlock() {
                 type="email"
                 value={email}
                 onChange={e => { setEmail(e.target.value); setError(''); }}
-                placeholder="votre@email.com"
+                placeholder={n.form_placeholder}
                 className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D] focus:ring-2 focus:ring-[#C1272D]/10 transition-all"
               />
               <button
@@ -148,7 +151,7 @@ function SubscribeBlock() {
                 ) : (
                   <Mail className="w-4 h-4" />
                 )}
-                OK
+                {n.form_submit}
               </button>
             </div>
 
@@ -169,15 +172,17 @@ const fallbackNews: NewsItem[] = [
 ];
 
 export default function NewsFeed() {
-  const { data: rawNews, isLoading: loading, isError, refetch } = useNews();
+  const { t, lang } = useLang();
+  const n = t.news_feed;
+  const { data: rawNews, isLoading: loading, isFetching, isError, refetch } = useNews();
   const news: NewsItem[] = rawNews?.length ? (rawNews as NewsItem[]).slice(0, 3) : fallbackNews;
-  const error = isError ? 'Impossible de charger les actualités depuis la base de données.' : null;
+  const error = isError ? n.fallback_error : null;
   const fetchNews = () => { refetch(); };
 
   const categoryIcons = { telecom: Radio, it: Cpu };
 
   const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    new Date(iso).toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <section className="py-24 bg-white dark:bg-slate-950 transition-colors overflow-hidden">
@@ -186,24 +191,24 @@ export default function NewsFeed() {
           <div className="max-w-2xl">
             <div className="flex items-center gap-3 text-[#C1272D] font-black uppercase tracking-[0.3em] text-xs mb-4">
               <Newspaper className="w-4 h-4" />
-              Actualités du Secteur
+              {n.badge}
             </div>
             <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white">
-              Veille <span className="text-[#C1272D]">Stratégique</span>
+              {n.title_start} <span className="text-[#C1272D]">{n.title_end}</span>
             </h2>
           </div>
           <button
             onClick={fetchNews} disabled={loading}
             className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-[#C1272D] transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
-            Actualiser
+            <RefreshCw className={cn('w-4 h-4', isFetching && 'animate-spin')} />
+            {n.refresh}
           </button>
         </div>
 
         {error && (
           <div className="mb-8 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 p-4 rounded-2xl text-amber-700 dark:text-amber-400 text-sm font-medium">
-            {error} — Affichage des données de démonstration.
+            {error} — {n.fallback_hint}
           </div>
         )}
 
@@ -252,7 +257,7 @@ export default function NewsFeed() {
                         </p>
                         <a href={item.url} target="_blank" rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#C1272D] hover:gap-3 transition-all">
-                          Lire la suite <ChevronRight className="w-4 h-4" />
+                          {n.read_more} <ChevronRight className="w-4 h-4" />
                         </a>
                       </div>
                     </motion.article>

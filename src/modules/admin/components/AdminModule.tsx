@@ -48,12 +48,13 @@ import BlogTab from './tabs/BlogTab';
 import PromoTab from './tabs/PromoTab';
 import NotificationsTab from './tabs/NotificationsTab';
 import { useSearchParams } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useIsFetching } from '@tanstack/react-query';
 import {
   useAdminUsers, useAdminOrders, useAdminTrainings,
   useAdminProducts, useAdminComments, useAdminNotifications,
 } from '@/shared/lib/queries';
 import { useAdminToast, AdminToast } from '@/shared/components/AdminToast';
+import { useLang } from '@/shared/context/LanguageContext';
 
 const VALID_TABS = ['overview','notifications','orders','users','formations','produits','stock','commentaires','devis','temoignages','realisations','partenaires','actualites','blog','promotions'] as const;
 type AdminTab = typeof VALID_TABS[number];
@@ -73,7 +74,9 @@ const AdminModule = () => {
   const [isSending, setIsSending] = React.useState(false);
   const [sendSuccess, setSendSuccess] = React.useState(false);
   
+  const { t } = useLang();
   const queryClient = useQueryClient();
+  const isFetching = useIsFetching({ queryKey: ['admin'] });
   const { data: users = [] }            = useAdminUsers(isAuthorized);
   const { data: orders = [] }           = useAdminOrders(isAuthorized);
   const { data: trainings = [] }        = useAdminTrainings(isAuthorized);
@@ -91,13 +94,107 @@ const AdminModule = () => {
 
   // Search State
   const [searchQuery, setSearchQuery] = React.useState('');
+  // Global admin search
+  const [globalSearch, setGlobalSearch] = React.useState('');
+  const [showGlobalSearch, setShowGlobalSearch] = React.useState(false);
+  const searchRef = React.useRef<HTMLDivElement>(null);
 
   // Delete Confirmation State
   const [deleteConfirmation, setDeleteConfirmation] = React.useState<{ id: string, table: string } | null>(null);
 
+  const adminPage = t.admin_page;
+  // Global search results — memoized
+  const globalSearchResults = React.useMemo(() => {
+    if (globalSearch.length < 2) return [];
+    const q = globalSearch.toLowerCase();
+    type ResultGroup = { label: string; tab: AdminTab; items: { id: string; label: string; sub?: string }[] };
+    const groups: ResultGroup[] = [];
+
+    const foundUsers = users
+      .filter((u: any) => (u.full_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)))
+      .slice(0, 5)
+      .map((u: any) => ({ id: u.id, label: u.full_name || u.email, sub: u.email }));
+    if (foundUsers.length) groups.push({ label: adminPage.sidebar_users, tab: 'users', items: foundUsers });
+
+    const foundOrders = orders
+      .filter((o: any) => o.id.toLowerCase().includes(q) || o.customer_email?.toLowerCase().includes(q))
+      .slice(0, 5)
+      .map((o: any) => ({ id: o.id, label: `#${o.id.slice(0, 8)}`, sub: o.customer_email }));
+    if (foundOrders.length) groups.push({ label: adminPage.sidebar_orders, tab: 'orders', items: foundOrders });
+
+    const foundProducts = products
+      .filter((p: any) => p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q))
+      .slice(0, 5)
+      .map((p: any) => ({ id: p.id, label: p.name, sub: p.category }));
+    if (foundProducts.length) groups.push({ label: adminPage.sidebar_products, tab: 'produits', items: foundProducts });
+
+    const foundTrainings = trainings
+      .filter((t: any) => t.title?.toLowerCase().includes(q) || t.category?.toLowerCase().includes(q))
+      .slice(0, 5)
+      .map((t: any) => ({ id: t.id, label: t.title, sub: t.category }));
+    if (foundTrainings.length) groups.push({ label: adminPage.sidebar_trainings, tab: 'formations', items: foundTrainings });
+
+    return groups;
+  }, [globalSearch, users, orders, products, trainings, adminPage]);
+
+  // Fermer le dropdown au clic outside
+  React.useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowGlobalSearch(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
   const refreshAll = React.useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['admin'] });
   }, [queryClient]);
+
+  const handleExportReport = React.useCallback(() => {
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10);
+
+    // Collecter les stats
+    const totalUsers = users.length;
+    const totalOrders = orders.length;
+    const totalProducts = products.length;
+    const totalTrainings = trainings.length;
+    const completedOrders = orders.filter((o: any) => o.status === 'completed' || o.status === 'Livrée');
+    const totalRevenue = completedOrders.reduce((sum: number, o: any) => sum + (Number(o.total_amount) || Number(o.total) || 0), 0);
+
+    // Construire le CSV
+    const rows: string[] = [];
+    rows.push('Rapport GCFI - Dashboard Administration');
+    rows.push(`Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR')}`);
+    rows.push('');
+    rows.push('--- INDICATEURS CLÉS ---');
+    rows.push(`Utilisateurs,${totalUsers}`);
+    rows.push(`Commandes,${totalOrders}`);
+    rows.push(`Produits,${totalProducts}`);
+    rows.push(`Formations,${totalTrainings}`);
+    rows.push(`Revenu total (commandes complétées),${totalRevenue} FCFA`);
+    rows.push('');
+    rows.push('--- PRODUITS ---');
+    rows.push('Nom,Prix,Stock,Remise (%)');
+    products.forEach((p: any) => rows.push(`"${p.name || ''}",${p.price ?? 0},${p.stock ?? 0},${p.discount ?? 0}`));
+    rows.push('');
+    rows.push('--- FORMATIONS ---');
+    rows.push('Titre,Prix,Durée,Remise (%)');
+    trainings.forEach((t: any) => rows.push(`"${t.title || ''}",${t.price ?? 0},"${t.duration || ''}",${t.discount ?? 0}`));
+
+    const csv = rows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gcfi-report-${dateStr}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showToast('Rapport exporté ✓');
+  }, [users, orders, products, trainings, showToast]);
 
   React.useEffect(() => {
     if (!isAuthorized) return;
@@ -425,13 +522,78 @@ const AdminModule = () => {
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Gérez le contenu, les utilisateurs et les opérations de GCFI.</p>
           </div>
           <div className="flex items-center gap-3">
+            {/* Global admin search */}
+            <div ref={searchRef} className="relative">
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm min-w-[220px]">
+                <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                <input
+                  type="text"
+                  placeholder={'Rechercher...'}
+                  value={globalSearch}
+                  onChange={e => { setGlobalSearch(e.target.value); setShowGlobalSearch(true); }}
+                  onFocus={() => setShowGlobalSearch(true)}
+                  className="w-full bg-transparent border-none outline-none text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
+                />
+                {globalSearch && (
+                  <button onClick={() => { setGlobalSearch(''); setShowGlobalSearch(false); }} className="p-0.5 text-slate-300 hover:text-slate-500">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Search dropdown */}
+              <AnimatePresence>
+                {showGlobalSearch && globalSearch.length >= 2 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="absolute top-full right-0 mt-2 w-[400px] bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50"
+                  >
+                    {globalSearchResults.length === 0 ? (
+                      <div className="p-6 text-center text-sm text-slate-400">
+                        <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                        <p>Aucun résultat pour "{globalSearch}"</p>
+                      </div>
+                    ) : (
+                      <div className="max-h-[60vh] overflow-y-auto p-2 space-y-1">
+                        {globalSearchResults.map(group => (
+                          <div key={group.tab}>
+                            <p className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                              {group.label}
+                            </p>
+                            {group.items.map(item => (
+                              <button
+                                key={item.id}
+                                onClick={() => { setActiveTab(group.tab); setShowGlobalSearch(false); setGlobalSearch(''); }}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{item.label}</p>
+                                  {item.sub && <p className="text-xs text-slate-400 truncate">{item.sub}</p>}
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+                              </button>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <button
               onClick={refreshAll}
               className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300"
             >
-              <RefreshCw className="w-4 h-4" /> Actualiser
+              <RefreshCw className={`w-4 h-4 ${isFetching > 0 ? 'animate-spin' : ''}`} /> Actualiser
             </button>
-            <button className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300">
+            <button
+              onClick={handleExportReport}
+              className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300"
+            >
               <BarChart3 className="w-4 h-4" /> Rapport
             </button>
             <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">

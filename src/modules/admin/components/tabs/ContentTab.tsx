@@ -51,7 +51,7 @@ export default function ContentTab({ type }: ContentTabProps) {
 
   const queryKey = ['admin', 'content', type];
 
-  const { data: items = [], isLoading: loading } = useQuery({
+  const { data: items = [], isLoading: loading, isFetching } = useQuery({
     queryKey,
     queryFn: async () => {
       const { data, error } = await supabase.from(cfg.table).select('*').order('created_at', { ascending: false });
@@ -97,7 +97,7 @@ export default function ContentTab({ type }: ContentTabProps) {
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">{cfg.label} ({items.length})</h3>
         <div className="flex gap-2">
-          <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className="w-4 h-4" /></button>
+          <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className={cn('w-4 h-4', isFetching && 'animate-spin')} /></button>
           <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-2 bg-[#C1272D] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#1E4D8C] transition-all">
             <Plus className="w-4 h-4" /> Ajouter
           </button>

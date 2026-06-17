@@ -1,3 +1,5 @@
+import type { Product, Course } from '@/shared/types';
+
 export function setStructuredData(data: Record<string, any>) {
   const script = document.createElement('script');
   script.type = 'application/ld+json';

@@ -47,7 +47,7 @@ export default function BlogTab() {
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const { data: posts = [], isLoading: loading } = useQuery({
+  const { data: posts = [], isLoading: loading, isFetching } = useQuery({
     queryKey: ['admin', 'blog_posts'],
     queryFn: async () => {
       const { data } = await supabase.from('blog_posts').select('*').order('created_at', { ascending: false });
@@ -208,7 +208,7 @@ export default function BlogTab() {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">Articles de blog ({posts.length})</h3>
         <div className="flex gap-2">
-          <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className="w-4 h-4" /></button>
+          <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} /></button>
           <button onClick={() => { resetForm(); setShowForm(true); }}
             className="flex items-center gap-2 bg-[#C1272D] text-white px-4 py-2 rounded-xl text-sm font-bold hover:opacity-90">
             <Plus className="w-4 h-4" /> Nouvel article

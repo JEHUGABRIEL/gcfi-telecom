@@ -11,12 +11,6 @@ import { useAuth } from '@/shared/context/AuthContext';
 import { useTrainings } from '@/shared/lib/queries';
 import { useContact } from '@/shared/context/ContactContext';
 
-const sortOptions = [
-  { label: 'Par défaut',       value: 'default' },
-  { label: 'Prix croissant',   value: 'price-asc' },
-  { label: 'Prix décroissant', value: 'price-desc' },
-  { label: 'Durée',            value: 'duration' },
-];
 
 export default function TrainingModule() {
   const { openContact: onContactOpen } = useContact();
