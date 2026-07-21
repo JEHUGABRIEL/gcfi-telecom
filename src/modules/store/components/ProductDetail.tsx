@@ -7,11 +7,13 @@ import { motion } from 'motion/react';
 import { ArrowLeft, Star, ShoppingCart, Heart, Share2, Shield, Truck, RefreshCw, Package, Tag } from 'lucide-react';
 import { useProducts } from '@/shared/lib/queries';
 import { useAuth } from '@/shared/context/AuthContext';
+import { useLang } from '@/shared/context/LanguageContext';
 import type { Product } from '@/shared/types';
 
 export default function ProductDetail() {
   const params = useParams(); const id = params.id as string;
   const router = useRouter();
+  const { t } = useLang();
   const { data: products = [], isLoading } = useProducts();
   const { user, setShowAuthModal } = useAuth();
   const [added, setAdded] = React.useState(false);
@@ -60,7 +62,7 @@ export default function ProductDetail() {
           onClick={() => router.back()}
           className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#C1272D] transition-colors mb-8"
         >
-          <ArrowLeft className="w-4 h-4" /> Retour à la boutique
+          <ArrowLeft className="w-4 h-4" /> {t.product_detail.back}
         </motion.button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -107,7 +109,7 @@ export default function ProductDetail() {
                   ))}
                 </div>
                 <span className="text-sm text-slate-500 font-medium">
-                  {product.rating.toFixed(1)} ({product.reviewsCount ?? product.reviews_count ?? 0} avis)
+                  {product.rating.toFixed(1)} ({product.reviewsCount ?? product.reviews_count ?? 0} {t.product_detail.reviews})
                 </span>
               </div>
             )}
@@ -130,7 +132,7 @@ export default function ProductDetail() {
               <div className="flex items-center gap-2 mb-6">
                 <div className={`w-2.5 h-2.5 rounded-full ${product.stock > 0 ? 'bg-green-500' : 'bg-red-400'}`} />
                 <span className={`text-sm font-bold ${product.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                  {product.stock > 0 ? `${product.stock} en stock` : 'Rupture de stock'}
+                  {product.stock > 0 ? `${product.stock} ${t.product_detail.in_stock}` : t.product_detail.out_of_stock}
                 </span>
               </div>
             )}
@@ -150,7 +152,7 @@ export default function ProductDetail() {
                 }`}
               >
                 <ShoppingCart className="w-4 h-4" />
-                {added ? 'Ajouté !' : 'Ajouter au panier'}
+                {added ? t.product_detail.added : t.product_detail.add_to_cart}
               </motion.button>
 
               <button
@@ -175,9 +177,9 @@ export default function ProductDetail() {
             {/* Garanties */}
             <div className="grid grid-cols-3 gap-4">
               {[
-                { icon: Shield, label: 'Garantie', sub: '12 mois' },
-                { icon: Truck, label: 'Livraison', sub: 'Bangui & provinces' },
-                { icon: RefreshCw, label: 'Retour', sub: '7 jours' },
+                { icon: Shield, label: t.product_detail.guarantee_title, sub: t.product_detail.guarantee_sub },
+                { icon: Truck, label: t.product_detail.delivery_title, sub: t.product_detail.delivery_sub },
+                { icon: RefreshCw, label: t.product_detail.return_title, sub: t.product_detail.return_sub },
               ].map(({ icon: Icon, label, sub }) => (
                 <div key={label} className="flex flex-col items-center text-center p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
                   <Icon className="w-5 h-5 text-[#C1272D] mb-2" />
@@ -198,7 +200,7 @@ export default function ProductDetail() {
             className="mt-12 flex items-center gap-3"
           >
             <Tag className="w-4 h-4 text-slate-400" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Catégorie</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.product_detail.category}</span>
             <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold px-4 py-1.5 rounded-full">
               {product.category}
             </span>

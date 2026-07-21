@@ -2,6 +2,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Smartphone, Lock, ArrowRight } from 'lucide-react';
+import { useLang } from '@/shared/context/LanguageContext';
 
 interface MFAVerificationProps {
   userId: string;
@@ -11,13 +12,14 @@ interface MFAVerificationProps {
 }
 
 export default function MFAVerification({ userId, phone, onSuccess, onCancel }: MFAVerificationProps) {
+  const { t } = useLang();
   const [code, setCode] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [verifying, setVerifying] = React.useState(false);
 
   const handleVerify = async () => {
     if (code.length !== 6) {
-      setError('Code invalide (6 chiffres requis)');
+      setError(t.mfa_verification.invalid_code);
       return;
     }
 
@@ -36,11 +38,11 @@ export default function MFAVerification({ userId, phone, onSuccess, onCancel }: 
         onSuccess();
       } else {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || 'Code incorrect ou expiré');
+        setError(data.error || t.mfa_verification.incorrect_code);
         setCode('');
       }
     } catch {
-      setError('Erreur de vérification');
+      setError(t.mfa_verification.error_verify);
     } finally {
       setVerifying(false);
     }
@@ -58,15 +60,15 @@ export default function MFAVerification({ userId, phone, onSuccess, onCancel }: 
         </div>
 
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white text-center mb-2">
-          Vérification 2FA
+          {t.mfa_verification.title}
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 text-center mb-6">
-          Entrez le code affiché dans votre application <span className="font-bold">Google Authenticator</span> ou <span className="font-bold">Authy</span>
+          {t.mfa_verification.instruction} <span className="font-bold">Google Authenticator</span> ou <span className="font-bold">Authy</span>
         </p>
 
         <div className="space-y-4 mb-6">
           <label className="text-xs font-bold uppercase tracking-widest text-slate-500 block">
-            Code MFA (6 chiffres)
+            {t.mfa_verification.code_label}
           </label>
           <input
             type="text"
@@ -77,7 +79,7 @@ export default function MFAVerification({ userId, phone, onSuccess, onCancel }: 
               setCode(e.target.value.replace(/\D/g, '').slice(0, 6));
               setError(null);
             }}
-            placeholder="000000"
+            placeholder={t.mfa_verification.code_placeholder}
             className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:border-blue-500"
           />
         </div>
@@ -94,19 +96,19 @@ export default function MFAVerification({ userId, phone, onSuccess, onCancel }: 
             disabled={verifying}
             className="flex-1 px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50"
           >
-            Annuler
+            {t.mfa_verification.cancel}
           </button>
           <button
             onClick={handleVerify}
             disabled={verifying || code.length !== 6}
             className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {verifying ? 'Vérification...' : <>Vérifier <ArrowRight className="w-4 h-4" /></>}
+            {verifying ? t.mfa_verification.verifying : <>{t.mfa_verification.verify} <ArrowRight className="w-4 h-4" /></>}
           </button>
         </div>
 
         <p className="text-xs text-slate-400 text-center mt-4">
-          Le code se renouvelle toutes les 30 secondes
+          {t.mfa_verification.renew}
         </p>
       </motion.div>
     </div>

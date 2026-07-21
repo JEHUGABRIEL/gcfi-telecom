@@ -7,17 +7,19 @@ import { Home, GraduationCap, ShoppingBag, User, LayoutGrid } from 'lucide-react
 import { cn } from '@/shared/lib/utils';
 import { motion } from 'motion/react';
 import { useAuth } from '@/shared/context/AuthContext';
+import { useLang } from '@/shared/context/LanguageContext';
 
 const BottomNav = () => {
+  const { t } = useLang();
   const { isAdmin } = useAuth();
   const pathname = usePathname();
 
   const navItems = [
-    { to: '/',          label: 'Accueil',   icon: Home },
-    { to: '/formation', label: 'Formation', icon: GraduationCap },
-    { to: '/boutique',  label: 'Boutique',  icon: ShoppingBag },
-    ...(isAdmin ? [{ to: '/admin', label: 'Admin', icon: LayoutGrid }] : []),
-    { to: '/profil',    label: 'Profil',    icon: User },
+    { to: '/',          label: t.bottom_nav.home,    icon: Home },
+    { to: '/formation', label: t.bottom_nav.training, icon: GraduationCap },
+    { to: '/boutique',  label: t.bottom_nav.shop,    icon: ShoppingBag },
+    ...(isAdmin ? [{ to: '/admin', label: t.bottom_nav.admin, icon: LayoutGrid }] : []),
+    { to: '/profil',    label: t.bottom_nav.profile,  icon: User },
   ];
 
   const isActive = (to: string) => to === '/' ? pathname === '/' : pathname.startsWith(to);

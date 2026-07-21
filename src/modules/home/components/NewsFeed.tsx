@@ -174,7 +174,7 @@ const fallbackNews: NewsItem[] = [
 export default function NewsFeed() {
   const { t, lang } = useLang();
   const n = t.news_feed;
-  const { data: rawNews, isLoading: loading, isFetching, isError, refetch } = useNews();
+  const { data: rawNews, isLoading: loading, isError, refetch } = useNews();
   const news: NewsItem[] = rawNews?.length ? (rawNews as NewsItem[]).slice(0, 3) : fallbackNews;
   const error = isError ? n.fallback_error : null;
   const fetchNews = () => { refetch(); };
@@ -201,7 +201,7 @@ export default function NewsFeed() {
             onClick={fetchNews} disabled={loading}
             className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-[#C1272D] transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={cn('w-4 h-4', isFetching && 'animate-spin')} />
+            <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
             {n.refresh}
           </button>
         </div>

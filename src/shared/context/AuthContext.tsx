@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { LogOut } from 'lucide-react';
 import { supabase, SupabaseUser } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
+import { useLang } from '@/shared/context/LanguageContext';
 
 interface Profile {
   id: string;
@@ -19,7 +20,7 @@ interface AuthContextType {
   profile: Profile | null;
   isAdmin: boolean;
   loading: boolean;
-  signOut: () => Promise<void>;
+  signOut: () => void;
   requireAuth: (callback: () => void) => void;
   setShowAuthModal: (show: boolean) => void;
   showAuthModal: boolean;
@@ -30,6 +31,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useLang();
+  const c = t.common;
   const router = useRouter();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -37,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const mounted = React.useRef(true);
 
@@ -54,11 +58,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timeout);
   }, []);
 
-  // Effect 1 — subscribe to auth state changes.
+  // Effect 1 — subscribe to auth state changes — SOLE source of truth.
   // IMPORTANT: the callback is kept SYNCHRONOUS (no async/await inside).
   // Calling fetchProfile() inside an async onAuthStateChange callback causes
   // GoTrueClient's internal request lock to block the PostgREST fetch
   // indefinitely on page refresh. Profile fetching is delegated to Effect 2.
+  // (A separate initializeAuth() calling getUser() concurrently caused
+  // the same lock issue — removed in favor of this single subscription.)
   useEffect(() => {
     mounted.current = true;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -74,6 +80,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(currentUser);
+      // NOTE: la redirection SIGNED_IN et la gestion de pendingAction
+      // sont déléguées à Effect 2 (ci-dessous) pour éviter d'appeler
+      // fetchProfile() dans le callback synchrone d'onAuthStateChange,
+      // ce qui bloquerait le verrou interne de GoTrueClient.
       if (!currentUser) {
         setProfile(null);
         setIsAdmin(false);
@@ -158,15 +168,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return false;
   }
 
-  // ✅ Auto-logout admin après 15 minutes d'inactivité
-  const ADMIN_TIMEOUT_MS = 15 * 60 * 1000; // 15 min
+  // ── Avertissement d'inactivité admin ──────────────────────────
+  // On n'appelle PAS signOut() (qui révoque le refresh token et force
+  // une reconnexion complète). On redirige simplement vers /admin-login
+  // pour que l'admin saisisse à nouveau son mot de passe, tandis que
+  // la session Supabase reste valide en arrière-plan.
+  const ADMIN_TIMEOUT_MS = 30 * 60 * 1000; // 30 min
   const adminTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const resetAdminTimer = React.useCallback(() => {
-    if (!mounted.current) return;
-    if (adminTimerRef.current) clearTimeout(adminTimerRef.current);
-    // On vérifie isAdmin via ref pour éviter les dépendances cycliques
-  }, []);
 
   React.useEffect(() => {
     if (!isAdmin) {
@@ -178,7 +186,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (adminTimerRef.current) clearTimeout(adminTimerRef.current);
       adminTimerRef.current = setTimeout(() => {
         if (mounted.current) {
-          signOut();
+          // Redirection vers la page de login admin sans déconnecter —
+          // le middleware validera à nouveau la session au retour.
+          window.location.replace('/admin-login');
         }
       }, ADMIN_TIMEOUT_MS);
     };
@@ -187,7 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const handler = () => startTimer();
 
     events.forEach(e => document.addEventListener(e, handler, { passive: true }));
-    startTimer(); // Démarrer dès la connexion admin
+    startTimer();
 
     return () => {
       events.forEach(e => document.removeEventListener(e, handler));
@@ -195,23 +205,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isAdmin]);
 
-  const signOut = async () => {
-    setUser(null);
-    setProfile(null);
-    setIsAdmin(false);
+  const signOut = () => {
     setShowSignOutModal(false);
+    setSigningOut(true);
 
-    try {
-      // scope:'global' revokes the refresh token server-side AND clears local
-      // cookies/storage via the client's internal _removeSession() — this
-      // happens before the network request, so the local session is wiped
-      // even if the server call fails.
-      await supabase.auth.signOut({ scope: 'global' });
-    } catch (err) {
-      logError('signOut', err);
-    } finally {
+    // ℹ️ On affiche l'écran de déconnexion 400ms avant de naviguer
+    // pour que l'utilisateur voie le message de confirmation.
+    // window.location.replace('/') est appelé après ce délai, ce qui
+    // empêche aussi la race condition où AdminModule redirigerait
+    // vers /admin-login avant nous.
+    setTimeout(() => {
       window.location.replace('/');
-    }
+    }, 400);
+
+    // scope:'global' revokes the refresh token server-side AND clears local
+    // cookies/storage via the client's internal _removeSession() — this
+    // happens before the network request, so the local session is wiped
+    // even if the server call fails.
+    supabase.auth.signOut({ scope: 'global' }).catch(err => {
+      logError('signOut', err);
+    });
   };
 
   const requireAuth = (callback: () => void) => {
@@ -245,26 +258,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
                 <LogOut className="w-8 h-8 text-red-500" />
               </div>
-              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Se déconnecter ?</h3>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">{c.signout_title}</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-7">
-                Vous devrez vous reconnecter pour accéder à votre compte.
+                {c.signout_text}
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowSignOutModal(false)}
                   className="flex-1 py-3 rounded-2xl font-bold text-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                 >
-                  Annuler
+                  {c.confirm_modal_cancel}
                 </button>
                 <button
                   onClick={signOut}
                   className="flex-1 py-3 rounded-2xl font-bold text-sm bg-red-500 text-white hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
                 >
-                  Déconnecter
+                  {c.signout_confirm}
                 </button>
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Écran de déconnexion en cours */}
+      <AnimatePresence>
+        {signingOut && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex flex-col items-center justify-center bg-white dark:bg-slate-900"
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+              className="w-14 h-14 border-4 border-red-100 dark:border-red-900/30 border-t-[#C1272D] rounded-full mb-6"
+            />
+            <p className="text-lg font-bold text-slate-700 dark:text-slate-300">{c.signing_out}</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">{c.signing_out_sub}</p>
+          </motion.div>
         )}
       </AnimatePresence>
     </AuthContext.Provider>

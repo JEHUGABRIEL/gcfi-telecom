@@ -1,6 +1,8 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { LanguageProvider } from '@/shared/context/LanguageContext';
 
 // Composant qui explose intentionnellement
 function BrokenComponent({ shouldThrow }: { shouldThrow: boolean }) {
@@ -11,23 +13,28 @@ function BrokenComponent({ shouldThrow }: { shouldThrow: boolean }) {
 // Éviter que les erreurs React polluent la console des tests
 beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
+  localStorage.setItem('gcfi-lang', 'fr');
 });
 
 describe('ErrorBoundary', () => {
   it('affiche les enfants normalement si pas d\'erreur', () => {
     render(
-      <ErrorBoundary>
-        <BrokenComponent shouldThrow={false} />
-      </ErrorBoundary>
+      <LanguageProvider>
+        <ErrorBoundary>
+          <BrokenComponent shouldThrow={false} />
+        </ErrorBoundary>
+      </LanguageProvider>
     );
     expect(screen.getByText('Contenu normal')).toBeInTheDocument();
   });
 
   it('affiche le fallback par défaut si un composant plante', () => {
     render(
-      <ErrorBoundary>
-        <BrokenComponent shouldThrow={true} />
-      </ErrorBoundary>
+      <LanguageProvider>
+        <ErrorBoundary>
+          <BrokenComponent shouldThrow={true} />
+        </ErrorBoundary>
+      </LanguageProvider>
     );
     expect(screen.getByText('Une erreur est survenue')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /recharger/i })).toBeInTheDocument();
@@ -35,9 +42,11 @@ describe('ErrorBoundary', () => {
 
   it('affiche un fallback personnalisé si fourni', () => {
     render(
-      <ErrorBoundary fallback={<div>Erreur personnalisée</div>}>
-        <BrokenComponent shouldThrow={true} />
-      </ErrorBoundary>
+      <LanguageProvider>
+        <ErrorBoundary fallback={<div>Erreur personnalisée</div>}>
+          <BrokenComponent shouldThrow={true} />
+        </ErrorBoundary>
+      </LanguageProvider>
     );
     expect(screen.getByText('Erreur personnalisée')).toBeInTheDocument();
   });
@@ -50,9 +59,11 @@ describe('ErrorBoundary', () => {
     });
 
     render(
-      <ErrorBoundary>
-        <BrokenComponent shouldThrow={true} />
-      </ErrorBoundary>
+      <LanguageProvider>
+        <ErrorBoundary>
+          <BrokenComponent shouldThrow={true} />
+        </ErrorBoundary>
+      </LanguageProvider>
     );
 
     fireEvent.click(screen.getByRole('button', { name: /recharger/i }));

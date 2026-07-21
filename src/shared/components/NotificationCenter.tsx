@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bell, X, Package, Tag, Info, CheckCircle, Trash2 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
+import { useLang } from '@/shared/context/LanguageContext';
 
 export interface AppNotification {
   id: string;
@@ -26,6 +27,7 @@ interface NotificationCenterProps {
 export default function NotificationCenter({
   isOpen, onClose, notifications, onMarkAsRead, onClearAll,
 }: NotificationCenterProps) {
+  const { t, lang } = useLang();
   const unreadCount = notifications.filter(n => !n.read).length;
 
   React.useEffect(() => {
@@ -97,7 +99,7 @@ export default function NotificationCenter({
                     <Bell className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                   </div>
                   <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Aucune notification</p>
-                  <p className="text-slate-400 text-xs mt-1">Vous êtes à jour !</p>
+                  <p className="text-slate-400 text-xs mt-1">Vous êtes \u00e0 jour !</p>
                 </div>
               ) : (
                 notifications.map(notif => (
@@ -133,7 +135,7 @@ export default function NotificationCenter({
                           {notif.message}
                         </p>
                         <span className="text-[10px] text-slate-400 mt-1 block">
-                          {new Intl.DateTimeFormat('fr-FR', {
+                          {new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'fr-FR', {
                             hour: '2-digit', minute: '2-digit',
                             day: '2-digit', month: 'short'
                           }).format(notif.timestamp)}

@@ -6,12 +6,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { ArrowLeft, Clock, Tag, GraduationCap, CheckCircle2, Phone, Share2, Users, Award } from 'lucide-react';
 import { useCourses } from '@/shared/lib/queries';
+import { useLang } from '@/shared/context/LanguageContext';
 import type { Course } from '@/shared/types';
 
 export default function CourseDetail() {
   const params = useParams(); const id = params.id as string;
   const router = useRouter();
-  const { data: courses = [], isLoading } = useCourses();
+  const { t, lang } = useLang();
+  const { data: courses = [], isLoading } = useCourses(lang);
 
   const course = courses.find((c: Course) => c.id === id);
 
@@ -21,7 +23,7 @@ export default function CourseDetail() {
 
   const handleContact = () => {
     window.open(
-      `https://wa.me/237681371449?text=Bonjour, je suis intéressé par la formation "${course?.title}"`,
+      `https://wa.me/237681371449?text=${encodeURIComponent(t.course_detail.enroll_message + ' "' + (course?.title ?? '') + '"')}`,
       '_blank'
     );
   };
@@ -41,13 +43,7 @@ export default function CourseDetail() {
 
   if (!course) return null;
 
-  const inclus = [
-    'Accès aux supports de cours',
-    'Exercices pratiques',
-    'Certificat de fin de formation',
-    'Suivi post-formation (1 mois)',
-    'Accès aux enregistrements',
-  ];
+  const inclus = t.course_detail.included_items as unknown as string[];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-20">
@@ -60,7 +56,7 @@ export default function CourseDetail() {
           onClick={() => router.back()}
           className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#C1272D] transition-colors mb-8"
         >
-          <ArrowLeft className="w-4 h-4" /> Retour aux formations
+          <ArrowLeft className="w-4 h-4" /> {t.course_detail.back}
         </motion.button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -100,17 +96,17 @@ export default function CourseDetail() {
                 )}
                 <div className="flex items-center gap-2 text-sm text-slate-500">
                   <Users className="w-4 h-4 text-[#C1272D]" />
-                  <span className="font-medium">Toutes niveaux</span>
+                  <span className="font-medium">{t.course_detail.level_all}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-500">
                   <Award className="w-4 h-4 text-[#C1272D]" />
-                  <span className="font-medium">Certificat inclus</span>
+                  <span className="font-medium">{t.course_detail.cert_included}</span>
                 </div>
               </div>
 
               {/* Description */}
               <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-8 mb-8">
-                <h2 className="text-lg font-black text-slate-900 dark:text-white mb-4">Description</h2>
+                <h2 className="text-lg font-black text-slate-900 dark:text-white mb-4">{t.course_detail.description}</h2>
                 <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-base">
                   {course.description}
                 </p>
@@ -118,7 +114,7 @@ export default function CourseDetail() {
 
               {/* Ce qui est inclus */}
               <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-8 mb-8">
-                <h2 className="text-lg font-black text-slate-900 dark:text-white mb-6">Ce qui est inclus</h2>
+                <h2 className="text-lg font-black text-slate-900 dark:text-white mb-6">{t.course_detail.what_included}</h2>
                 <div className="space-y-3">
                   {inclus.map(item => (
                     <div key={item} className="flex items-center gap-3">
@@ -155,13 +151,13 @@ export default function CourseDetail() {
                 {/* Prix */}
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-4xl font-black text-[#C1272D]">
-                    {course.price === 0 ? 'Gratuit' : course.price.toLocaleString('fr-FR')}
+                    {course.price === 0 ? t.course_detail.value_free : course.price.toLocaleString(lang === 'en' ? 'en-US' : 'fr-FR')}
                   </span>
                   {course.price > 0 && (
                     <span className="text-base font-bold text-slate-500">FCFA</span>
                   )}
                 </div>
-                <p className="text-xs text-slate-400 mb-8">Prix par participant</p>
+                <p className="text-xs text-slate-400 mb-8">{t.course_detail.price_per}</p>
 
                 {/* CTA */}
                 <motion.button
@@ -170,24 +166,24 @@ export default function CourseDetail() {
                   className="w-full flex items-center justify-center gap-3 py-4 bg-[#C1272D] hover:bg-[#1E4D8C] text-white font-black text-sm uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-[#C1272D]/20 mb-4"
                 >
                   <Phone className="w-4 h-4" />
-                  S&apos;inscrire via WhatsApp
+                  {t.course_detail.enroll_whatsapp}
                 </motion.button>
 
                 <button
                   onClick={handleShare}
                   className="w-full flex items-center justify-center gap-2 py-3 border-2 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-[#C1272D] hover:text-[#C1272D] rounded-2xl text-sm font-bold transition-all"
                 >
-                  <Share2 className="w-4 h-4" /> Partager
+                  <Share2 className="w-4 h-4" /> {t.course_detail.share}
                 </button>
 
                 {/* Infos rapides */}
                 <div className="mt-8 space-y-3 pt-6 border-t border-slate-100 dark:border-slate-800">
                   {[
-                    { label: 'Durée', value: course.duration || 'À définir' },
-                    { label: 'Catégorie', value: course.category },
-                    { label: 'Niveau', value: 'Tous niveaux' },
-                    { label: 'Langue', value: 'Français' },
-                    { label: 'Certificat', value: 'Oui, inclus' },
+                    { label: t.course_detail.info_duration, value: course.duration || t.course_detail.value_to_define },
+                    { label: t.course_detail.info_category, value: course.category },
+                    { label: t.course_detail.info_level, value: t.course_detail.value_all_levels },
+                    { label: t.course_detail.info_language, value: t.course_detail.value_french },
+                    { label: t.course_detail.info_certificate, value: t.course_detail.value_yes_included },
                   ].map(({ label, value }) => (
                     <div key={label} className="flex justify-between text-sm">
                       <span className="text-slate-400 font-medium">{label}</span>

@@ -5,10 +5,13 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { Lock, Eye, EyeOff, CheckCircle, Shield } from 'lucide-react';
 import { supabase } from '@/shared/lib/supabase';
+import { useLang } from '@/shared/context/LanguageContext';
 
 type Step = 'loading' | 'form' | 'success' | 'invalid';
 
 export default function ResetPassword() {
+  const { t } = useLang();
+  const c = t.common;
   const router = useRouter();
   const [step, setStep]         = useState<Step>('loading');
   const [password, setPassword] = useState('');
@@ -41,11 +44,11 @@ export default function ResetPassword() {
     e.preventDefault();
     setError(null);
     if (password !== confirm) {
-      setError('Les mots de passe ne correspondent pas.');
+      setError(c.reset_pwd_error_mismatch);
       return;
     }
     if (password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères.');
+      setError(c.reset_pwd_error_short);
       return;
     }
     setLoading(true);
@@ -56,8 +59,8 @@ export default function ResetPassword() {
       // Rediriger vers l'accueil après 3 secondes
       const t = setTimeout(() => router.push('/'), 3000);
       return () => clearTimeout(t);
-    } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t.common.error);
     } finally {
       setLoading(false);
     }
@@ -78,7 +81,7 @@ export default function ResetPassword() {
           {step === 'loading' && (
             <div className="text-center py-8">
               <div className="w-12 h-12 border-4 border-slate-100 border-t-[var(--accent)] rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-sm text-slate-500 font-medium">Vérification du lien…</p>
+              <p className="text-sm text-slate-500 font-medium">{c.reset_pwd_checking}</p>
             </div>
           )}
 
@@ -88,11 +91,11 @@ export default function ResetPassword() {
               <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Shield className="w-7 h-7 text-red-500" />
               </div>
-              <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">Lien invalide</h2>
-              <p className="text-sm text-slate-500 mb-6">Ce lien de réinitialisation est expiré ou invalide. Faites une nouvelle demande.</p>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">{c.reset_pwd_invalid_title}</h2>
+              <p className="text-sm text-slate-500 mb-6">{c.reset_pwd_invalid_text}</p>
               <button onClick={() => router.push('/')}
                 className="w-full py-3.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-2xl font-bold text-sm transition-colors">
-                Retour à l'accueil
+                {c.reset_pwd_back_home}
               </button>
             </div>
           )}
@@ -104,8 +107,8 @@ export default function ResetPassword() {
                 <div className="w-14 h-14 bg-[color-mix(in_srgb,var(--accent)_8%,white)] dark:bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Lock className="w-7 h-7 text-[var(--accent)]" />
                 </div>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white">Nouveau mot de passe</h2>
-                <p className="text-xs text-slate-500 mt-1.5">Choisissez un mot de passe sécurisé (min. 6 caractères).</p>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">{c.reset_pwd_form_title}</h2>
+                <p className="text-xs text-slate-500 mt-1.5">{c.reset_pwd_form_subtitle}</p>
               </div>
 
               {error && (
@@ -118,7 +121,7 @@ export default function ResetPassword() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                  <input type={showPwd ? 'text' : 'password'} placeholder="Nouveau mot de passe"
+                  <input type={showPwd ? 'text' : 'password'} placeholder={c.reset_pwd_password_placeholder}
                     value={password} onChange={e => setPassword(e.target.value)} required className={inputCls} />
                   <button type="button" onClick={() => setShowPwd(v => !v)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -127,7 +130,7 @@ export default function ResetPassword() {
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                  <input type={showPwd ? 'text' : 'password'} placeholder="Confirmer le mot de passe"
+                  <input type={showPwd ? 'text' : 'password'} placeholder={c.reset_pwd_confirm_placeholder}
                     value={confirm} onChange={e => setConfirm(e.target.value)} required className={inputCls} />
                 </div>
 
@@ -138,7 +141,7 @@ export default function ResetPassword() {
 
                 <button type="submit" disabled={loading}
                   className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg disabled:opacity-50">
-                  {loading ? 'Mise à jour...' : 'Changer le mot de passe'}
+                  {loading ? c.reset_pwd_loading : c.reset_pwd_submit}
                 </button>
               </form>
             </>
@@ -154,8 +157,8 @@ export default function ResetPassword() {
               >
                 <CheckCircle className="w-7 h-7 text-green-500" />
               </motion.div>
-              <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">Mot de passe mis à jour !</h2>
-              <p className="text-sm text-slate-500">Vous allez être redirigé vers l'accueil…</p>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">{c.reset_pwd_success_title}</h2>
+              <p className="text-sm text-slate-500">{c.reset_pwd_success_text}</p>
               <div className="mt-4 h-1 bg-slate-100 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }} animate={{ width: '100%' }}
@@ -181,7 +184,8 @@ function PasswordStrength({ password }: { password: string }) {
     /[^A-Za-z0-9]/.test(password),
   ].filter(Boolean).length;
 
-  const labels = ['Très faible', 'Faible', 'Correct', 'Fort', 'Très fort'];
+  const { t } = useLang();
+  const labels = t.common.reset_pwd_strength_labels as unknown as string[];
   const colors = ['bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-green-400', 'bg-green-500'];
 
   return (

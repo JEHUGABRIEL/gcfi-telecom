@@ -78,7 +78,7 @@ export default function ServicesTab() {
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const { data: services = [], isLoading: loading, isFetching } = useQuery({
+  const { data: services = [], isLoading: loading } = useQuery({
     queryKey: ['admin', 'services'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -371,7 +371,7 @@ export default function ServicesTab() {
         </div>
         <div className="flex gap-2">
           <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors">
-            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+            <RefreshCw className="w-4 h-4" />
           </button>
           <button
             onClick={() => { resetForm(); setShowForm(true); }}

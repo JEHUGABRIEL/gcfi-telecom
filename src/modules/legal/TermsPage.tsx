@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { FileText, User, ShoppingBag, Shield, AlertTriangle, Scale, RefreshCw, Mail, Ban, GraduationCap } from 'lucide-react';
+import { useLang } from '@/shared/context/LanguageContext';
 
 const LAST_UPDATED = '29 mai 2025';
 const CONTACT_EMAIL = 'gcfitelecom@gmail.com';
@@ -56,6 +57,7 @@ function Warning({ children }: { children: React.ReactNode }) {
 }
 
 export default function TermsPage() {
+  const { t } = useLang();
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
 
@@ -68,17 +70,15 @@ export default function TermsPage() {
                 <Scale className="w-7 h-7 text-[var(--accent)]" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)]">Légal</p>
-                <h1 className="text-3xl font-black text-slate-900 dark:text-white">Conditions d'utilisation</h1>
+                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)]">{t.terms_page.hero_badge}</p>
+                <h1 className="text-3xl font-black text-slate-900 dark:text-white">{t.terms_page.hero_title}</h1>
               </div>
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm">
-              Dernière mise à jour : <strong className="text-slate-700 dark:text-slate-300">{LAST_UPDATED}</strong>
+              {t.terms_page.last_update} : <strong className="text-slate-700 dark:text-slate-300">{LAST_UPDATED}</strong>
             </p>
             <p className="mt-4 text-slate-600 dark:text-slate-400 leading-relaxed">
-              En accédant au site <strong className="text-slate-700 dark:text-slate-300">{SITE_URL}</strong> et en
-              utilisant nos services, vous acceptez sans réserve les présentes conditions générales d'utilisation (CGU).
-              Si vous n'êtes pas d'accord avec l'une de ces conditions, veuillez ne pas utiliser le site.
+              {t.terms_page.hero_paragraph.replace('{SITE_URL}', SITE_URL).replace('{COMPANY_NAME}', COMPANY_NAME)}
             </p>
           </motion.div>
         </div>
@@ -88,204 +88,95 @@ export default function TermsPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-6">
 
         {/* 1. Présentation */}
-        <Section icon={FileText} title="1. Présentation du site">
-          <p>
-            Le site <strong className="text-slate-700 dark:text-slate-300">{SITE_URL}</strong> est édité par{' '}
-            <strong className="text-slate-700 dark:text-slate-300">{COMPANY_NAME}</strong>, entreprise spécialisée
-            dans les télécommunications, la formation IT et la vente d'équipements réseau en République Centrafricaine.
-          </p>
-          <p>Le site propose les services suivants :</p>
+        <Section icon={FileText} title={t.terms_page.section1_title}>
+          <p>{t.terms_page.section1_text1.replace('{SITE_URL}', SITE_URL).replace('{COMPANY_NAME}', COMPANY_NAME)}</p>
+          <p>{t.terms_page.section1_text2}</p>
           <ul className="space-y-1 mt-1">
-            <Li>Boutique en ligne d'équipements télécom et réseaux</Li>
-            <Li>Catalogue et inscription aux formations IT et cybersécurité</Li>
-            <Li>Informations sur nos services professionnels</Li>
-            <Li>Actualités du secteur télécom en RCA</Li>
-            <Li>Espace personnel pour gérer vos commandes et profil</Li>
+            {(t.terms_page.section1_items as unknown as string[]).map((item, i) => <Li key={i}>{item}</Li>)}
           </ul>
         </Section>
 
         {/* 2. Compte utilisateur */}
-        <Section icon={User} title="2. Création et gestion de votre compte">
-          <p>
-            Pour accéder à certaines fonctionnalités (passage de commande, suivi, liste de souhaits),
-            la création d'un compte est nécessaire. En créant un compte, vous vous engagez à :
-          </p>
+        <Section icon={User} title={t.terms_page.section2_title}>
+          <p>{t.terms_page.section2_text1}</p>
           <ul className="space-y-1 mt-1">
-            <Li>Fournir des informations exactes, complètes et à jour</Li>
-            <Li>Maintenir la confidentialité de vos identifiants de connexion</Li>
-            <Li>Ne pas partager votre compte avec des tiers</Li>
-            <Li>Nous notifier immédiatement de tout accès non autorisé à votre compte</Li>
-            <Li>Être âgé d'au moins 16 ans pour créer un compte</Li>
+            {(t.terms_page.section2_items as unknown as string[]).map((item, i) => <Li key={i}>{item}</Li>)}
           </ul>
-          <p className="mt-2">
-            {COMPANY_NAME} se réserve le droit de suspendre ou supprimer tout compte en cas de violation
-            des présentes CGU, sans préavis ni indemnité.
-          </p>
-          <Warning>
-            Vous êtes seul responsable de toutes les activités effectuées depuis votre compte.
-          </Warning>
+          <p className="mt-2">{t.terms_page.section2_suspension.replace('{COMPANY_NAME}', COMPANY_NAME)}</p>
+          <Warning>{t.terms_page.section2_warning}</Warning>
         </Section>
 
         {/* 3. Commandes */}
-        <Section icon={ShoppingBag} title="3. Commandes et processus d'achat">
-          <p>
-            Notre boutique en ligne permet de constituer un panier et de passer une commande. Le processus
-            de finalisation s'effectue via <strong className="text-slate-700 dark:text-slate-300">WhatsApp</strong>,
-            où notre équipe commerciale vous confirmera la disponibilité, le prix définitif et les modalités
-            de livraison.
-          </p>
-
+        <Section icon={ShoppingBag} title={t.terms_page.section3_title}>
+          <p>{t.terms_page.section3_text1}</p>
           <div>
-            <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">Étapes d'une commande :</p>
+            <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">{t.terms_page.section3_steps_title}</p>
             <ol className="space-y-1 list-decimal list-inside ml-1">
-              <li>Ajout des articles au panier sur le site</li>
-              <li>Validation du panier et envoi automatique sur WhatsApp</li>
-              <li>Confirmation de disponibilité et accord sur le prix final par notre équipe</li>
-              <li>Paiement et livraison selon les modalités convenues</li>
+              {(t.terms_page.section3_steps as unknown as string[]).map((step, i) => <li key={i}>{step}</li>)}
             </ol>
           </div>
-
-          <p>
-            Les prix affichés sur le site sont indicatifs en <strong className="text-slate-700 dark:text-slate-300">
-            Francs CFA (FCFA)</strong> et peuvent être actualisés sans préavis. Le prix définitif est celui
-            confirmé par notre équipe via WhatsApp.
-          </p>
-          <Warning>
-            L'ajout au panier ne constitue pas une réservation ferme du produit. La commande n'est effective
-            qu'après confirmation écrite de notre équipe commerciale.
-          </Warning>
+          <p>{t.terms_page.section3_pricing}</p>
+          <Warning>{t.terms_page.section3_warning}</Warning>
         </Section>
 
         {/* 4. Formations */}
-        <Section icon={GraduationCap} title="4. Formations et inscriptions">
-          <p>
-            L'inscription à une formation s'effectue via notre site. En vous inscrivant, vous reconnaissez :
-          </p>
+        <Section icon={GraduationCap} title={t.terms_page.section4_title}>
+          <p>{t.terms_page.section4_text1}</p>
           <ul className="space-y-1 mt-1">
-            <Li>Avoir pris connaissance du programme et des prérequis de la formation</Li>
-            <Li>Votre inscription est soumise à la disponibilité des places et à la validation de notre équipe</Li>
-            <Li>Le programme, les dates et le lieu peuvent être modifiés par GCFI avec un préavis raisonnable</Li>
-            <Li>Toute annulation doit être notifiée au moins 48h à l'avance</Li>
+            {(t.terms_page.section4_items as unknown as string[]).map((item, i) => <Li key={i}>{item}</Li>)}
           </ul>
-          <p className="mt-2">
-            Les conditions tarifaires et modalités de paiement des formations sont communiquées
-            directement par notre équipe pédagogique.
-          </p>
+          <p className="mt-2">{t.terms_page.section4_text2}</p>
         </Section>
 
         {/* 5. Utilisation interdite */}
-        <Section icon={Ban} title="5. Utilisations interdites">
-          <p>Il vous est strictement interdit d'utiliser le site pour :</p>
+        <Section icon={Ban} title={t.terms_page.section5_title}>
+          <p>{t.terms_page.section5_text1}</p>
           <ul className="space-y-1 mt-1">
-            <Li>Usurper l'identité d'une autre personne ou entité</Li>
-            <Li>Publier, transmettre ou distribuer tout contenu illégal, diffamatoire, haineux ou frauduleux</Li>
-            <Li>Tenter de contourner les mesures de sécurité du site</Li>
-            <Li>Collecter des données d'autres utilisateurs sans leur consentement</Li>
-            <Li>Utiliser des robots, scrapers ou tout outil automatisé non autorisé</Li>
-            <Li>Perturber le fonctionnement du site ou des serveurs associés</Li>
-            <Li>Passer des commandes fictives ou frauduleuses</Li>
-            <Li>Créer plusieurs comptes pour contourner une suspension</Li>
+            {(t.terms_page.section5_items as unknown as string[]).map((item, i) => <Li key={i}>{item}</Li>)}
           </ul>
-          <p className="mt-2">
-            Toute violation pourra entraîner la suspension immédiate de votre compte et, le cas échéant,
-            des poursuites judiciaires.
-          </p>
+          <p className="mt-2">{t.terms_page.section5_text2}</p>
         </Section>
 
         {/* 6. Propriété intellectuelle */}
-        <Section icon={Shield} title="6. Propriété intellectuelle">
-          <p>
-            L'ensemble des éléments du site — textes, images, logos, icônes, vidéos, graphiques, mises en page,
-            code source — est la propriété exclusive de{' '}
-            <strong className="text-slate-700 dark:text-slate-300">{COMPANY_NAME}</strong> ou de ses partenaires,
-            et est protégé par les lois applicables en matière de propriété intellectuelle.
-          </p>
-          <p>
-            Toute reproduction, représentation, modification, publication ou adaptation, même partielle,
-            de ces éléments est <strong className="text-slate-700 dark:text-slate-300">strictement interdite</strong>{' '}
-            sans autorisation écrite préalable.
-          </p>
-          <p>
-            Les marques et logos affichés sur le site (partenaires, fabricants) restent la propriété
-            de leurs détenteurs respectifs.
-          </p>
+        <Section icon={Shield} title={t.terms_page.section6_title}>
+          <p>{t.terms_page.section6_text1.replace('{COMPANY_NAME}', COMPANY_NAME)}</p>
+          <p>{t.terms_page.section6_text2}</p>
+          <p>{t.terms_page.section6_text3}</p>
         </Section>
 
         {/* 7. Responsabilité */}
-        <Section icon={AlertTriangle} title="7. Limitation de responsabilité">
-          <p>
-            {COMPANY_NAME} s'efforce d'assurer l'exactitude et la mise à jour des informations diffusées
-            sur le site. Cependant, nous ne pouvons garantir :
-          </p>
+        <Section icon={AlertTriangle} title={t.terms_page.section7_title}>
+          <p>{t.terms_page.section7_text1.replace('{COMPANY_NAME}', COMPANY_NAME)}</p>
           <ul className="space-y-1 mt-1">
-            <Li>L'exactitude, l'exhaustivité ou l'actualité de toutes les informations publiées</Li>
-            <Li>L'absence d'interruption ou d'erreur dans le fonctionnement du site</Li>
-            <Li>La compatibilité du site avec tous les appareils et navigateurs</Li>
+            {(t.terms_page.section7_items as unknown as string[]).map((item, i) => <Li key={i}>{item}</Li>)}
           </ul>
-          <p className="mt-2">
-            {COMPANY_NAME} ne saurait être tenu responsable des dommages directs ou indirects résultant
-            de l'utilisation du site, d'une interruption de service, d'une perte de données ou d'un accès
-            non autorisé à votre compte.
-          </p>
-          <p>
-            Notre responsabilité, dans les cas où elle pourrait être engagée, est limitée au montant
-            des sommes effectivement payées par l'utilisateur pour le service concerné.
-          </p>
+          <p className="mt-2">{t.terms_page.section7_text2.replace('{COMPANY_NAME}', COMPANY_NAME)}</p>
+          <p>{t.terms_page.section7_text3}</p>
         </Section>
 
         {/* 8. Liens externes */}
-        <Section icon={FileText} title="8. Liens vers des sites tiers">
-          <p>
-            Le site peut contenir des liens vers des sites internet tiers (partenaires, réseaux sociaux,
-            services de paiement). Ces liens sont fournis à titre informatif uniquement.
-          </p>
-          <p>
-            {COMPANY_NAME} n'exerce aucun contrôle sur le contenu de ces sites et décline toute
-            responsabilité quant à leurs pratiques en matière de confidentialité ou à la légalité
-            de leur contenu. La consultation de ces sites s'effectue sous votre seule responsabilité.
-          </p>
+        <Section icon={FileText} title={t.terms_page.section8_title}>
+          <p>{t.terms_page.section8_text1}</p>
+          <p>{t.terms_page.section8_text2.replace('{COMPANY_NAME}', COMPANY_NAME)}</p>
         </Section>
 
         {/* 9. Droit applicable */}
-        <Section icon={Scale} title="9. Droit applicable et litiges">
-          <p>
-            Les présentes CGU sont régies par le droit en vigueur en{' '}
-            <strong className="text-slate-700 dark:text-slate-300">République Centrafricaine</strong>.
-          </p>
-          <p>
-            En cas de litige relatif à l'interprétation ou à l'exécution des présentes conditions,
-            les parties s'engagent à rechercher une solution amiable avant tout recours judiciaire.
-            À défaut d'accord, le litige sera soumis aux juridictions compétentes de Bangui.
-          </p>
-          <p>
-            Pour toute réclamation ou différend, contactez-nous d'abord à{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[var(--accent)] hover:underline font-medium">
-              {CONTACT_EMAIL}
-            </a>{' '}
-            afin de trouver une solution amiable dans les meilleurs délais.
-          </p>
+        <Section icon={Scale} title={t.terms_page.section9_title}>
+          <p>{t.terms_page.section9_text1}</p>
+          <p>{t.terms_page.section9_text2}</p>
+          <p>{t.terms_page.section9_text3} <a href={`mailto:${CONTACT_EMAIL}`} className="text-[var(--accent)] hover:underline font-medium">{CONTACT_EMAIL}</a></p>
         </Section>
 
         {/* 10. Modifications */}
-        <Section icon={RefreshCw} title="10. Modifications des CGU">
-          <p>
-            {COMPANY_NAME} se réserve le droit de modifier les présentes CGU à tout moment, notamment
-            pour s'adapter aux évolutions légales, réglementaires ou techniques.
-          </p>
-          <p>
-            Les modifications prennent effet dès leur publication sur cette page. En continuant à utiliser
-            le site après modification, vous acceptez les nouvelles conditions. Il vous est donc conseillé
-            de consulter régulièrement cette page.
-          </p>
-          <p>
-            La version en vigueur est toujours accessible à l'adresse{' '}
-            <strong className="text-slate-700 dark:text-slate-300">{SITE_URL}/conditions</strong>.
-          </p>
+        <Section icon={RefreshCw} title={t.terms_page.section10_title}>
+          <p>{t.terms_page.section10_text1.replace('{COMPANY_NAME}', COMPANY_NAME)}</p>
+          <p>{t.terms_page.section10_text2}</p>
+          <p>{t.terms_page.section10_text3.replace('{SITE_URL}', SITE_URL)}</p>
         </Section>
 
         {/* 11. Contact */}
-        <Section icon={Mail} title="11. Contact">
-          <p>Pour toute question relative aux présentes conditions d'utilisation :</p>
+        <Section icon={Mail} title={t.terms_page.section11_title}>
+          <p>{t.terms_page.section11_text}</p>
           <div className="mt-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-5 space-y-2">
             <p className="font-bold text-slate-700 dark:text-slate-300">{COMPANY_NAME}</p>
             <p>Bangui, République Centrafricaine</p>
@@ -300,9 +191,9 @@ export default function TermsPage() {
       {/* Footer note */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 text-center">
         <p className="text-xs text-slate-400 dark:text-slate-600">
-          Ces conditions d'utilisation s'appliquent au site{' '}
-          <strong>{SITE_URL}</strong> et à tous ses sous-domaines.
-          Dernière mise à jour le {LAST_UPDATED}.
+          {t.terms_page.footer_text}{' '}
+          <strong>{SITE_URL}</strong>{' '}
+          {t.terms_page.footer_suffix}{' '}{LAST_UPDATED}.
         </p>
       </div>
     </div>

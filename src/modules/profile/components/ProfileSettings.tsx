@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion } from 'motion/react';
 import { Save, User, Bell, Lock, CheckCircle2, XCircle } from 'lucide-react';
+import { useLang } from '@/shared/context/LanguageContext';
 import Input from './ui/Input';
 import { supabase } from '@/shared/lib/supabase';
 import { cn } from '@/shared/lib/utils';
@@ -20,10 +21,11 @@ const settingsSchema = z.object({
 type SettingsFormData = z.infer<typeof settingsSchema>;
 
 interface ProfileSettingsProps {
-  user: any;
+  user: import('@supabase/supabase-js').User;
 }
 
 export default function ProfileSettings({ user }: ProfileSettingsProps) {
+  const { t } = useLang();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [message, setMessage] = React.useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -67,9 +69,9 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
       
       if (profileError) throw profileError;
       
-      setMessage({ type: 'success', text: 'Paramètres mis à jour avec succès !' });
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Une erreur est survenue.' });
+      setMessage({ type: 'success', text: t.profile_settings.saved });
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : t.common.error });
     } finally {
       setIsSubmitting(false);
     }
@@ -93,7 +95,7 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
           </div>
           <div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-white">Informations Personnelles</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Gérez vos informations de compte.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t.profile_settings.section_account}</p>
           </div>
         </div>
 
@@ -160,7 +162,7 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
             </div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">Notifications</h3>
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Gérez vos préférences de notifications et activez les alertes push pour vos commandes.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{t.profile_settings.section_notifications}</p>
           <button
             onClick={handlePushActivation}
             className="text-sm font-bold text-[#C1272D] hover:underline"
@@ -169,12 +171,12 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
           </button>
           {pushStatus === 'success' && (
             <div className="mt-3 flex items-center gap-2 text-sm text-emerald-600 font-medium">
-              <CheckCircle2 className="w-4 h-4" /> Notifications activées avec succès.
+              <CheckCircle2 className="w-4 h-4" /> {t.profile_settings.notif_enabled}
             </div>
           )}
           {pushStatus === 'denied' && (
             <div className="mt-3 flex items-center gap-2 text-sm text-red-500 font-medium">
-              <XCircle className="w-4 h-4" /> Autorisation refusée ou non supportée.
+              <XCircle className="w-4 h-4" /> {t.profile_settings.notif_denied}
             </div>
           )}
         </div>
@@ -184,24 +186,24 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
             <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-2xl mr-4 text-orange-500">
               <Lock className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Sécurité</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t.profile_settings.security_title}</h3>
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Changez votre mot de passe ou gérez votre sécurité.</p>
-          <button className="text-sm font-bold text-[#C1272D] hover:underline">Gérer la sécurité</button>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{t.profile_settings.section_security}</p>
+          <button className="text-sm font-bold text-[#C1272D] hover:underline">{t.profile_settings.security_manage}</button>
         </div>
       </div>
 
       <div className="bg-slate-900 dark:bg-slate-800 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#C1272D]/10 rounded-full blur-3xl -mr-32 -mt-32 transition-transform group-hover:scale-110" />
         <div className="relative z-10">
-          <h3 className="text-xl font-bold text-white mb-2">Centre de Test Notifications</h3>
-          <p className="text-slate-400 text-sm mb-8">Utilisez ces boutons pour simuler des événements réels et vérifier vos notifications push.</p>
+          <h3 className="text-xl font-bold text-white mb-2">{t.profile_settings.demo_title}</h3>
+          <p className="text-slate-400 text-sm mb-8">{t.profile_settings.demo_desc}</p>
           
           <div className="flex flex-wrap gap-4">
             <button 
               onClick={() => addNotification({
-                title: 'Nouveauté Boutique !',
-                message: 'Le nouvel iPhone 15 Pro est disponible au showroom de Bangui.',
+                title: t.profile_settings.demo_shop,
+                message: t.profile_settings.demo_shop_msg,
                 type: 'offer'
               })}
               className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all border border-white/10"
@@ -210,8 +212,8 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
             </button>
             <button 
               onClick={() => addNotification({
-                title: 'Mise à jour Commande',
-                message: 'Votre commande #GCFI-882 est maintenant expédiée.',
+                title: t.profile_settings.demo_order,
+                message: t.profile_settings.demo_order_msg,
                 type: 'order'
               })}
               className="bg-[#C1272D] hover:bg-[#1E4D8C] text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-500/20"

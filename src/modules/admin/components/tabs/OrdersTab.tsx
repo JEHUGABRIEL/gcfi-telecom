@@ -5,6 +5,7 @@ import { logError } from '@/shared/lib/supabase-helpers';
 import { Order } from '@/shared/types';
 import { Package, RefreshCw } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
+import { useLang } from '@/shared/context/LanguageContext';
 import Pagination from '@/shared/components/ui/Pagination';
 
 const PAGE_SIZE = 10;
@@ -14,13 +15,16 @@ const STATUS_COLORS: Record<Order['status'], string> = {
   'Expédiée':       'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400',
   'Livrée':         'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400',
   'Annulée':        'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400',
+  'completed':      'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400',
 };
 
 export default function OrdersTab() {
+  const { t } = useLang();
+  const ap = t.admin_page;
   const queryClient = useQueryClient();
   const [page, setPage] = React.useState(1);
 
-  const { data, isLoading: loading, isFetching } = useQuery({
+  const { data, isLoading: loading } = useQuery({
     queryKey: ['admin', 'orders', page],
     queryFn: async () => {
       const from = (page - 1) * PAGE_SIZE;
@@ -50,16 +54,16 @@ export default function OrdersTab() {
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-          Commandes
+          {ap.order_title}
           {totalItems > 0 && (
-            <span className="ml-2 text-sm font-normal text-slate-400">({totalItems} au total)</span>
+            <span className="ml-2 text-sm font-normal text-slate-400">({totalItems} {ap.order_total})</span>
           )}
         </h3>
         <button
           onClick={() => queryClient.invalidateQueries({ queryKey: ['admin', 'orders', page] })}
           className="text-xs text-slate-500 hover:text-[#C1272D] flex items-center gap-1 transition-colors"
         >
-          <RefreshCw className={cn('w-3 h-3', isFetching && 'animate-spin')} /> Actualiser
+          <RefreshCw className={cn('w-3 h-3', loading && 'animate-spin')} /> {ap.header_refresh}
         </button>
       </div>
 
@@ -70,7 +74,7 @@ export default function OrdersTab() {
       ) : orders.length === 0 ? (
         <div className="text-center py-12 text-slate-400">
           <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p>Aucune commande pour le moment.</p>
+          <p>{ap.order_empty}</p>
         </div>
       ) : (
         <>

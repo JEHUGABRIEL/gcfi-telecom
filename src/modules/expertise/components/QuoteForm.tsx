@@ -3,15 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Send, CheckCircle, X, FileText, Phone, Mail, Building2, MessageSquare, DollarSign, Wrench } from 'lucide-react';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
+import { useLang } from '@/shared/context/LanguageContext';
 import type { QuoteServiceType } from '@/shared/types';
-
-const SERVICE_TYPES: QuoteServiceType[] = [
-  'Réseau LAN/WAN', 'Fibre Optique', 'Vidéosurveillance',
-  'WiFi / Hotspot', 'Starlink', 'Cybersécurité',
-  'Développement App', 'Formation', 'Autre',
-];
-
-const BUDGETS = ['< 500 000 FCFA', '500 000 – 2M FCFA', '2M – 10M FCFA', '10M – 50M FCFA', '> 50M FCFA', 'À définir'];
 
 // ✅ Rate limiting côté client — 3 devis max par heure
 function checkRateLimit(): { allowed: boolean; remainingMs: number } {
@@ -37,6 +30,10 @@ interface QuoteFormProps {
 }
 
 export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteFormProps) {
+  const { t } = useLang();
+  const q = t.quote_form;
+  const SERVICE_TYPES = q.service_types as unknown as QuoteServiceType[];
+  const BUDGETS = q.budgets as unknown as string[];
   const [step, setStep] = React.useState<'form' | 'success'>('form');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -62,7 +59,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
     }
 
     if (!form.full_name || !form.email || !form.service_type || !form.message) {
-      setError('Veuillez remplir tous les champs obligatoires (*).');
+      setError(q.error_required);
       return;
     }
 
@@ -70,7 +67,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
     const { allowed, remainingMs } = checkRateLimit();
     if (!allowed) {
       const mins = Math.ceil(remainingMs / 60000);
-      setError(`Trop de demandes. Veuillez réessayer dans ${mins} minute${mins > 1 ? 's' : ''}.`);
+      setError(q.error_rate_limit.replace('{mins}', String(mins)).replace('{s}', mins > 1 ? 's' : ''));
       return;
     }
 
@@ -91,7 +88,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
       setStep('success');
     } catch (err) {
       logError('QuoteForm/submit', err);
-      setError('Une erreur est survenue. Veuillez réessayer ou nous contacter par WhatsApp.');
+      setError(q.error_generic);
     } finally {
       setLoading(false);
     }
@@ -127,11 +124,11 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                     <CheckCircle className="w-10 h-10 text-green-500" />
                   </div>
                 </motion.div>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4">Demande envoyée !</h3>
-                <p className="text-slate-500 dark:text-slate-400 mb-2">Notre équipe analysera votre demande et vous contactera sous <strong>24–48h ouvrables</strong>.</p>
-                <p className="text-slate-400 dark:text-slate-500 text-sm mb-8">Un récapitulatif a été enregistré dans notre système.</p>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4">{q.success_title}</h3>
+                <p className="text-slate-500 dark:text-slate-400 mb-2">{q.success_text}</p>
+                <p className="text-slate-400 dark:text-slate-500 text-sm mb-8">{q.success_note}</p>
                 <button onClick={handleClose} className="bg-[#C1272D] text-white px-8 py-4 rounded-full font-bold hover:bg-[#1E4D8C] transition-all">
-                  Fermer
+                  {q.close}
                 </button>
               </div>
             ) : (
@@ -142,10 +139,10 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                 </div>
                 <div className="mb-8">
                   <div className="flex items-center gap-3 text-[#C1272D] font-black uppercase tracking-widest text-xs mb-3">
-                    <FileText className="w-4 h-4" /> Demande de devis
+                    <FileText className="w-4 h-4" /> {q.badge}
                   </div>
-                  <h2 className="text-3xl font-black text-slate-900 dark:text-white">Décrivez votre projet</h2>
-                  <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">Nous vous répondons sous 24–48h ouvrables.</p>
+                  <h2 className="text-3xl font-black text-slate-900 dark:text-white">{q.title}</h2>
+                  <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">{q.subtitle}</p>
                 </div>
 
                 {error && (
@@ -158,17 +155,17 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                   {/* Nom + Email */}
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">Nom complet *</label>
+                      <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">{q.full_name_label}</label>
                       <div className="relative">
-                        <input value={form.full_name} onChange={set('full_name')} placeholder="Jean Dupont" required
+                        <input value={form.full_name} onChange={set('full_name')} placeholder={q.name_placeholder} required
                           className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors" />
                         <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">Email *</label>
+                      <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">{q.email_label}</label>
                       <div className="relative">
-                        <input type="email" value={form.email} onChange={set('email')} placeholder="vous@email.com" required
+                        <input type="email" value={form.email} onChange={set('email')} placeholder={q.email_placeholder} required
                           className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors" />
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
@@ -178,17 +175,17 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                   {/* Téléphone + Société */}
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">Téléphone</label>
+                      <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">{q.phone_label}</label>
                       <div className="relative">
-                        <input value={form.phone} onChange={set('phone')} placeholder="+236 72 00 00 00"
+                        <input value={form.phone} onChange={set('phone')} placeholder={q.phone_placeholder}
                           className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors" />
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">Société / Organisation</label>
+                      <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">{q.company_label}</label>
                       <div className="relative">
-                        <input value={form.company} onChange={set('company')} placeholder="Nom de l'entreprise"
+                        <input value={form.company} onChange={set('company')} placeholder={q.company_placeholder}
                           className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors" />
                         <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
@@ -196,12 +193,11 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                   </div>
 
                   {/* Type de service */}
-                  <div>
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">Type de service *</label>
-                    <div className="relative">
-                      <select value={form.service_type} onChange={set('service_type')} required
-                        className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors appearance-none">
-                        <option value="">Sélectionner un service...</option>
+                  <div>                      <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">{q.service_label}</label>
+                      <div className="relative">
+                        <select value={form.service_type} onChange={set('service_type')} required
+                          className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors appearance-none">
+                          <option value="">{q.service_placeholder}</option>
                         {SERVICE_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                       <Wrench className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -209,12 +205,11 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                   </div>
 
                   {/* Budget */}
-                  <div>
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">Budget estimé</label>
-                    <div className="relative">
-                      <select value={form.budget} onChange={set('budget')}
-                        className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors appearance-none">
-                        <option value="">Sélectionner une tranche...</option>
+                  <div>                      <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">{q.budget_label}</label>
+                      <div className="relative">
+                        <select value={form.budget} onChange={set('budget')}
+                          className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors appearance-none">
+                          <option value="">{q.budget_placeholder}</option>
                         {BUDGETS.map(b => <option key={b} value={b}>{b}</option>)}
                       </select>
                       <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -222,11 +217,10 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                   </div>
 
                   {/* Message */}
-                  <div>
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">Description du projet *</label>
-                    <div className="relative">
-                      <textarea value={form.message} onChange={set('message')} required rows={4}
-                        placeholder="Décrivez votre besoin, le contexte, les contraintes particulières..."
+                  <div>                      <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 block">{q.message_label}</label>
+                      <div className="relative">
+                        <textarea value={form.message} onChange={set('message')} required rows={4}
+                          placeholder={q.message_placeholder}
                         className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:border-[#C1272D] transition-colors resize-none" />
                       <MessageSquare className="absolute left-3 top-4 w-4 h-4 text-slate-400" />
                     </div>
@@ -238,10 +232,10 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
                   {loading ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
-                    <><Send className="w-5 h-5" /> Envoyer la demande</>
+                    <><Send className="w-5 h-5" /> {q.submit}</>
                   )}
                 </button>
-                <p className="text-center text-xs text-slate-400 mt-4">Vos données sont traitées de façon confidentielle et ne sont jamais partagées.</p>
+                <p className="text-center text-xs text-slate-400 mt-4">{q.footer}</p>
               </form>
             )}
           </motion.div>

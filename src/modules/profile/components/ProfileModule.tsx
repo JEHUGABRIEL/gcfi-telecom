@@ -11,11 +11,13 @@ import ProfileSettings from './ProfileSettings';
 import { cn } from '@/shared/lib/utils';
 import { Order } from '@/shared/types';
 import { useAuth } from '@/shared/context/AuthContext';
+import { useLang } from '@/shared/context/LanguageContext';
 
 type ProfileTab = 'dashboard' | 'settings' | 'orders' | 'investments' | 'wishlist';
 
 
 export default function ProfileModule() {
+  const { t } = useLang();
   const router = useRouter();
   const { user, profile, signOut, setShowSignOutModal, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = React.useState<ProfileTab>('dashboard');
@@ -27,9 +29,9 @@ export default function ProfileModule() {
   const [authError, setAuthError] = React.useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [userOrders, setUserOrders] = React.useState<any[]>([]);
+  const [userOrders, setUserOrders] = React.useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = React.useState(false);
-  const [storeProducts, setStoreProducts] = React.useState<any[]>([]);
+  const [storeProducts, setStoreProducts] = React.useState<{ id: string; name: string; price: number; image: string; category: string }[]>([]);
   const [productsLoading, setProductsLoading] = React.useState(false);
 
   React.useEffect(() => {
@@ -86,9 +88,9 @@ export default function ProfileModule() {
         }
       });
       if (error) throw error;
-    } catch (error: any) {
+    } catch (error: unknown) {
       logError("ProfileModule/signIn", error);
-      setAuthError(error.message || "Échec de la connexion avec Google.");
+      setAuthError(error instanceof Error ? error.message : t.profile_page.auth_error_google);
     }
   };
 
@@ -108,15 +110,15 @@ export default function ProfileModule() {
           }
         });
         if (error) throw error;
-        setAuthSuccess("Inscription réussie ! Veuillez vérifier votre email.");
+        setAuthSuccess(t.profile_page.auth_success_signup);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email, password
         });
         if (error) throw error;
       }
-    } catch (error: any) {
-      setAuthError(error.message);
+    } catch (error: unknown) {
+      setAuthError(error instanceof Error ? error.message : t.common.error);
     } finally {
       setIsSubmitting(false);
     }
@@ -130,10 +132,10 @@ export default function ProfileModule() {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
-      setAuthSuccess("Un lien de réinitialisation a été envoyé à votre adresse email.");
-    } catch (error: any) {
+      setAuthSuccess(t.profile_page.auth_success_reset);
+    } catch (error: unknown) {
       logError("ProfileModule/resetPassword", error);
-      setAuthError(error.message || "Erreur lors de l'envoi de l'email de réinitialisation.");
+      setAuthError(error instanceof Error ? error.message : t.profile_page.auth_error_reset);
     }
   };
 
@@ -146,7 +148,7 @@ export default function ProfileModule() {
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           className="w-12 h-12 border-4 border-[var(--accent)]/20 border-t-[var(--accent)] rounded-full mb-4"
         />
-        <p className="text-sm font-bold text-slate-500 animate-pulse">Synchronisation de votre profil...</p>
+        <p className="text-sm font-bold text-slate-500 animate-pulse">{t.profile_page.sync_title}</p>
       </div>
     );
   }
@@ -160,12 +162,10 @@ export default function ProfileModule() {
               {authMode === 'login' ? <LogIn className="w-10 h-10 text-[var(--accent)]" /> : <UserPlus className="w-10 h-10 text-[var(--accent)]" />}
             </div>
             <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">
-              {authMode === 'login' ? 'Bienvenue' : 'Créer un compte'}
+              {authMode === 'login' ? t.profile_page.welcome_title : t.profile_page.signup_title}
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              {authMode === 'login' 
-                ? 'Connectez-vous pour accéder à vos services GCFI.' 
-                : 'Rejoignez la communauté GCFI dès aujourd\'hui.'}
+              {authMode === 'login' ? t.profile_page.welcome_sub : t.profile_page.signup_sub}
             </p>
           </div>
 
@@ -223,13 +223,13 @@ export default function ProfileModule() {
               disabled={isSubmitting}
               className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50"
             >
-              {isSubmitting ? 'Chargement...' : authMode === 'login' ? 'Se connecter' : "S'inscrire"}
+              {isSubmitting ? t.common.loading : authMode === 'login' ? t.auth.login_btn : t.auth.signup_btn}
             </button>
           </form>
 
           <div className="relative my-8">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100 dark:border-slate-700" /></div>
-            <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest text-slate-400"><span className="bg-white dark:bg-slate-800 px-4">Ou continuer avec</span></div>
+            <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest text-slate-400"><span className="bg-white dark:bg-slate-800 px-4">{t.auth.or_continue}</span></div>
           </div>
 
           <button 
@@ -241,12 +241,12 @@ export default function ProfileModule() {
           </button>
 
           <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            {authMode === 'login' ? "Pas encore de compte ?" : "Déjà inscrit ?"}
+            {authMode === 'login' ? t.auth.no_account : t.auth.has_account}
             <button 
               onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
               className="ml-2 font-bold text-[var(--accent)] hover:underline"
             >
-              {authMode === 'login' ? "S'inscrire" : "Se connecter"}
+              {authMode === 'login' ? t.auth.switch_signup : t.auth.switch_login}
             </button>
           </p>
         </div>
@@ -277,7 +277,7 @@ export default function ProfileModule() {
                 )}
               >
                 <User className="w-5 h-5 mr-3" />
-                Mon Profil
+                {t.profile_page.my_profile}
               </button>
               <button 
                 onClick={() => setActiveTab('orders')}
@@ -287,7 +287,7 @@ export default function ProfileModule() {
                 )}
               >
                 <Package className="w-5 h-5 mr-3" />
-                Mes Commandes
+                {t.profile_page.my_orders}
               </button>
               <button 
                 onClick={() => setActiveTab('wishlist')}
@@ -297,7 +297,7 @@ export default function ProfileModule() {
                 )}
               >
                 <Heart className="w-5 h-5 mr-3" />
-                Liste de Souhaits
+                {t.profile_page.my_wishlist}
               </button>
               <button 
                 onClick={() => setActiveTab('investments')}
@@ -316,7 +316,7 @@ export default function ProfileModule() {
                 )}
               >
                 <Settings className="w-5 h-5 mr-3" />
-                Paramètres
+                {t.profile_page.settings}
               </button>
               <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-700">
                 <button
@@ -324,7 +324,7 @@ export default function ProfileModule() {
                   className="w-full flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
                 >
                   <LogOut className="w-5 h-5 mr-3" />
-                  Déconnexion
+                  {t.profile_page.logout}
                 </button>
               </div>
             </nav>
@@ -336,14 +336,14 @@ export default function ProfileModule() {
           {activeTab === 'dashboard' && (
             <>
               <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-lg border border-slate-100 dark:border-slate-700 transition-colors">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Tableau de bord</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">{t.profile_page.dashboard}</h3>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="p-6 bg-white dark:bg-slate-700 rounded-2xl border border-slate-100 dark:border-slate-600 shadow-sm">
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Formations en cours</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">{t.profile_page.courses_in_progress}</p>
                     <p className="text-3xl font-bold text-[var(--accent)]">0</p>
                   </div>
                   <div className="p-6 bg-white dark:bg-slate-700 rounded-2xl border border-slate-100 dark:border-slate-600 shadow-sm">
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Commandes livrées</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">{t.profile_page.orders_delivered}</p>
                     <p className="text-3xl font-bold text-[var(--accent)]">0</p>
                   </div>
                 </div>
@@ -351,15 +351,15 @@ export default function ProfileModule() {
 
               <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-lg border border-slate-100 dark:border-slate-700 transition-colors">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">Sécurité</h3>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t.profile_page.security}</h3>
                   <Shield className="text-green-500 w-6 h-6" />
                 </div>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Votre compte est protégé par l'authentification Supabase.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{t.profile_page.security_desc}</p>
                 {/* ✅ Reset password uniquement pour les utilisateurs classiques */}
                 {(profile?.role === 'admin' || profile?.role === 'superadmin') ? (
                   <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-50 dark:bg-slate-900 px-4 py-3 rounded-xl">
                     <Lock className="w-4 h-4 text-slate-400 shrink-0" />
-                    <span>La réinitialisation du mot de passe administrateur est gérée par le superadmin uniquement.</span>
+                    <span>{t.profile_page.reset_pwd_admin}</span>
                   </div>
                 ) : (
                   <button 
@@ -367,7 +367,7 @@ export default function ProfileModule() {
                     className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[var(--accent)] hover:underline"
                   >
                     <Lock className="w-4 h-4" />
-                    Réinitialiser le mot de passe par email
+                    {t.profile_page.reset_pwd}
                   </button>
                 )}
               </div>
@@ -379,32 +379,32 @@ export default function ProfileModule() {
           {activeTab === 'orders' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">Suivi de commandes</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{t.profile_page.my_orders}</h3>
                 <span className="text-xs font-black uppercase tracking-widest text-[var(--accent)] bg-[var(--accent)]/5 px-4 py-2 rounded-full">
-                  {userOrders.length} Commandes
+                  {userOrders.length} {t.profile_page.my_orders}
                 </span>
               </div>
               
               {ordersLoading ? (
-                <div className="p-12 text-center text-slate-400">Chargement de vos commandes...</div>
+                <div className="p-12 text-center text-slate-400">{t.profile_page.loading_orders}</div>
               ) : userOrders.length === 0 ? (
                 <div className="bg-white dark:bg-slate-800 p-12 rounded-[2rem] text-center text-slate-500 border border-slate-100 dark:border-slate-700">
                   <ShoppingBag className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                  <p className="font-bold">Vous n'avez pas encore passé de commande.</p>
+                  <p className="font-bold">{t.profile_page.empty_orders}</p>
                 </div>
               ) : userOrders.map((order) => (
                 <div key={order.id} className="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-xl overflow-hidden">
                   <div className="p-6 border-b border-slate-50 dark:border-slate-700 flex flex-wrap items-center justify-between gap-4">
                     <div>
-                      <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">N° de commande</p>
+                      <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">{t.profile_page.order_number}</p>
                       <h4 className="text-lg font-black text-slate-900 dark:text-white">#{order.id.slice(0, 8)}</h4>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Date</p>
+                      <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">{t.profile_page.order_date}</p>
                       <p className="text-sm font-bold text-slate-600 dark:text-slate-300">{new Date(order.created_at).toLocaleDateString()}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Statut</p>
+                      <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">{t.profile_page.order_status}</p>
                       <span className={cn(
                         "text-[10px] uppercase font-black tracking-widest px-3 py-1.5 rounded-lg",
                         order.status === 'completed' ? "bg-green-50 dark:bg-green-900/20 text-green-600" :
@@ -415,7 +415,7 @@ export default function ProfileModule() {
                       </span>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Total</p>
+                      <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">{t.profile_page.order_total}</p>
                       <p className="text-lg font-black text-[var(--accent)]">{(order.total || 0).toLocaleString()} FCFA</p>
                     </div>
                   </div>
@@ -433,28 +433,29 @@ export default function ProfileModule() {
                         }}
                       />
                       
-                      {[
-                        { label: 'En préparation', icon: Clock, active: true },
-                        { label: 'Expédiée', icon: Truck, active: order.status === 'Expédiée' || order.status === 'completed' },
-                        { label: 'Livrée', icon: CheckCircle2, active: order.status === 'completed' }
-                      ].map((step, idx) => (
+                      {(t.profile_page.order_steps as unknown as string[]).map((label: string, idx: number) => {
+                        const icons = [Clock, Truck, CheckCircle2];
+                        const Icon = icons[idx];
+                        const active = idx === 0 ? true : idx === 1 ? (order.status === 'Expédiée' || order.status === 'completed') : order.status === 'completed';
+                        return (
                         <div key={idx} className="relative z-10 flex flex-col items-center">
                           <div className={cn(
                             "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500",
-                            step.active 
+                            active 
                               ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-lg shadow-blue-500/20" 
                               : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-300"
                           )}>
-                            <step.icon className="w-5 h-5" />
+                            <Icon className="w-5 h-5" />
                           </div>
                           <span className={cn(
                             "absolute top-12 whitespace-nowrap text-[10px] font-black uppercase tracking-widest",
-                            step.active ? "text-slate-900 dark:text-white" : "text-slate-400"
+                            active ? "text-slate-900 dark:text-white" : "text-slate-400"
                           )}>
-                            {step.label}
+                            {label}
                           </span>
                         </div>
-                      ))}
+                        );})
+                      }
                     </div>
 
                     {order.items && order.items.length > 0 && (
@@ -478,7 +479,7 @@ export default function ProfileModule() {
 
           {activeTab === 'wishlist' && (
             <div className="space-y-6">
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-8">Ma Liste de Souhaits</h3>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-8">{t.profile_page.my_wishlist}</h3>
               {(() => {
                 const wishlistIds = JSON.parse(localStorage.getItem('wishlist') || '[]');
                 const wishlistItems = storeProducts.filter(p => wishlistIds.includes(p.id));
@@ -487,13 +488,13 @@ export default function ProfileModule() {
                   return (
                     <div className="bg-white dark:bg-slate-800 p-16 rounded-[2.5rem] shadow-lg border border-slate-100 dark:border-slate-700 text-center">
                       <Heart className="w-16 h-16 text-slate-200 dark:text-slate-700 mx-auto mb-6" />
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Votre liste est vide</h3>
-                      <p className="text-slate-500 dark:text-slate-400 mb-8">Parcourez notre collection et sauvegardez vos produits favoris.</p>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{t.profile_page.wishlist_empty_title}</h3>
+                      <p className="text-slate-500 dark:text-slate-400 mb-8">{t.profile_page.wishlist_empty_text}</p>
                       <button 
                         onClick={() => window.location.reload()} 
                         className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all"
                       >
-                        Retour à la boutique
+                        {t.profile_page.wishlist_back}
                       </button>
                     </div>
                   );
@@ -527,14 +528,14 @@ export default function ProfileModule() {
                                 }}
                                 className="text-[10px] font-black uppercase tracking-widest text-red-500 hover:underline"
                               >
-                                Retirer
+                                {t.profile_page.wishlist_remove}
                               </button>
                               <div className="w-1 h-1 bg-slate-200 dark:bg-slate-700 rounded-full" />
                               <button 
                                 onClick={() => window.location.reload()}
                                 className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                               >
-                                Voir produit
+                                {t.profile_page.wishlist_view}
                               </button>
                             </div>
                           </div>
@@ -550,8 +551,8 @@ export default function ProfileModule() {
           {activeTab === 'investments' && (
             <div className="bg-white dark:bg-slate-800 p-12 rounded-[2.5rem] shadow-lg border border-slate-100 dark:border-slate-700 text-center transition-colors">
               <Package className="w-16 h-16 text-slate-200 dark:text-slate-700 mx-auto mb-6" />
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Aucune donnée trouvée</h3>
-              <p className="text-slate-500 dark:text-slate-400">Vous n'avez pas encore d'activité dans cette section.</p>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{t.profile_page.investments_empty_title}</h3>
+              <p className="text-slate-500 dark:text-slate-400">{t.profile_page.investments_empty_text}</p>
             </div>
           )}
         </div>

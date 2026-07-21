@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { uploadToCloudinary } from '@/shared/lib/cloudinary';
 import { cn } from '@/shared/lib/utils';
 import { checkRateLimit, recordUpload } from '@/shared/lib/rate-limiter';
+import { useLang } from '@/shared/context/LanguageContext';
 
 interface ImageUploadProps {
   value?: string;
@@ -21,9 +22,11 @@ export default function ImageUpload({
   onChange,
   folder = 'gcfi',
   className,
-  placeholder = 'Cliquer ou glisser une image',
+  placeholder,
   maxSizeMB = 5,
 }: ImageUploadProps) {
+  const { t } = useLang();
+  const defaultPlaceholder = placeholder || t.image_upload.placeholder;
   const [uploading, setUploading] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
   const [error, setError] = React.useState<string | null>(null);
@@ -34,11 +37,11 @@ const handleFile = async (file: File) => {
   setError(null);
   
   if (!file.type.startsWith('image/')) {
-    setError('Fichier non supporté.');
+    setError(t.image_upload.file_not_supported);
     return;
   }
   if (file.size > maxSizeMB * 1024 * 1024) {
-    setError(`Fichier trop volumineux. Max ${maxSizeMB} Mo.`);
+    setError(`${t.image_upload.file_too_large} ${maxSizeMB} Mo.`);
     return;
   }
 
@@ -46,7 +49,7 @@ const handleFile = async (file: File) => {
     const userId = localStorage.getItem('userId') || 'anonymous';
     const { allowed, reason } = await checkRateLimit(userId);
     if (!allowed) {
-      setError(reason || 'Trop d\'uploads.');
+      setError(reason || t.image_upload.too_many_uploads);
       return;
     }
 
@@ -58,8 +61,8 @@ const handleFile = async (file: File) => {
       // ✅ NOUVEAU : Enregistrer l'upload
       await recordUpload(userId);
       setProgress(0);
-    } catch (err: any) {
-      setError(err?.message || "Échec de l'upload.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t.image_upload.upload_failed);
       console.error('[ImageUpload]', err);
     } finally {
       setUploading(false);
@@ -101,7 +104,7 @@ const handleFile = async (file: File) => {
           <div className="w-full h-full relative group">
             <NextImage src={value} alt="Aperçu" fill className="object-cover" sizes="(max-width: 768px) 100vw, 400px" />
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-              <span className="text-white text-sm font-bold">Changer</span>
+              <span className="text-white text-sm font-bold">{t.image_upload.change}</span>
             </div>
           </div>
         )}
@@ -112,8 +115,8 @@ const handleFile = async (file: File) => {
             <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
               <ImageIcon className="w-5 h-5 text-slate-400" />
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{placeholder}</p>
-            <p className="text-xs text-slate-400">JPG, PNG, WebP · max {maxSizeMB} Mo</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{defaultPlaceholder}</p>
+            <p className="text-xs text-slate-400">{t.image_upload.formats} {maxSizeMB} Mo</p>
           </div>
         )}
 
@@ -126,8 +129,7 @@ const handleFile = async (file: File) => {
               <div className="w-48 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                 <motion.div className="h-full bg-[var(--accent)] rounded-full"
                   initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ ease: 'linear' }} />
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Upload {progress}%</p>
+              </div>                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t.image_upload.uploading} {progress}%</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -136,10 +138,9 @@ const handleFile = async (file: File) => {
       </div>
 
       {/* Bouton supprimer */}
-      {value && !uploading && (
-        <button onClick={e => { e.stopPropagation(); onChange(''); }}
+      {value && !uploading && (          <button onClick={e => { e.stopPropagation(); onChange(''); }}
           className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 font-medium transition-colors">
-          <X className="w-3.5 h-3.5" /> Supprimer l'image
+          <X className="w-3.5 h-3.5" /> {t.image_upload.delete_image}
         </button>
       )}
 

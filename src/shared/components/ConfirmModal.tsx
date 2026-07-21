@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, X } from 'lucide-react';
+import { useLang } from '@/shared/context/LanguageContext';
 
 interface ConfirmModalProps {
   open: boolean;
@@ -15,12 +16,17 @@ interface ConfirmModalProps {
 
 export default function ConfirmModal({
   open,
-  title = 'Confirmer la suppression',
-  message = 'Cette action est irréversible. Voulez-vous vraiment supprimer cet élément ?',
-  confirmLabel = 'Supprimer',
+  title,
+  message,
+  confirmLabel,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const { t } = useLang();
+  const c = t.common;
+  title = title ?? c.confirm_modal_default_title;
+  message = message ?? c.confirm_modal_default_message;
+  confirmLabel = confirmLabel ?? c.confirm_modal_default_confirm;
   return (
     <AnimatePresence>
       {open && (
@@ -69,7 +75,7 @@ export default function ConfirmModal({
                   onClick={onCancel}
                   className="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:border-slate-400 transition-all"
                 >
-                  Annuler
+                  {c.confirm_modal_cancel}
                 </button>
                 <button
                   onClick={onConfirm}

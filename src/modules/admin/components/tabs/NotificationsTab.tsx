@@ -5,6 +5,8 @@ import { cn } from '@/shared/lib/utils';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { useAdminToast, AdminToast } from '@/shared/components/AdminToast';
+import { useActivityLog } from '@/shared/hooks/useActivityLog';
+import { useLang } from '@/shared/context/LanguageContext';
 
 interface Notification { id: string; title: string; message: string; type: string; created_at: string; }
 
@@ -14,8 +16,11 @@ interface NotificationsTabProps {
 }
 
 export default function NotificationsTab({ onDelete, notifications: allNotifications }: NotificationsTabProps) {
+  const { t } = useLang();
+  const ap = t.admin_page;
   const queryClient = useQueryClient();
   const { toast, showToast, dismiss } = useAdminToast();
+  const { logActivity } = useActivityLog();
   const [msgTitle, setMsgTitle] = React.useState('');
   const [msgContent, setMsgContent] = React.useState('');
   const [category, setCategory] = React.useState('info');
@@ -31,13 +36,14 @@ export default function NotificationsTab({ onDelete, notifications: allNotificat
       }]);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['admin', 'notifications'] });
+      logActivity({ action: 'sent', entity: 'notifications', label: `${ap.notif_sent}: ${msgTitle}` });
       setSendSuccess(true);
       setMsgTitle(''); setMsgContent('');
-      showToast('Annonce diffusée avec succès');
+      showToast(ap.notify_sent);
       setTimeout(() => setSendSuccess(false), 3000);
     } catch (err) {
       logError('NotificationsTab/send', err);
-      showToast('Erreur lors de l\'envoi', 'error');
+      showToast(ap.notify_error, 'error');
     }
     finally { setIsSending(false); }
   };
@@ -51,47 +57,47 @@ export default function NotificationsTab({ onDelete, notifications: allNotificat
           <Megaphone className="w-6 h-6 text-[#C1272D]" />
         </div>
         <div>
-          <h3 className="text-xl font-black text-slate-900 dark:text-white">Envoyer une Annonce</h3>
-          <p className="text-sm text-slate-500">Diffusez un message à tous les utilisateurs.</p>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white">{ap.notif_send_title}</h3>
+          <p className="text-sm text-slate-500">{ap.notif_send_desc}</p>
         </div>
       </div>
 
       <form onSubmit={handleSend} className="space-y-6">
         <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Titre</label>
+            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">{ap.notif_title_label}</label>
             <input type="text" value={msgTitle} onChange={e => setMsgTitle(e.target.value)}
-              placeholder="Ex: Promotion de fin d'année..." required
+              placeholder={ap.notif_title_placeholder} required
               className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#C1272D] outline-none dark:text-white" />
           </div>
           <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Catégorie</label>
+            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">{ap.notif_category_label}</label>
             <select value={category} onChange={e => setCategory(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#C1272D] outline-none dark:text-white appearance-none">
-              <option value="info">Info</option>
-              <option value="success">Offre / Promotion</option>
-              <option value="warning">Important</option>
-              <option value="error">Urgent</option>
+              <option value="info">{ap.notif_category_info}</option>
+              <option value="success">{ap.notif_category_offer}</option>
+              <option value="warning">{ap.notif_category_important}</option>
+              <option value="error">{ap.notif_category_urgent}</option>
             </select>
           </div>
         </div>
         <div>
-          <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Message</label>
+          <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">{ap.notif_message_label}</label>
           <textarea rows={4} value={msgContent} onChange={e => setMsgContent(e.target.value)}
-            placeholder="Détails de votre annonce..." required
+            placeholder={ap.notif_message_placeholder} required
             className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#C1272D] outline-none dark:text-white resize-none" />
         </div>
         <button type="submit" disabled={isSending}
           className={cn("w-full flex items-center justify-center gap-3 py-4 rounded-full font-black uppercase tracking-widest transition-all",
             isSending ? "bg-slate-100 text-slate-400" : "bg-[#C1272D] text-white hover:bg-opacity-90 shadow-xl shadow-blue-500/20")}>
-          {isSending ? "Envoi..." : sendSuccess ? "Annonce Envoyée !" : "Diffuser l'annonce"}
+          {isSending ? ap.notif_sending : sendSuccess ? ap.notif_sent : ap.notif_send_btn}
           {!isSending && !sendSuccess && <Send className="w-4 h-4" />}
           {sendSuccess && <CheckCircle className="w-4 h-4" />}
         </button>
       </form>
 
       <div className="mt-12">
-        <h4 className="text-lg font-black text-slate-900 dark:text-white mb-6">Historique</h4>
+        <h4 className="text-lg font-black text-slate-900 dark:text-white mb-6">{ap.notif_history}</h4>
         <div className="space-y-4">
           {allNotifications.map(notif => (
             <div key={notif.id} className="p-6 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex justify-between items-start">
@@ -101,7 +107,7 @@ export default function NotificationsTab({ onDelete, notifications: allNotificat
                     notif.type === 'success' ? "bg-emerald-100 text-emerald-600" :
                     notif.type === 'info' ? "bg-blue-100 text-blue-600" :
                     notif.type === 'warning' ? "bg-amber-100 text-amber-600" : "bg-red-100 text-red-600")}>
-                    {notif.type === 'success' ? 'Offre' : notif.type}
+                    {notif.type === 'success' ? ap.notif_type_offer : notif.type}
                   </span>
                   <h5 className="font-bold text-slate-900 dark:text-white">{notif.title}</h5>
                 </div>

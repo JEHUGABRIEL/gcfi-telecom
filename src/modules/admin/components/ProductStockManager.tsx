@@ -13,6 +13,7 @@ import {
   Info
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
+import { useLang } from '@/shared/context/LanguageContext';
 
 interface Product {
   id: string;
@@ -23,6 +24,8 @@ interface Product {
 }
 
 export default function ProductStockManager() {
+  const { t } = useLang();
+  const ap = t.admin_page;
   const { addNotification } = useNotifications();
   const [products, setProducts] = React.useState<Product[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -48,8 +51,8 @@ export default function ProductStockManager() {
       setStockInputs(inputs);
     } catch (err) {
       addNotification({
-        title: "Erreur de chargement",
-        message: "Impossible de récupérer les données de stock.",
+        title: ap.stock_notif_load_error,
+        message: ap.stock_notif_load_error_msg,
         type: 'info'
       });
     } finally {
@@ -91,8 +94,8 @@ export default function ProductStockManager() {
       if (error) throw error;
 
       addNotification({
-        title: "Stock mis à jour ✅",
-        message: `La quantité a été mise à jour avec succès.`,
+        title: ap.stock_notif_loaded,
+        message: ap.stock_notif_loaded_msg,
         type: 'info'
       });
 
@@ -102,18 +105,18 @@ export default function ProductStockManager() {
         if (session?.user) {
           await supabase.from('notifications').insert([{
             user_id: session.user.id,
-            title: finalStock === 0 ? "⚠️ Rupture de stock" : "⚠️ Stock faible",
-            message: `Le produit "${product?.name}" est ${finalStock === 0 ? 'épuisé' : 'bientôt épuisé'} (${finalStock} restants). Un réapprovisionnement est nécessaire.`,
+            title: finalStock === 0 ? ap.stock_alert_title_empty : ap.stock_alert_title_low,
+            message: (finalStock === 0 ? ap.stock_alert_msg_empty : ap.stock_alert_msg_low).replace('{name}', product?.name || '').replace('{stock}', String(finalStock)),
             type: finalStock === 0 ? 'error' : 'warning',
             read: false
           }]);
         }
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       addNotification({
-        title: "Erreur de mise à jour",
-        message: err.message || "Une erreur est survenue lors de la mise à jour.",
+        title: ap.stock_notif_update_error,
+        message: err instanceof Error ? err.message : ap.stock_notif_update_error_msg,
         type: 'info'
       });
     } finally {
@@ -129,9 +132,9 @@ export default function ProductStockManager() {
   };
 
   const getStockStatus = (stock: number) => {
-    if (stock <= 0) return { label: 'Rupture', color: 'text-red-600 bg-red-50 dark:bg-red-900/30' };
-    if (stock <= 5) return { label: 'Faible', color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/30' };
-    return { label: 'En stock', color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30' };
+    if (stock <= 0) return { label: ap.stock_out, color: 'text-red-600 bg-red-50 dark:bg-red-900/30' };
+    if (stock <= 5) return { label: ap.stock_low, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/30' };
+    return { label: ap.stock_in, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30' };
   };
 
   const filteredProducts = products.filter(p => {
@@ -149,15 +152,15 @@ export default function ProductStockManager() {
       <div className="p-8 border-b border-slate-50 dark:border-slate-700 space-y-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h3 className="text-xl font-black text-slate-900 dark:text-white">Gestionnaire de Stock Automatisé</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Suivez et ajustez vos stocks en temps réel avec notifications critiques.</p>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white">{ap.stock_manager_title}</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{ap.stock_manager_desc}</p>
           </div>
           <button 
             onClick={() => fetchProducts()}
             className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
           >
             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-            Actualiser
+            {ap.header_refresh}
           </button>
         </div>
 
@@ -165,7 +168,7 @@ export default function ProductStockManager() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             type="text"
-            placeholder="Rechercher par nom, catégorie ou statut (En stock, Faible, Rupture)..."
+            placeholder={ap.stock_search}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl pl-12 pr-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D] text-sm"
@@ -177,10 +180,10 @@ export default function ProductStockManager() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-900/50">
-              <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">PRODUIT</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">STATUT</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">STOCK ACTUEL</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">AJUSTEMENT</th>
+              <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">{ap.stock_header_product}</th>
+              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">{ap.stock_header_status}</th>
+              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">{ap.stock_header_current}</th>
+              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">{ap.stock_header_adjust}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
@@ -189,7 +192,7 @@ export default function ProductStockManager() {
                 <td colSpan={4} className="px-8 py-20 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <RefreshCw className="w-8 h-8 text-[#C1272D] animate-spin" />
-                    <span className="text-sm font-bold text-slate-400">Chargement de l'inventaire...</span>
+                    <span className="text-sm font-bold text-slate-400">{ap.stock_inventory_loading}</span>
                   </div>
                 </td>
               </tr>
@@ -197,7 +200,7 @@ export default function ProductStockManager() {
               <tr>
                 <td colSpan={4} className="px-8 py-20 text-center text-slate-400">
                   <Package className="w-12 h-12 mx-auto mb-4 opacity-10" />
-                  Aucun produit ne correspond à votre recherche.
+                  {ap.stock_empty_search}
                 </td>
               </tr>
             ) : (
@@ -236,7 +239,7 @@ export default function ProductStockManager() {
                           {product.stock}
                         </span>
                         {product.stock <= 5 && (
-                          <span className="text-[9px] font-bold text-red-500 uppercase tracking-tighter">Réappro. Requis</span>
+                          <span className="text-[9px] font-bold text-red-500 uppercase tracking-tighter">{ap.stock_restock_needed}</span>
                         )}
                       </div>
                     </td>
@@ -298,7 +301,7 @@ export default function ProductStockManager() {
           <Info className="w-4 h-4" />
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          <strong>Astuce:</strong> Les modifications de stock déclenchent automatiquement des alertes critiques si le niveau descend sous 5 unités. Les mises à jour sont synchronisées en temps réel.
+          <strong>{ap.stock_tip_label}</strong> {ap.stock_tip}
         </p>
       </div>
     </div>

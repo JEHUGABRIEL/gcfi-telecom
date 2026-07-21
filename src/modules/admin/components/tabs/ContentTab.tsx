@@ -6,6 +6,7 @@ import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { Plus, Trash2, Check, X, Star, RefreshCw, Globe } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
+import { useLang } from '@/shared/context/LanguageContext';
 import type { Testimonial, Achievement, Partner, NewsItem } from '@/shared/types';
 
 // ── Onglet générique pour Témoignages, Réalisations, Partenaires, Actualités ──
@@ -14,35 +15,40 @@ type ContentType = 'testimonials' | 'achievements' | 'partners' | 'news';
 
 interface ContentTabProps { type: ContentType; }
 
-const CONFIG = {
-  testimonials: {
-    label: 'Témoignages', table: 'testimonials',
-    fields: ['name', 'role', 'content', 'avatar_url', 'rating'],
-    labels: { name: 'Nom', role: 'Poste / Rôle', content: 'Témoignage', avatar_url: 'URL photo', rating: 'Note (1-5)' },
-    defaultItem: { name: '', role: '', content: '', avatar_url: '', rating: 5, status: 'pending' },
-  },
-  achievements: {
-    label: 'Réalisations', table: 'achievements',
-    fields: ['title', 'description', 'year', 'image'],
-    labels: { title: 'Titre', description: 'Description', year: 'Année', image: 'URL image' },
-    defaultItem: { title: '', description: '', year: new Date().getFullYear().toString(), image: '' },
-  },
-  partners: {
-    label: 'Partenaires', table: 'partners',
-    fields: ['name', 'logo', 'website'],
-    labels: { name: 'Nom', logo: 'URL logo', website: 'Site web' },
-    defaultItem: { name: '', logo: '', website: '' },
-  },
-  news: {
-    label: 'Actualités', table: 'news',
-    fields: ['title', 'excerpt', 'category', 'image', 'source', 'url'],
-    labels: { title: 'Titre', excerpt: 'Résumé', category: 'Catégorie', image: 'URL image', source: 'Source', url: 'Lien article' },
-    defaultItem: { title: '', excerpt: '', category: 'telecom', image: '', source: '', url: '#', published_at: new Date().toISOString() },
-  },
-};
+function getConfig(type: ContentType, ap: any) {
+  const base = {
+    testimonials: {
+      label: ap.content_label_testimonials, table: 'testimonials',
+      fields: ['name', 'role', 'content', 'avatar_url', 'rating'],
+      labels: { name: ap.content_field_name, role: ap.content_field_role, content: ap.content_field_content, avatar_url: ap.content_field_avatar_url, rating: ap.content_field_rating },
+      defaultItem: { name: '', role: '', content: '', avatar_url: '', rating: 5, status: 'pending' },
+    },
+    achievements: {
+      label: ap.content_label_achievements, table: 'achievements',
+      fields: ['title', 'description', 'year', 'image'],
+      labels: { title: ap.content_field_title, description: ap.content_field_description, year: ap.content_field_year, image: ap.content_field_image },
+      defaultItem: { title: '', description: '', year: new Date().getFullYear().toString(), image: '' },
+    },
+    partners: {
+      label: ap.content_label_partners, table: 'partners',
+      fields: ['name', 'logo', 'website'],
+      labels: { name: ap.content_field_name, logo: ap.content_field_logo, website: ap.content_field_website },
+      defaultItem: { name: '', logo: '', website: '' },
+    },
+    news: {
+      label: ap.content_label_news, table: 'news',
+      fields: ['title', 'excerpt', 'category', 'image', 'source', 'url'],
+      labels: { title: ap.content_field_title, excerpt: ap.content_field_excerpt, category: ap.content_field_category, image: ap.content_field_image, source: ap.content_field_source, url: ap.content_field_url },
+      defaultItem: { title: '', excerpt: '', category: 'telecom', image: '', source: '', url: '#', published_at: new Date().toISOString() },
+    },
+  };
+  return base[type];
+}
 
 export default function ContentTab({ type }: ContentTabProps) {
-  const cfg = CONFIG[type];
+  const { t } = useLang();
+  const ap = t.admin_page;
+  const cfg = getConfig(type, ap);
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = React.useState(false);
   const [form, setForm] = React.useState<any>({ ...cfg.defaultItem });
@@ -51,7 +57,7 @@ export default function ContentTab({ type }: ContentTabProps) {
 
   const queryKey = ['admin', 'content', type];
 
-  const { data: items = [], isLoading: loading, isFetching } = useQuery({
+  const { data: items = [], isLoading: loading } = useQuery({
     queryKey,
     queryFn: async () => {
       const { data, error } = await supabase.from(cfg.table).select('*').order('created_at', { ascending: false });
@@ -89,7 +95,7 @@ export default function ContentTab({ type }: ContentTabProps) {
     <>
       <ConfirmModal
         open={!!pendingDeleteId}
-        message={`Cette action est irréversible. Voulez-vous vraiment supprimer cet élément de "${cfg.label}" ?`}
+        message={ap.confirm_delete_message}
         onConfirm={remove}
         onCancel={() => setPendingDeleteId(null)}
       />
@@ -97,9 +103,9 @@ export default function ContentTab({ type }: ContentTabProps) {
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">{cfg.label} ({items.length})</h3>
         <div className="flex gap-2">
-          <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className={cn('w-4 h-4', isFetching && 'animate-spin')} /></button>
+          <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className="w-4 h-4" /></button>
           <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-2 bg-[#C1272D] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#1E4D8C] transition-all">
-            <Plus className="w-4 h-4" /> Ajouter
+            <Plus className="w-4 h-4" /> {ap.content_add}
           </button>
         </div>
       </div>
@@ -123,11 +129,10 @@ export default function ContentTab({ type }: ContentTabProps) {
                 ) : field === 'category' ? (
                   <select value={form[field] || 'telecom'} onChange={e => setForm((f: any) => ({ ...f, [field]: e.target.value }))}
                     className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D]">
-                    <option value="telecom">Télécom</option>
-                    <option value="it">IT</option>
+                    <option value="telecom">{ap.content_cat_telecom}</option>
+                    <option value="it">{ap.content_cat_it}</option>
                   </select>
                 ) : field === 'rating' ? (
-                  // ✅ Sélecteur étoiles — bloqué à 5 max
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map(star => (
                       <button key={star} type="button"
@@ -152,10 +157,10 @@ export default function ContentTab({ type }: ContentTabProps) {
           </div>
           <div className="flex gap-3">
             <button onClick={save} disabled={saving} className="bg-[#C1272D] text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-[#1E4D8C] transition-all disabled:opacity-50">
-              {saving ? 'Enregistrement...' : 'Enregistrer'}
+              {saving ? ap.btn_saving : ap.btn_save}
             </button>
             <button onClick={() => setShowForm(false)} className="px-6 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:border-[#C1272D] transition-all">
-              Annuler
+              {ap.btn_cancel}
             </button>
           </div>
         </div>
@@ -165,7 +170,7 @@ export default function ContentTab({ type }: ContentTabProps) {
       <div className="space-y-3">
         {items.length === 0 ? (
           <div className="text-center py-12 text-slate-400">
-            <p>Aucun élément. Cliquez sur "Ajouter" ou exécutez le SQL de seed.</p>
+            <p>{ap.content_empty}</p>
           </div>
         ) : items.map(item => (
           <div key={item.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex items-start justify-between gap-4">
@@ -177,7 +182,7 @@ export default function ContentTab({ type }: ContentTabProps) {
                 {item.status && (
                   <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full',
                     item.status === 'approved' ? 'bg-green-100 text-green-700' : item.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700')}>
-                    {item.status}
+                    {item.status === 'approved' ? ap.status_approved : item.status === 'rejected' ? ap.status_rejected : ap.status_pending}
                   </span>
                 )}
                 {item.rating && <span className="flex items-center gap-0.5 text-yellow-400"><Star className="w-3 h-3 fill-current" /><span className="text-xs text-slate-600 dark:text-slate-400">{item.rating}/5</span></span>}
@@ -189,8 +194,8 @@ export default function ContentTab({ type }: ContentTabProps) {
               {/* Modération témoignages */}
               {type === 'testimonials' && item.status === 'pending' && (
                 <>
-                  <button onClick={() => approveTestimonial(item.id, 'approved')} title="Approuver" className="p-1.5 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"><Check className="w-4 h-4" /></button>
-                  <button onClick={() => approveTestimonial(item.id, 'rejected')} title="Rejeter" className="p-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"><X className="w-4 h-4" /></button>
+                  <button onClick={() => approveTestimonial(item.id, 'approved')} title={ap.status_approved} className="p-1.5 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"><Check className="w-4 h-4" /></button>
+                  <button onClick={() => approveTestimonial(item.id, 'rejected')} title={ap.status_rejected} className="p-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"><X className="w-4 h-4" /></button>
                 </>
               )}
               <button onClick={() => setPendingDeleteId(item.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>

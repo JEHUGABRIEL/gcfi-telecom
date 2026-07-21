@@ -29,13 +29,16 @@ import {
   Package,
   Minus,
   RefreshCw,
-  Tag
+  Tag,
+  Wrench,
+  Megaphone as MegaphoneIcon
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { useNotifications } from '@/shared/context/NotificationContext';
 import { useAuth } from '@/shared/context/AuthContext';
+import { useLang } from '@/shared/context/LanguageContext';
 import ProductStockManager from './ProductStockManager';
 import QuotesTab from './tabs/QuotesTab';
 import ContentTab from './tabs/ContentTab';
@@ -47,19 +50,32 @@ import TrainingsTab from './tabs/TrainingsTab';
 import BlogTab from './tabs/BlogTab';
 import PromoTab from './tabs/PromoTab';
 import NotificationsTab from './tabs/NotificationsTab';
+import ServicesTab from './tabs/ServicesTab';
+import AnnouncementsTab from './tabs/AnnouncementsTab';
 import { useSearchParams } from 'next/navigation';
-import { useQueryClient, useIsFetching } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useAdminUsers, useAdminOrders, useAdminTrainings,
   useAdminProducts, useAdminComments, useAdminNotifications,
 } from '@/shared/lib/queries';
 import { useAdminToast, AdminToast } from '@/shared/components/AdminToast';
-import { useLang } from '@/shared/context/LanguageContext';
 
-const VALID_TABS = ['overview','notifications','orders','users','formations','produits','stock','commentaires','devis','temoignages','realisations','partenaires','actualites','blog','promotions'] as const;
+const VALID_TABS = ['overview','notifications','orders','users','formations','produits','stock','commentaires','devis','temoignages','realisations','partenaires','actualites','blog','promotions','services','annonces'] as const;
 type AdminTab = typeof VALID_TABS[number];
 
+interface SidebarItem {
+  id: AdminTab;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+interface SidebarGroup {
+  label: string;
+  items: SidebarItem[];
+}
+
 const AdminModule = () => {
+  const { t } = useLang();
   const { addNotification } = useNotifications();
   const { toast, showToast, dismiss } = useAdminToast();
   const { user: adminUser, isAdmin: isAuthorized, loading: authLoading } = useAuth();
@@ -74,9 +90,7 @@ const AdminModule = () => {
   const [isSending, setIsSending] = React.useState(false);
   const [sendSuccess, setSendSuccess] = React.useState(false);
   
-  const { t } = useLang();
   const queryClient = useQueryClient();
-  const isFetching = useIsFetching({ queryKey: ['admin'] });
   const { data: users = [] }            = useAdminUsers(isAuthorized);
   const { data: orders = [] }           = useAdminOrders(isAuthorized);
   const { data: trainings = [] }        = useAdminTrainings(isAuthorized);
@@ -94,107 +108,13 @@ const AdminModule = () => {
 
   // Search State
   const [searchQuery, setSearchQuery] = React.useState('');
-  // Global admin search
-  const [globalSearch, setGlobalSearch] = React.useState('');
-  const [showGlobalSearch, setShowGlobalSearch] = React.useState(false);
-  const searchRef = React.useRef<HTMLDivElement>(null);
 
   // Delete Confirmation State
   const [deleteConfirmation, setDeleteConfirmation] = React.useState<{ id: string, table: string } | null>(null);
 
-  const adminPage = t.admin_page;
-  // Global search results — memoized
-  const globalSearchResults = React.useMemo(() => {
-    if (globalSearch.length < 2) return [];
-    const q = globalSearch.toLowerCase();
-    type ResultGroup = { label: string; tab: AdminTab; items: { id: string; label: string; sub?: string }[] };
-    const groups: ResultGroup[] = [];
-
-    const foundUsers = users
-      .filter((u: any) => (u.full_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)))
-      .slice(0, 5)
-      .map((u: any) => ({ id: u.id, label: u.full_name || u.email, sub: u.email }));
-    if (foundUsers.length) groups.push({ label: adminPage.sidebar_users, tab: 'users', items: foundUsers });
-
-    const foundOrders = orders
-      .filter((o: any) => o.id.toLowerCase().includes(q) || o.customer_email?.toLowerCase().includes(q))
-      .slice(0, 5)
-      .map((o: any) => ({ id: o.id, label: `#${o.id.slice(0, 8)}`, sub: o.customer_email }));
-    if (foundOrders.length) groups.push({ label: adminPage.sidebar_orders, tab: 'orders', items: foundOrders });
-
-    const foundProducts = products
-      .filter((p: any) => p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q))
-      .slice(0, 5)
-      .map((p: any) => ({ id: p.id, label: p.name, sub: p.category }));
-    if (foundProducts.length) groups.push({ label: adminPage.sidebar_products, tab: 'produits', items: foundProducts });
-
-    const foundTrainings = trainings
-      .filter((t: any) => t.title?.toLowerCase().includes(q) || t.category?.toLowerCase().includes(q))
-      .slice(0, 5)
-      .map((t: any) => ({ id: t.id, label: t.title, sub: t.category }));
-    if (foundTrainings.length) groups.push({ label: adminPage.sidebar_trainings, tab: 'formations', items: foundTrainings });
-
-    return groups;
-  }, [globalSearch, users, orders, products, trainings, adminPage]);
-
-  // Fermer le dropdown au clic outside
-  React.useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowGlobalSearch(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
-
   const refreshAll = React.useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['admin'] });
   }, [queryClient]);
-
-  const handleExportReport = React.useCallback(() => {
-    const now = new Date();
-    const dateStr = now.toISOString().slice(0, 10);
-
-    // Collecter les stats
-    const totalUsers = users.length;
-    const totalOrders = orders.length;
-    const totalProducts = products.length;
-    const totalTrainings = trainings.length;
-    const completedOrders = orders.filter((o: any) => o.status === 'completed' || o.status === 'Livrée');
-    const totalRevenue = completedOrders.reduce((sum: number, o: any) => sum + (Number(o.total_amount) || Number(o.total) || 0), 0);
-
-    // Construire le CSV
-    const rows: string[] = [];
-    rows.push('Rapport GCFI - Dashboard Administration');
-    rows.push(`Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR')}`);
-    rows.push('');
-    rows.push('--- INDICATEURS CLÉS ---');
-    rows.push(`Utilisateurs,${totalUsers}`);
-    rows.push(`Commandes,${totalOrders}`);
-    rows.push(`Produits,${totalProducts}`);
-    rows.push(`Formations,${totalTrainings}`);
-    rows.push(`Revenu total (commandes complétées),${totalRevenue} FCFA`);
-    rows.push('');
-    rows.push('--- PRODUITS ---');
-    rows.push('Nom,Prix,Stock,Remise (%)');
-    products.forEach((p: any) => rows.push(`"${p.name || ''}",${p.price ?? 0},${p.stock ?? 0},${p.discount ?? 0}`));
-    rows.push('');
-    rows.push('--- FORMATIONS ---');
-    rows.push('Titre,Prix,Durée,Remise (%)');
-    trainings.forEach((t: any) => rows.push(`"${t.title || ''}",${t.price ?? 0},"${t.duration || ''}",${t.discount ?? 0}`));
-
-    const csv = rows.join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `gcfi-report-${dateStr}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    showToast('Rapport exporté ✓');
-  }, [users, orders, products, trainings, showToast]);
 
   React.useEffect(() => {
     if (!isAuthorized) return;
@@ -211,8 +131,8 @@ const AdminModule = () => {
           
           // Add notification via context
           addNotification({
-            title: "Nouvelle Commande !",
-            message: `Commande #${newOrder.id.slice(0, 8)} reçue de ${newOrder.customer_email || 'un client'}.`,
+            title: ap.notif_new_order,
+            message: ap.notif_order_received.replace('{id}', newOrder.id.slice(0, 8)).replace('{email}', newOrder.customer_email || ap.notif_unknown_customer),
             type: 'info'
           });
 
@@ -244,10 +164,10 @@ const AdminModule = () => {
       }
       setIsModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['admin'] });
-      showToast(editingItem ? 'Élément modifié avec succès' : 'Élément ajouté avec succès');
+      showToast(`${t.admin_page.item} ${t.admin_page.save_success}`);
     } catch (err) {
       logError("AdminModule: Error saving item", err);
-      showToast('Erreur lors de l\'enregistrement', 'error');
+      showToast(t.admin_page.save_error, 'error');
     }
   };
 
@@ -259,10 +179,10 @@ const AdminModule = () => {
       if (error) throw error;
       setDeleteConfirmation(null);
       queryClient.invalidateQueries({ queryKey: ['admin'] });
-      showToast('Élément supprimé');
+      showToast(t.admin_page.delete_success);
     } catch (err) {
       logError("AdminModule: Error deleting item", err);
-      showToast('Erreur lors de la suppression', 'error');
+      showToast(t.admin_page.delete_error, 'error');
     }
   };
 
@@ -271,10 +191,10 @@ const AdminModule = () => {
       const { error } = await supabase.from('comments').update({ status: 'approved' }).eq('id', id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] });
-      showToast('Commentaire approuvé');
+      showToast(t.admin_page.comment_approved);
     } catch (err) {
       logError("AdminModule: Error approving comment", err);
-      showToast('Erreur lors de l\'approbation', 'error');
+      showToast(t.admin_page.comment_approve_error, 'error');
     }
   };
 
@@ -283,14 +203,24 @@ const AdminModule = () => {
       const { error } = await supabase.from('comments').update({ status: 'rejected' }).eq('id', id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] });
-      showToast('Commentaire rejeté');
+      showToast(t.admin_page.comment_rejected);
     } catch (err) {
       logError("AdminModule: Error rejecting comment", err);
-      showToast('Erreur lors du rejet', 'error');
+      showToast(t.admin_page.comment_reject_error, 'error');
     }
   };
 
-  const handleCompleteOrder = async (order: any) => {
+  interface AdminOrder {
+    id: string;
+    created_at: string;
+    status: string;
+    customer_id: string;
+    customer_email: string;
+    total_amount?: number;
+    total?: number;
+  }
+
+  const handleCompleteOrder = async (order: AdminOrder) => {
     try {
       // 1. Update order status
       const { error: orderError } = await supabase
@@ -305,8 +235,8 @@ const AdminModule = () => {
         .from('notifications')
         .insert([{
           user_id: order.customer_id,
-          title: "Commande Terminée ✅",
-          message: `Votre commande #${order.id.slice(0, 8)} a été traitée avec succès ! Merci de votre confiance.`,
+          title: ap.notif_order_completed,
+          message: ap.notif_order_completed_msg.replace('{id}', order.id.slice(0, 8)),
           type: 'success',
           read: false
         }]);
@@ -314,8 +244,8 @@ const AdminModule = () => {
       if (notifyError) throw notifyError;
 
       addNotification({
-        title: "Commande Clôturée",
-        message: `La commande #${order.id.slice(0, 8)} a été marquée comme terminée.`,
+        title: ap.notif_order_closed,
+        message: ap.notif_order_closed_msg.replace('{id}', order.id.slice(0, 8)),
         type: 'info'
       });
 
@@ -325,7 +255,7 @@ const AdminModule = () => {
     }
   };
 
-  const getFilteredData = (data: any[], type: string) => {
+  const getFilteredData = (data: Record<string, any>[], type: string) => {
     if (!searchQuery) return data;
     const query = searchQuery.toLowerCase();
     
@@ -371,6 +301,14 @@ const AdminModule = () => {
     setSearchQuery('');
   }, [activeTab]);
 
+  // Quand le chargement est terminé et qu'il n'y a pas d'utilisateur connecté,
+  // on redirige vers /admin-login au lieu d'afficher un spinner indéfiniment.
+  React.useEffect(() => {
+    if (!authLoading && !adminUser) {
+      window.location.replace('/admin-login');
+    }
+  }, [authLoading, adminUser]);
+
   if (authLoading || (!adminUser && !isAuthorized)) {
     // Show spinner while auth is resolving OR when there is no user yet
     // (INITIAL_SESSION race before initializeAuth completes).
@@ -378,33 +316,14 @@ const AdminModule = () => {
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 pt-24">
         <div className="flex flex-col items-center gap-4">
           <RefreshCw className="w-8 h-8 text-[#C1272D] animate-spin" />
-          <p className="text-sm font-bold text-slate-500">Vérification des accès...</p>
+          <p className="text-sm font-bold text-slate-500">{t.admin_page.auth_verifying}</p>
         </div>
       </div>
     );
   }
 
-  if (isAuthorized === false) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 pt-20">
-        <div className="max-w-md w-full text-center bg-white dark:bg-slate-800 p-12 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700">
-          <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lock className="w-10 h-10 text-[#C1272D]" />
-          </div>
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-4 transition-colors">Accès Refusé</h2>
-          <p className="text-slate-600 dark:text-slate-400 mb-8 transition-colors">Vous n'avez pas les privilèges nécessaires pour accéder au panel d'administration GCFI.</p>
-          <button 
-            onClick={() => window.location.href = '/'}
-            className="w-full bg-[#C1272D] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-blue-500/20"
-          >
-            Retour à l'accueil
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (isAuthorized === null) {
+  if (!adminUser) {
+    // Redirection en cours — afficher un spinner discret
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="w-8 h-8 border-4 border-slate-200 border-t-[#C1272D] rounded-full animate-spin" />
@@ -432,10 +351,10 @@ const AdminModule = () => {
       .reduce((sum, o) => sum + (Number(o.total_amount) || Number(o.total) || 0), 0);
 
     return [
-      { label: 'Utilisateurs', value: totalUsers.toLocaleString(), icon: Users, color: 'blue', change: '+12%' },
-      { label: 'Commandes', value: totalOrders.toLocaleString(), icon: ShoppingBag, color: 'emerald', change: '+8%' },
-      { label: 'Cours Actifs', value: activeTrainings.toLocaleString(), icon: GraduationCap, color: 'red', change: '0%' },
-      { label: 'Revenu Mensuel', value: `${(monthlyRevenue / 1000).toFixed(1)}k F`, icon: TrendingUp, color: 'amber', change: '+15%' },
+      { label: t.admin_page.stat_users, value: totalUsers.toLocaleString(), icon: Users, color: 'blue', change: '+12%' },
+      { label: t.admin_page.stat_orders, value: totalOrders.toLocaleString(), icon: ShoppingBag, color: 'emerald', change: '+8%' },
+      { label: t.admin_page.stat_active_courses, value: activeTrainings.toLocaleString(), icon: GraduationCap, color: 'red', change: '0%' },
+      { label: t.admin_page.stat_monthly_revenue, value: `${(monthlyRevenue / 1000).toFixed(1)}k F`, icon: TrendingUp, color: 'amber', change: '+15%' },
     ];
   };
 
@@ -470,40 +389,43 @@ const AdminModule = () => {
     }
   };
 
-  const sidebarGroups = [
+  const ap = t.admin_page;
+  const sidebarGroups: SidebarGroup[] = [
     {
-      label: 'Tableau de bord',
+      label: ap.sidebar_dashboard,
       items: [
-        { id: 'overview' as AdminTab, label: "Vue d'ensemble", icon: BarChart3 },
+        { id: 'overview' as AdminTab, label: ap.sidebar_overview, icon: BarChart3 },
       ],
     },
     {
-      label: 'Gestion',
+      label: ap.sidebar_management,
       items: [
-        { id: 'users' as AdminTab,      label: 'Utilisateurs',  icon: Users },
-        { id: 'orders' as AdminTab,     label: 'Commandes',     icon: ShoppingBag },
-        { id: 'formations' as AdminTab, label: 'Formations',    icon: GraduationCap },
-        { id: 'produits' as AdminTab,   label: 'Produits',      icon: ShoppingBag },
-        { id: 'stock' as AdminTab,      label: 'Stock',         icon: Package },
-        { id: 'promotions' as AdminTab, label: 'Promotions',    icon: Tag },
+        { id: 'users' as AdminTab,      label: ap.sidebar_users,        icon: Users },
+        { id: 'orders' as AdminTab,     label: ap.sidebar_orders,       icon: ShoppingBag },
+        { id: 'formations' as AdminTab, label: ap.sidebar_trainings,    icon: GraduationCap },
+        { id: 'produits' as AdminTab,   label: ap.sidebar_products,     icon: ShoppingBag },
+        { id: 'stock' as AdminTab,      label: ap.sidebar_stock,        icon: Package },
+        { id: 'promotions' as AdminTab, label: ap.sidebar_promotions,   icon: Tag },
+        { id: 'services' as AdminTab,   label: ap.sidebar_services,     icon: Wrench },
+        { id: 'annonces' as AdminTab,   label: ap.sidebar_banners,      icon: MegaphoneIcon },
       ],
     },
     {
-      label: 'Contenu',
+      label: ap.sidebar_content,
       items: [
-        { id: 'blog' as AdminTab,          label: 'Blog',           icon: FileText },
-        { id: 'commentaires' as AdminTab,  label: 'Commentaires',   icon: MessageSquare },
-        { id: 'devis' as AdminTab,         label: 'Devis reçus',    icon: FileText },
-        { id: 'temoignages' as AdminTab,   label: 'Témoignages',    icon: Star },
-        { id: 'realisations' as AdminTab,  label: 'Réalisations',   icon: Award },
-        { id: 'partenaires' as AdminTab,   label: 'Partenaires',    icon: Users },
-        { id: 'actualites' as AdminTab,    label: 'Actualités',     icon: Megaphone },
+        { id: 'blog' as AdminTab,          label: ap.sidebar_blog,           icon: FileText },
+        { id: 'commentaires' as AdminTab,  label: ap.sidebar_comments,       icon: MessageSquare },
+        { id: 'devis' as AdminTab,         label: ap.sidebar_quotes,         icon: FileText },
+        { id: 'temoignages' as AdminTab,   label: ap.sidebar_testimonials,   icon: Star },
+        { id: 'realisations' as AdminTab,  label: ap.sidebar_achievements,   icon: Award },
+        { id: 'partenaires' as AdminTab,   label: ap.sidebar_partners,       icon: Users },
+        { id: 'actualites' as AdminTab,    label: ap.sidebar_news,           icon: Megaphone },
       ],
     },
     {
-      label: 'Communication',
+      label: ap.sidebar_communication,
       items: [
-        { id: 'notifications' as AdminTab, label: 'Notifications', icon: Megaphone },
+        { id: 'notifications' as AdminTab, label: ap.sidebar_notifications, icon: Megaphone },
       ],
     },
   ];
@@ -517,84 +439,19 @@ const AdminModule = () => {
         {/* Admin Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-[#C1272D] mb-1">Tableau de bord</p>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white">Panel <span className="text-[#C1272D]">Administration</span></h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Gérez le contenu, les utilisateurs et les opérations de GCFI.</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#C1272D] mb-1">{t.admin_page.dashboard}</p>
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white">{t.admin_page.header_title.split(' ')[0]} <span className="text-[#C1272D]">{t.admin_page.header_title.split(' ')[1]}</span></h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t.admin_page.header_subtitle}</p>
           </div>
           <div className="flex items-center gap-3">
-            {/* Global admin search */}
-            <div ref={searchRef} className="relative">
-              <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm min-w-[220px]">
-                <Search className="w-4 h-4 text-slate-400 shrink-0" />
-                <input
-                  type="text"
-                  placeholder={'Rechercher...'}
-                  value={globalSearch}
-                  onChange={e => { setGlobalSearch(e.target.value); setShowGlobalSearch(true); }}
-                  onFocus={() => setShowGlobalSearch(true)}
-                  className="w-full bg-transparent border-none outline-none text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
-                />
-                {globalSearch && (
-                  <button onClick={() => { setGlobalSearch(''); setShowGlobalSearch(false); }} className="p-0.5 text-slate-300 hover:text-slate-500">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Search dropdown */}
-              <AnimatePresence>
-                {showGlobalSearch && globalSearch.length >= 2 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    className="absolute top-full right-0 mt-2 w-[400px] bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50"
-                  >
-                    {globalSearchResults.length === 0 ? (
-                      <div className="p-6 text-center text-sm text-slate-400">
-                        <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                        <p>Aucun résultat pour "{globalSearch}"</p>
-                      </div>
-                    ) : (
-                      <div className="max-h-[60vh] overflow-y-auto p-2 space-y-1">
-                        {globalSearchResults.map(group => (
-                          <div key={group.tab}>
-                            <p className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                              {group.label}
-                            </p>
-                            {group.items.map(item => (
-                              <button
-                                key={item.id}
-                                onClick={() => { setActiveTab(group.tab); setShowGlobalSearch(false); setGlobalSearch(''); }}
-                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{item.label}</p>
-                                  {item.sub && <p className="text-xs text-slate-400 truncate">{item.sub}</p>}
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
-                              </button>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
             <button
               onClick={refreshAll}
               className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300"
             >
-              <RefreshCw className={`w-4 h-4 ${isFetching > 0 ? 'animate-spin' : ''}`} /> Actualiser
+              <RefreshCw className="w-4 h-4" /> {t.admin_page.header_refresh}
             </button>
-            <button
-              onClick={handleExportReport}
-              className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300"
-            >
-              <BarChart3 className="w-4 h-4" /> Rapport
+            <button className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300">
+              <BarChart3 className="w-4 h-4" /> {t.admin_page.header_report}
             </button>
             <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
               <div className="w-8 h-8 rounded-full bg-[#C1272D] flex items-center justify-center text-white text-sm font-black shrink-0">
@@ -602,7 +459,7 @@ const AdminModule = () => {
               </div>
               <div className="hidden sm:block">
                 <p className="text-xs font-black text-slate-900 dark:text-white leading-none">{adminUser?.email?.split('@')[0]}</p>
-                <p className="text-[10px] text-[#C1272D] font-bold mt-0.5">Administrateur</p>
+                <p className="text-[10px] text-[#C1272D] font-bold mt-0.5">{t.admin_page.header_admin_badge}</p>
               </div>
             </div>
           </div>
@@ -658,7 +515,7 @@ const AdminModule = () => {
             className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300"
           >
             <Menu className="w-4 h-4" />
-            Navigation
+            {t.admin_page.header_nav}
           </button>
           {/* Breadcrumb showing the current tab */}
           {(() => {
@@ -697,8 +554,8 @@ const AdminModule = () => {
                 {/* Drawer header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#C1272D]">Administration</p>
-                    <p className="text-sm font-black text-slate-900 dark:text-white">Navigation</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#C1272D]">{t.admin_page.badge}</p>
+                    <p className="text-sm font-black text-slate-900 dark:text-white">{t.admin_page.header_nav}</p>
                   </div>
                   <button
                     onClick={() => setIsSidebarOpen(false)}
@@ -758,7 +615,7 @@ const AdminModule = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-black text-slate-900 dark:text-white truncate">{adminUser?.email?.split('@')[0]}</p>
-                      <p className="text-[10px] text-[#C1272D] font-bold">Administrateur</p>
+                      <p className="text-[10px] text-[#C1272D] font-bold">{t.admin_page.admin_label}</p>
                     </div>
                   </div>
                 </div>
@@ -769,29 +626,31 @@ const AdminModule = () => {
 
         {/* Full-width Tab Content */}
         <div>
-            {activeTab === 'overview' && <OverviewTab onNavigate={(tab) => setActiveTab(tab as any)} />}
+            {activeTab === 'overview' && <OverviewTab onNavigate={(tab) => setActiveTab(tab as AdminTab)} />}
             {activeTab === 'users' && <UsersTab />}
-            {activeTab === 'notifications' && <NotificationsTab onDelete={(id, table) => setDeleteConfirmation({ id, table })} notifications={allNotifications as any} />}
+            {activeTab === 'notifications' && <NotificationsTab onDelete={(id, table) => setDeleteConfirmation({ id, table })} notifications={allNotifications as { id: string; title: string; message: string; type: string; created_at: string }[]} />}
             {activeTab === 'orders' && <OrdersTab />}
             {activeTab === 'formations' && <TrainingsTab />}
             {activeTab === 'blog' && <BlogTab />}
             {activeTab === 'promotions' && <PromoTab />}
             {activeTab === 'produits' && <ProductsTab />}
+            {activeTab === 'services' && <ServicesTab />}
+            {activeTab === 'annonces' && <AnnouncementsTab />}
             {activeTab === 'stock' && (
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <div className="relative mb-8">
                   <div className="w-24 h-24 bg-gradient-to-br from-[#C1272D]/10 to-[#C1272D]/5 rounded-3xl flex items-center justify-center mx-auto">
                     <Package className="w-12 h-12 text-[#C1272D]" />
                   </div>
-                  <span className="absolute -top-2 -right-2 bg-amber-400 text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full">Bientôt</span>
+                  <span className="absolute -top-2 -right-2 bg-amber-400 text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full">{t.admin_page.coming_soon_badge_new}</span>
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3">Coming Soon...</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3">{t.admin_page.coming_soon_title}</h3>
                 <p className="text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed">
-                  Le module de gestion de stock est en cours de développement. Il sera disponible très prochainement.
+                  {t.admin_page.coming_soon_text}
                 </p>
                 <div className="mt-8 flex items-center gap-2 text-xs text-[#C1272D] font-bold bg-[#C1272D]/5 px-6 py-3 rounded-full">
                   <span className="w-2 h-2 bg-[#C1272D] rounded-full animate-pulse" />
-                  En développement actif
+                  {t.admin_page.coming_soon_badge}
                 </div>
               </div>
             )}
@@ -842,7 +701,7 @@ const AdminModule = () => {
             >
               <div className="p-8 border-b border-slate-50 dark:border-slate-700 flex justify-between items-center">
                 <h3 className="text-xl font-black text-slate-900 dark:text-white">
-                  {editingItem ? 'Modifier' : 'Ajouter'} {formType === 'product' ? 'un Produit' : 'une Formation'}
+                  {(editingItem ? ap.modal_title_edit : ap.modal_title_add)} {formType === 'product' ? ap.modal_product_label : ap.modal_training_label}
                 </h3>
                 <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full">
                   <X className="w-6 h-6" />
@@ -852,7 +711,7 @@ const AdminModule = () => {
               <form onSubmit={handleCreateOrUpdate} className="p-8 space-y-4 max-h-[70vh] overflow-y-auto">
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                    {formType === 'product' ? 'Nom du produit' : 'Titre de la formation'}
+                    {formType === 'product' ? ap.product_name : ap.training_title}
                   </label>
                   <input 
                     name={formType === 'product' ? 'name' : 'title'}
@@ -862,17 +721,17 @@ const AdminModule = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Catégorie</label>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{ap.modal_field_category}</label>
                   <input 
                     name="category"
                     defaultValue={editingItem?.category || ''}
-                    placeholder={formType === 'product' ? "Mobile, Réseau..." : "IT, Télécom..."}
+                    placeholder={formType === 'product' ? ap.modal_category_placeholder_product : ap.modal_category_placeholder_training}
                     className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D]"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Prix (FCFA)</label>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{ap.modal_field_price}</label>
                     <input 
                       type="number"
                       name="price"
@@ -885,14 +744,14 @@ const AdminModule = () => {
                   </div>
                   <div>
                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                      {formType === 'product' ? 'Stock' : 'Niveau'}
+                      {formType === 'product' ? ap.modal_field_stock : ap.modal_field_level}
                     </label>
                     <input 
                       type={formType === 'product' ? 'number' : 'text'}
                       name={formType === 'product' ? 'stock' : 'level'}
                       min={formType === 'product' ? "0" : undefined}
                       defaultValue={editingItem ? (formType === 'product' ? editingItem.stock : editingItem.level) : ''}
-                      placeholder={formType === 'training' ? "Ex: Débutant" : ""}
+                      placeholder={formType === 'training' ? ap.modal_level_placeholder : ""}
                       className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D]"
                     />
                   </div>
@@ -900,27 +759,26 @@ const AdminModule = () => {
                 {formType === 'training' && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Instructeur</label>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{ap.modal_field_instructor}</label>
                       <input 
                         name="instructor"
                         defaultValue={editingItem?.instructor || ''}
-                        placeholder="Nom"
+                        placeholder={ap.modal_instructor_placeholder}
                         className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D]"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Durée</label>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{ap.modal_field_duration}</label>
                       <input 
                         name="duration"
                         defaultValue={editingItem?.duration || ''}
-                        placeholder="Ex: 3 mois"
+                        placeholder={ap.modal_duration_placeholder}
                         className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D]"
                       />
                     </div>
                   </div>
                 )}
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Description</label>
+                <div>                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{ap.modal_field_description}</label>
                   <textarea 
                     name="description"
                     defaultValue={editingItem?.description || ''}
@@ -928,8 +786,7 @@ const AdminModule = () => {
                     className="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#C1272D] resize-none"
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">URL Image</label>
+                <div>                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{ap.modal_field_image_url}</label>
                   <input 
                     name="image"
                     defaultValue={editingItem?.image || ''}
@@ -937,7 +794,7 @@ const AdminModule = () => {
                   />
                 </div>
                 <button type="submit" className="w-full bg-[#C1272D] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-blue-500/20 mt-4">
-                  Confirmer
+                  {ap.modal_confirm}
                 </button>
               </form>
             </motion.div>
@@ -965,22 +822,22 @@ const AdminModule = () => {
               <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
                 <AlertCircle className="w-8 h-8 text-[#C1272D]" />
               </div>
-              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Confirmation</h3>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">{ap.confirm_delete_title}</h3>
               <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">
-                Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.
+                {ap.confirm_delete_message}
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <button 
                   onClick={() => setDeleteConfirmation(null)}
                   className="py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
                 >
-                  Annuler
+                  {t.admin_page.confirm_delete_cancel}
                 </button>
                 <button 
                   onClick={handleDelete}
                   className="py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-[#C1272D] text-white shadow-lg shadow-blue-500/20"
                 >
-                  Supprimer
+                  {t.admin_page.confirm_delete_confirm}
                 </button>
               </div>
             </motion.div>

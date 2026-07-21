@@ -2,108 +2,146 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { motion } from 'motion/react';
-import { ArrowRight, GraduationCap, ShoppingBag } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ArrowRight, GraduationCap, ShoppingBag, Network, Wifi, ShieldCheck, Zap, Radio } from 'lucide-react';
+import { useLang, type Translations } from '@/shared/context/LanguageContext';
 
 interface HeroProps {
   onNavigate: (path: string) => void;
 }
 
+const HERO_SLIDE_SRCS = [
+  { src: '/team/gcfi-formation-salle.png', alt: 'Salle de formation GCFI' },
+  { src: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=1600', alt: 'Infrastructure réseau datacenter' },
+  { src: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=1600', alt: 'Salle serveurs' },
+  { src: 'https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?auto=format&fit=crop&q=80&w=1600', alt: 'Technicien réseau' },
+  { src: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&q=80&w=1600', alt: 'Formation professionnelle' },
+];
+
 export default function Hero({ onNavigate }: HeroProps) {
+  const { t } = useLang();
+  const [slide, setSlide] = React.useState(0);
+
+  const SLIDES = React.useMemo(() =>
+    HERO_SLIDE_SRCS.map((base, i) => ({
+      ...base,
+      tag: (t.hero_slides[i] as Translations['hero_slides'][number]).tag,
+      title: t.hero_slides[i].title,
+      sub: t.hero_slides[i].sub,
+    })),
+    [t]
+  );
+
+  React.useEffect(() => {
+    const t = setInterval(() => setSlide(s => (s + 1) % SLIDES.length), 5500);
+    return () => clearInterval(t);
+  }, []);
+
   return (
-    <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-white dark:bg-slate-900 transition-colors">
-      {/* Background Elements */}
-      <div className="absolute top-0 right-0 -z-10 w-1/2 h-full bg-white dark:bg-slate-800/50 skew-x-[-12deg] origin-top-right transition-colors border-l border-slate-50 dark:border-transparent" />
-      <div className="absolute top-1/4 left-0 -z-10 w-64 h-64 bg-[var(--accent)]/5 dark:bg-[var(--accent)]/10 rounded-full blur-3xl" />
+    <section className="relative min-h-[92vh] flex items-center pt-[68px] overflow-hidden">
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
-            <span className="inline-block py-1 px-3 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold uppercase tracking-wider mb-6">
-              Leader en Télécommunication 
-            </span>
-            <h1 className="text-5xl lg:text-7xl font-bold text-slate-900 dark:text-white leading-[1.1] mb-6">
-              Propulsez votre <span className="text-[var(--accent)]">Avenir</span> avec GCFI.
-            </h1>
-            <p className="text-lg text-slate-600 dark:text-slate-400 mb-10 max-w-lg leading-relaxed">
-              De la formation d'experts en cybersécurité à tous vos besoins en équipements télécom, GCFI est votre partenaire technologique en République Centrafricaine.
-            </p>
+      {/* ── Background slideshow ── */}
+      <div className="absolute inset-0">
+        <AnimatePresence mode="sync">
+          <motion.div key={slide}
+            initial={{ opacity: 0, scale: 1.04 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: 'easeInOut' }}
+            className="absolute inset-0">
+            <Image
+              src={SLIDES[slide].src}
+              alt={SLIDES[slide].alt}
+              fill
+              className="object-cover object-center"
+              sizes="100vw"
+              priority
+              unoptimized={SLIDES[slide].src.startsWith('/')}
+            />
+          </motion.div>
+        </AnimatePresence>
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/85 via-slate-900/60 to-slate-900/25" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent" />
+      </div>
 
-            <div className="flex flex-wrap gap-4">
-              {/* ✅ navigate('/formation') au lieu de setActiveModule('training') */}
-              <button
-                onClick={() => onNavigate('/formation')}
-                className="bg-[var(--accent)] text-white px-8 py-4 rounded-full font-bold hover:bg-[var(--accent-hover)] transition-all flex items-center shadow-lg shadow-[var(--accent)]/20"
-              >
-                Nos Formations
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </button>
-              <button
-                onClick={() => onNavigate('/boutique')}
-                className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 px-8 py-4 rounded-full font-bold hover:bg-white dark:hover:bg-slate-700 hover:border-[var(--accent)]/30 transition-all shadow-sm"
-              >
-                Boutique en ligne
-              </button>
-            </div>
+      {/* ── Content ── */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
+        <div className="max-w-2xl">
 
-            <div className="mt-12 grid grid-cols-3 gap-6 border-t border-slate-100 dark:border-slate-800 pt-12">
-              <div>
-                <p className="text-3xl font-bold text-[var(--accent)]">15+</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Années d'Expertise</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-[var(--accent)]">500+</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Étudiants Formés</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-[var(--accent)]">100%</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Engagement Local</p>
-              </div>
-            </div>
+          {/* Texts — change with each slide */}
+          <AnimatePresence mode="wait">
+            <motion.div key={slide}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -14 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}>
+
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/15 backdrop-blur-sm text-white border border-white/20 rounded-full text-xs font-black uppercase tracking-widest mb-6">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#C1272D] animate-pulse" />
+                {SLIDES[slide].tag}
+              </span>
+
+              <h1 className="text-5xl md:text-6xl xl:text-7xl font-black text-white leading-[1.05] tracking-tight mb-6">
+                {SLIDES[slide].title.includes('Centrafrique') ? (
+                  <>
+                    Connecter la{' '}
+                    <span className="relative">
+                      <span className="text-[#ff4d4d]">Centrafrique</span>
+                      <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 10" fill="none" preserveAspectRatio="none">
+                        <path d="M0 8 Q75 2 150 6 Q225 10 300 4" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.7"/>
+                      </svg>
+                    </span>{' '}
+                    au monde numérique
+                  </>
+                ) : SLIDES[slide].title}
+              </h1>
+
+              <p className="text-lg text-white/80 leading-relaxed mb-10 max-w-xl">
+                {SLIDES[slide].sub}
+              </p>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* CTAs — fixes */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex flex-wrap gap-4"
+          >
+            <button onClick={() => onNavigate('/formation')}
+              className="flex items-center gap-2.5 px-8 py-4 bg-[#C1272D] text-white rounded-2xl font-bold text-sm hover:bg-red-600 transition-all shadow-lg shadow-red-500/30 hover:-translate-y-0.5">
+              <GraduationCap className="w-4 h-4" /> {t.hero.cta_formations} <ArrowRight className="w-4 h-4" />
+            </button>
+            <button onClick={() => onNavigate('/boutique')}
+              className="flex items-center gap-2.5 px-8 py-4 bg-white/15 backdrop-blur-sm text-white border border-white/30 rounded-2xl font-bold text-sm hover:bg-white/25 transition-all hover:-translate-y-0.5">
+              <ShoppingBag className="w-4 h-4" /> {t.nav.boutique}
+            </button>
           </motion.div>
 
+          {/* Stats — fixes */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="mt-12 flex items-center gap-8 flex-wrap border-t border-white/15 pt-10"
           >
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <div className="h-64 rounded-3xl overflow-hidden shadow-2xl relative">
-                  <Image src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800" alt="Cybersecurity" fill className="object-cover" priority sizes="(max-width: 1024px) 50vw, 400px" />
-                </div>
-                <div className="h-48 bg-slate-900 dark:bg-slate-950 rounded-3xl flex flex-col justify-end p-6 text-white border border-white/5">
-                  <GraduationCap className="w-8 h-8 mb-4 text-[var(--accent)]" />
-                  <h3 className="font-bold text-xl">Formation IT</h3>
-                  <p className="text-sm opacity-80">Telecom & Cybersécurité</p>
-                </div>
+            {[
+              { v: '9+', l: (t.profile_page.hero_stats as unknown as string[])[0] },
+              { v: '200+', l: (t.profile_page.hero_stats as unknown as string[])[1] },
+              { v: '500+', l: (t.profile_page.hero_stats as unknown as string[])[2] },
+            ].map(s => (
+              <div key={s.l}>
+                <p className="text-3xl font-black text-white">{s.v}</p>
+                <p className="text-xs text-white/60 uppercase tracking-wider font-semibold mt-0.5">{s.l}</p>
               </div>
-              <div className="space-y-4 pt-8">
-                <div className="h-48 bg-[var(--accent)] rounded-3xl flex flex-col justify-end p-6 text-white shadow-xl shadow-black/10">
-                  <GraduationCap className="w-8 h-8 mb-4" />
-                  <h3 className="font-bold text-xl">Formation</h3>
-                  <p className="text-sm opacity-80">Telecom & Cyber</p>
-                </div>
-                <div className="h-64 rounded-3xl overflow-hidden shadow-2xl relative">
-                  <Image src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=800" alt="Telecom" fill className="object-cover" priority sizes="(max-width: 1024px) 50vw, 400px" />
-                </div>
-              </div>
-            </div>
-
-            {/* Floating Badge */}
-            <div className="absolute -bottom-6 -left-6 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 flex items-center transition-colors">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mr-4">
-                <ShoppingBag className="text-green-600 dark:text-green-400 w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">Boutique Ouverte</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Livraison Bangui & Provinces</p>
-              </div>
-            </div>
+            ))}
           </motion.div>
         </div>
       </div>
+
+
     </section>
   );
 }

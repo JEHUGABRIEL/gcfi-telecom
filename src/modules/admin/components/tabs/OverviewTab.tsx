@@ -37,7 +37,7 @@ function timeAgo(dateStr: string, prefix: string, suffix: string) {
 export default function OverviewTab({ onNavigate }: OverviewTabProps) {
   const { t } = useLang();
   const ap = t.admin_page;
-  const { data: activities = [], isLoading, isFetching, refetch } = useQuery({
+  const { data: activities = [], isLoading, refetch } = useQuery({
     queryKey: ['admin', 'activity_log'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -62,7 +62,7 @@ export default function OverviewTab({ onNavigate }: OverviewTabProps) {
             className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"
             title={ap.overview_refresh}
           >
-            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
         </div>
 

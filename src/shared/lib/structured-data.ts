@@ -31,7 +31,7 @@ export const organizationSchema = {
   },
 };
 
-export const productSchema = (product: any) => ({
+export const productSchema = (product: Product) => ({
   '@context': 'https://schema.org',
   '@type': 'Product',
   name: product.name,
@@ -43,7 +43,7 @@ export const productSchema = (product: any) => ({
   url: `https://www.gcfi-rca.com/#/boutique/${product.id}`,
 });
 
-export const courseSchema = (course: any) => ({
+export const courseSchema = (course: Course) => ({
   '@context': 'https://schema.org',
   '@type': 'Course',
   name: course.title,

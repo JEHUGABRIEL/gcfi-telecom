@@ -7,10 +7,15 @@ import { Plus, Trash2, RefreshCw, BookOpen, Edit, X, Eye, EyeOff, AlertTriangle 
 import ImageUpload from '@/shared/components/ImageUpload';
 import { motion, AnimatePresence } from 'motion/react';
 import Pagination from '@/shared/components/ui/Pagination';
+import { useActivityLog } from '@/shared/hooks/useActivityLog';
+import { useLang } from '@/shared/context/LanguageContext';
 
 const PAGE_SIZE = 10;
 
-function ConfirmModal({ message, onConfirm, onCancel }: { message: string; onConfirm: () => void; onCancel: () => void }) {
+function ConfirmModal({ message, onConfirm, onCancel, title, cancelText, confirmText }: {
+  message: string; onConfirm: () => void; onCancel: () => void;
+  title: string; cancelText: string; confirmText: string;
+}) {
   return (
     <div className="fixed inset-0 z-300 flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -20,11 +25,11 @@ function ConfirmModal({ message, onConfirm, onCancel }: { message: string; onCon
         <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="w-7 h-7 text-red-500" />
         </div>
-        <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">Confirmer la suppression</h3>
+        <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">{title}</h3>
         <p className="text-sm text-slate-500 mb-6">{message}</p>
         <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-3 rounded-2xl font-bold text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 hover:bg-slate-200 transition-colors">Annuler</button>
-          <button onClick={onConfirm} className="flex-1 py-3 rounded-2xl font-bold text-sm bg-red-500 text-white hover:bg-red-600 transition-colors">Supprimer</button>
+          <button onClick={onCancel} className="flex-1 py-3 rounded-2xl font-bold text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 hover:bg-slate-200 transition-colors">{cancelText}</button>
+          <button onClick={onConfirm} className="flex-1 py-3 rounded-2xl font-bold text-sm bg-red-500 text-white hover:bg-red-600 transition-colors">{confirmText}</button>
         </div>
       </motion.div>
     </div>
@@ -34,8 +39,11 @@ function ConfirmModal({ message, onConfirm, onCancel }: { message: string; onCon
 const EMPTY = { title: '', excerpt: '', content: '', category: '', author: '', tags: '', image: '', read_time: '5', published: false };
 
 export default function BlogTab() {
+  const { t } = useLang();
+  const ap = t.admin_page;
   const queryClient = useQueryClient();
   const { toast, showToast, dismiss } = useAdminToast();
+  const { logActivity } = useActivityLog();
   const [page, setPage]             = React.useState(1);
   const [showForm, setShowForm]     = React.useState(false);
   const [saving, setSaving]         = React.useState(false);
@@ -47,7 +55,7 @@ export default function BlogTab() {
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const { data: posts = [], isLoading: loading, isFetching } = useQuery({
+  const { data: posts = [], isLoading: loading } = useQuery({
     queryKey: ['admin', 'blog_posts'],
     queryFn: async () => {
       const { data } = await supabase.from('blog_posts').select('*').order('created_at', { ascending: false });
@@ -77,7 +85,7 @@ export default function BlogTab() {
     setSaving(true);
     const payload = {
       title: form.title.trim(), excerpt: form.excerpt.trim(), content: form.content.trim(),
-      category: form.category.trim(), author: form.author.trim() || 'GCFI Télécom',
+      category: form.category.trim(), author: form.author.trim() || ap.blog_field_author_placeholder,
       tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
       image: form.image || null, read_time: Number(form.read_time) || 5,
       published: (form as any).published,
@@ -87,32 +95,34 @@ export default function BlogTab() {
         ? await supabase.from('blog_posts').update(payload).eq('id', editing.id)
         : await supabase.from('blog_posts').insert([payload]);
       if (error) {
-        setSaveError(`Erreur Supabase: ${error.message} (code: ${error.code})`);
+        setSaveError(`${ap.save_error}: ${error.message} (${error.code})`);
         showToast(error.message, 'error');
       } else {
+        logActivity({ action: editing ? 'updated' : 'created', entity: 'blog', entity_id: editing?.id, label: editing ? `${ap.blog_toast_updated}: ${form.title}` : `${ap.blog_toast_created}: ${form.title}` });
         resetForm();
         invalidate();
-        showToast(editing ? 'Article modifié avec succès' : 'Article créé avec succès');
+        showToast(editing ? ap.blog_toast_updated : ap.blog_toast_created);
       }
-    } catch (err: any) {
-      setSaveError(err.message || 'Erreur inconnue');
+    } catch (err: any) {        setSaveError(err.message || ap.save_error);
     } finally {
       setSaving(false);
     }
   };
 
-  const togglePublish = async (id: string, current: boolean) => {
+  const togglePublish = async (id: string, current: boolean, title?: string) => {
     await supabase.from('blog_posts').update({ published: !current }).eq('id', id);
+    logActivity({ action: current ? 'unpublished' : 'published', entity: 'blog', entity_id: id, label: current ? `${ap.blog_toast_unpublished}: ${title || id}` : `${ap.blog_toast_published}: ${title || id}` });
     invalidate();
-    showToast(current ? 'Article dépublié' : 'Article publié');
+    showToast(current ? ap.blog_toast_unpublished : ap.blog_toast_published);
   };
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     await supabase.from('blog_posts').delete().eq('id', deleteTarget.id);
+    logActivity({ action: 'deleted', entity: 'blog', entity_id: deleteTarget.id, label: `${ap.blog_toast_deleted}: ${deleteTarget.title}` });
     setDelete(null);
     invalidate();
-    showToast('Article supprimé');
+    showToast(ap.blog_toast_deleted);
   };
 
   const inputCls = "w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#C1272D]";
@@ -124,7 +134,13 @@ export default function BlogTab() {
     <AdminToast toast={toast} onDismiss={dismiss} />
     <div className="space-y-4">
       <AnimatePresence>
-        {deleteTarget && <ConfirmModal message={`Supprimer "${deleteTarget.title}" ?`} onConfirm={confirmDelete} onCancel={() => setDelete(null)} />}
+        {deleteTarget && <ConfirmModal
+            title={ap.confirm_delete_title}
+            cancelText={ap.btn_cancel}
+            confirmText={ap.confirm_delete_confirm}
+            message={`${ap.confirm_delete_message} \"${deleteTarget.title}\" ?`}
+            onConfirm={confirmDelete}
+            onCancel={() => setDelete(null)} />}
       </AnimatePresence>
 
       {/* Modal formulaire */}
@@ -135,42 +151,42 @@ export default function BlogTab() {
               className="bg-white dark:bg-slate-800 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
               <div className="sticky top-0 bg-white dark:bg-slate-800 p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center z-10">
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {editing ? 'Modifier l\'article' : 'Nouvel article'}
+                  {editing ? ap.blog_modal_edit : ap.blog_modal_new}
                 </h3>
                 <button onClick={resetForm} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><X className="w-5 h-5" /></button>
               </div>
               <div className="p-6 space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">Titre *</label>
-                    <input value={form.title} onChange={set('title')} placeholder="Titre de l'article" className={inputCls} />
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">{ap.blog_field_title}</label>
+                    <input value={form.title} onChange={set('title')} placeholder={ap.blog_field_title_placeholder} className={inputCls} />
                   </div>
                   <div>
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">Catégorie</label>
-                    <input value={form.category} onChange={set('category')} placeholder="ex: Télécom, Cybersécurité" className={inputCls} />
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">{ap.blog_field_category}</label>
+                    <input value={form.category} onChange={set('category')} placeholder={ap.blog_field_category_placeholder} className={inputCls} />
                   </div>
                   <div>
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">Auteur</label>
-                    <input value={form.author} onChange={set('author')} placeholder="GCFI Télécom" className={inputCls} />
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">{ap.blog_field_author}</label>
+                    <input value={form.author} onChange={set('author')} placeholder={ap.blog_field_author_placeholder} className={inputCls} />
                   </div>
                   <div>
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">Temps de lecture (min)</label>
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">{ap.blog_field_read_time}</label>
                     <input value={form.read_time} onChange={set('read_time')} type="number" min="1" className={inputCls} />
                   </div>
                   <div>
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">Tags (virgule)</label>
-                    <input value={form.tags} onChange={set('tags')} placeholder="ex: 5G, Réseau, RCA" className={inputCls} />
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">{ap.blog_field_tags}</label>
+                    <input value={form.tags} onChange={set('tags')} placeholder={ap.blog_field_tags_placeholder} className={inputCls} />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">Résumé</label>
-                    <textarea value={form.excerpt} onChange={set('excerpt')} rows={2} placeholder="Courte description (affichée dans la liste)" className={inputCls} />
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">{ap.blog_field_excerpt}</label>
+                    <textarea value={form.excerpt} onChange={set('excerpt')} rows={2} placeholder={ap.blog_field_excerpt_placeholder} className={inputCls} />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">Contenu *</label>
-                    <textarea value={form.content} onChange={set('content')} rows={10} placeholder="Contenu de l'article..." className={inputCls + ' resize-y'} />
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">{ap.blog_field_content}</label>
+                    <textarea value={form.content} onChange={set('content')} rows={10} placeholder={ap.blog_field_content_placeholder} className={inputCls + ' resize-y'} />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block">Image de couverture</label>
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block">{ap.blog_field_cover}</label>
                     <ImageUpload value={form.image} onChange={url => setForm(f => ({ ...f, image: url }))} folder="gcfi/blog" />
                   </div>
                   <div className="sm:col-span-2 flex items-center gap-3">
@@ -180,23 +196,23 @@ export default function BlogTab() {
                       <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${(form as any).published ? 'translate-x-7' : 'translate-x-1'}`} />
                     </button>
                     <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                      {(form as any).published ? 'Publié (visible sur le site)' : 'Brouillon (non visible)'}
+                      {(form as any).published ? ap.blog_published : ap.blog_draft}
                     </label>
                   </div>
                 </div>
                 {saveError && (
                   <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 rounded-xl text-xs text-red-600 dark:text-red-400 font-medium">
                     ⚠️ {saveError}
-                    {saveError.includes('does not exist') && (
-                      <p className="mt-1 font-bold">→ La table blog_posts n'existe pas encore dans Supabase. Créez-la via l'éditeur SQL.</p>
+                    {saveError && saveError.includes('does not exist') && (
+                      <p className="mt-1 font-bold">→ The blog_posts table does not exist yet in Supabase. Create it via the SQL Editor.</p>
                     )}
                   </div>
                 )}
                 <div className="flex gap-3 pt-2">
                   <button onClick={save} disabled={saving} className="bg-[#C1272D] text-white px-6 py-2 rounded-xl text-sm font-bold hover:opacity-90 disabled:opacity-50">
-                    {saving ? 'Enregistrement...' : 'Enregistrer'}
+                    {saving ? ap.btn_saving : ap.btn_save}
                   </button>
-                  <button onClick={resetForm} className="px-6 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300">Annuler</button>
+                  <button onClick={resetForm} className="px-6 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300">{ap.btn_cancel}</button>
                 </div>
               </div>
             </motion.div>
@@ -206,12 +222,12 @@ export default function BlogTab() {
 
       {/* Header liste */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Articles de blog ({posts.length})</h3>
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">{ap.blog_list_title} ({posts.length})</h3>
         <div className="flex gap-2">
-          <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} /></button>
+          <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className="w-4 h-4" /></button>
           <button onClick={() => { resetForm(); setShowForm(true); }}
             className="flex items-center gap-2 bg-[#C1272D] text-white px-4 py-2 rounded-xl text-sm font-bold hover:opacity-90">
-            <Plus className="w-4 h-4" /> Nouvel article
+            <Plus className="w-4 h-4" /> {ap.blog_new}
           </button>
         </div>
       </div>
@@ -220,7 +236,7 @@ export default function BlogTab() {
       {posts.length === 0 ? (
         <div className="text-center py-12 text-slate-400">
           <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p>Aucun article. Créez votre premier post !</p>
+          <p>{ap.blog_empty}</p>
         </div>
       ) : (
         <>
@@ -233,7 +249,7 @@ export default function BlogTab() {
                   <div className="flex items-center gap-2 mb-0.5">
                     <p className="font-bold text-slate-900 dark:text-white truncate">{p.title}</p>
                     <span className={`shrink-0 text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${p.published ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                      {p.published ? 'Publié' : 'Brouillon'}
+                      {p.published ? ap.blog_status_published : ap.blog_status_draft}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 mt-1">
@@ -243,9 +259,9 @@ export default function BlogTab() {
                   </div>
                 </div>
                 <div className="flex gap-1 shrink-0">
-                  <button onClick={() => togglePublish(p.id, p.published)}
+                  <button onClick={() => togglePublish(p.id, p.published, p.title)}
                     className="p-2 text-slate-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/10 rounded-lg transition-colors"
-                    title={p.published ? 'Dépublier' : 'Publier'}>
+                    title={p.published ? ap.blog_tooltip_unpublish : ap.blog_tooltip_publish}>
                     {p.published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                   <button onClick={() => startEdit(p)} className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">

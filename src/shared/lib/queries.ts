@@ -21,10 +21,22 @@ export const QUERY_KEYS = {
   partners:     ['partners'] as const,
 };
 
+// ── Helper pour obtenir la langue courante depuis le store ──────
+function getLang(): string {
+  if (typeof window === 'undefined') return 'fr';
+  try {
+    const stored = localStorage.getItem('gcfi-lang');
+    return stored === 'en' ? 'en' : 'fr';
+  } catch {
+    return 'fr';
+  }
+}
+
 // ── Produits ───────────────────────────────────────────────────
-export function useProducts() {
+export function useProducts(lang?: string) {
+  const l = lang ?? getLang();
   return useQuery({
-    queryKey: QUERY_KEYS.products,
+    queryKey: [...QUERY_KEYS.products, l],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
@@ -38,9 +50,10 @@ export function useProducts() {
 }
 
 // ── Formations ─────────────────────────────────────────────────
-export function useTrainings() {
+export function useTrainings(lang?: string) {
+  const l = lang ?? getLang();
   return useQuery({
-    queryKey: QUERY_KEYS.trainings,
+    queryKey: [...QUERY_KEYS.trainings, l],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('trainings')
@@ -106,9 +119,10 @@ export function useSaveCart(userId: string | undefined) {
 }
 
 // ── Témoignages ────────────────────────────────────────────────
-export function useTestimonials() {
+export function useTestimonials(lang?: string) {
+  const l = lang ?? getLang();
   return useQuery({
-    queryKey: QUERY_KEYS.testimonials,
+    queryKey: [...QUERY_KEYS.testimonials, l],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('testimonials')
@@ -123,9 +137,10 @@ export function useTestimonials() {
 }
 
 // ── Réalisations ───────────────────────────────────────────────
-export function useAchievements() {
+export function useAchievements(lang?: string) {
+  const l = lang ?? getLang();
   return useQuery({
-    queryKey: QUERY_KEYS.achievements,
+    queryKey: [...QUERY_KEYS.achievements, l],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('achievements')
@@ -139,9 +154,10 @@ export function useAchievements() {
 }
 
 // ── Partenaires ────────────────────────────────────────────────
-export function usePartners() {
+export function usePartners(lang?: string) {
+  const l = lang ?? getLang();
   return useQuery({
-    queryKey: QUERY_KEYS.partners,
+    queryKey: [...QUERY_KEYS.partners, l],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('partners')

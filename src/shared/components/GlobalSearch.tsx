@@ -7,6 +7,7 @@ import { Search, X, ShoppingBag, GraduationCap, Newspaper, ArrowRight } from 'lu
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/shared/lib/utils';
 import { supabase } from '@/shared/lib/supabase';
+import { useLang } from '@/shared/context/LanguageContext';
 import type { Product, Course, AppModule } from '@/shared/types';
 
 
@@ -28,6 +29,7 @@ interface GlobalSearchProps {
 
 export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: GlobalSearchProps) {
   const router = useRouter();
+  const { t } = useLang();
   const [internalIsOpen, setInternalIsOpen] = React.useState(false);
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
   
@@ -51,16 +53,18 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
   const [allProducts, setAllProducts] = React.useState<Product[]>([]);
   const [allCourses, setAllCourses] = React.useState<Course[]>([]);
 
+  const { lang } = useLang();
+
   React.useEffect(() => {
+    const l = lang === 'en' ? 'en' : 'fr';
     Promise.all([
-      supabase.from('products').select('id, name, description, category, price, image'),
-      // ✅ select('*') → évite 400 si colonnes image/tags absentes dans la table trainings
-      supabase.from('trainings').select('*')
+      supabase.from('products').select('id, name, description, category, price, image').eq('lang', l),
+      supabase.from('trainings').select('*').eq('lang', l)
     ]).then(([{ data: prods }, { data: trains }]) => {
       setAllProducts((prods || []) as Product[]);
       setAllCourses((trains || []) as Course[]);
     });
-  }, []);
+  }, [lang]);
 
   const [query, setQuery] = React.useState('');
   const [results, setResults] = React.useState<SearchResult[]>([]);
@@ -103,7 +107,7 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
           className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 hover:border-[#C1272D]/50 transition-all group lg:min-w-[300px] shadow-sm"
         >
           <Search className="w-4 h-4 text-slate-400 group-hover:text-[#C1272D] transition-colors" />
-          <span className="text-xs text-slate-400 font-medium">Rechercher...</span>
+          <span className="text-xs text-slate-400 font-medium">{t.global_search.search_btn}</span>
           <kbd className="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded ml-auto uppercase">
             Ctrl K
           </kbd>
@@ -132,7 +136,7 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
                   <input
                     autoFocus
                     type="text"
-                    placeholder="Que cherchez-vous ?"
+                    placeholder={t.global_search.placeholder}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     className="flex-1 bg-transparent border-none outline-none text-xl font-bold text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600"
@@ -164,7 +168,7 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
                             {result.type === 'course' && <GraduationCap className="w-3 h-3 text-green-500" />}
                             {result.type === 'news' && <Newspaper className="w-3 h-3 text-[#C1272D]" />}
                             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                              {result.type === 'product' ? 'Boutique' : result.type === 'course' ? 'Formation' : 'Actualité'}
+                              {result.type === 'product' ? t.global_search.type_product : result.type === 'course' ? t.global_search.type_course : t.global_search.type_news}
                             </span>
                           </div>
                           <h4 className="font-bold text-slate-900 dark:text-white truncate">
@@ -180,13 +184,13 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
                     <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-50 dark:border-transparent shadow-sm">
                       <Search className="w-8 h-8 text-slate-300" />
                     </div>
-                    <p className="text-slate-500 font-medium">Aucun résultat pour "{query}"</p>
+                    <p className="text-slate-500 font-medium">{t.global_search.no_results} "{query}"</p>
                   </div>
                 ) : (
                   <div className="py-8 px-4">
-                    <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Suggestions</p>
+                    <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">{t.global_search.suggestions}</p>
                     <div className="grid grid-cols-2 gap-3">
-                      {['MikroTik', 'Wifi Zone', 'Cybersécurité', 'Formation IT'].map((tag) => (
+                      {(t.global_search.suggest_tags as unknown as string[]).map((tag) => (
                         <button
                           key={tag}
                           onClick={() => setQuery(tag)}
@@ -202,16 +206,16 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
 
               <div className="p-4 bg-white dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  Firme Gaveaux Christian Centrafrique
+                  {t.global_search.footer}
                 </p>
                 <div className="flex gap-4">
                   <span className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold">
                     <span className="px-1 py-0.5 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600">Enter</span>
-                    Sélectionner
+                    {t.global_search.select}
                   </span>
                   <span className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold">
                     <span className="px-1 py-0.5 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600">Esc</span>
-                    Fermer
+                    {t.global_search.close}
                   </span>
                 </div>
               </div>

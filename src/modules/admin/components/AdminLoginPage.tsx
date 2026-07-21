@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ShieldCheck, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/shared/lib/supabase';
 import { isMFAEnabled } from '@/shared/lib/mfa-service';
+import { useLang } from '@/shared/context/LanguageContext';
 import MFAVerification from '@/shared/components/MFAVerification';
 
 export default function AdminLoginPage() {
+  const { t } = useLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
@@ -14,6 +16,22 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [requiresMFA, setRequiresMFA] = useState(false);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+
+  // Si une session admin valide existe déjà (retour après inactivité),
+  // on redirige directement sans demander de reconnexion.
+  React.useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session?.user) return;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+      if (profile?.role === 'admin' || profile?.role === 'superadmin') {
+        window.location.replace('/admin');
+      }
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +50,7 @@ export default function AdminLoginPage() {
 
       if (profileError || (profile?.role !== 'admin' && profile?.role !== 'superadmin')) {
         await supabase.auth.signOut({ scope: 'local' });
-        throw new Error('Accès refusé. Compte administrateur requis.');
+        throw new Error(t.admin_login.access_denied);
       }
 
       // Check MFA while session is still active
@@ -45,10 +63,9 @@ export default function AdminLoginPage() {
         setLoading(false);
         return;
       }
-      // onAuthStateChange('SIGNED_IN') handles router.push('/admin') after
-      // fetchProfile completes — isAdmin is guaranteed true before navigation.
+      // Effect 2 d'AuthContext gère la redirection vers /admin
     } catch (err: any) {
-      setError(err.message || 'Erreur de connexion.');
+      setError(err.message || t.admin_login.error_general);
       setLoading(false);
     }
   };
@@ -63,7 +80,7 @@ export default function AdminLoginPage() {
       setPendingUserId(null);
       // onAuthStateChange handles navigation to /admin
     } catch (err: any) {
-      setError(err.message || 'Erreur de reconnexion.');
+      setError(err.message || t.admin_login.error_reconnect);
       setRequiresMFA(false);
       setPendingUserId(null);
       setLoading(false);
@@ -90,7 +107,13 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 relative">
+      {/* Bouton retour à l'accueil */}
+      <a href="/"
+        className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 rounded-full shadow-sm border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-all z-10">
+        <ArrowLeft className="w-4 h-4" />
+        {t.common.back}
+      </a>
       <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">
         <div className="h-1.5 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)]" />
         <div className="p-8">
@@ -98,8 +121,8 @@ export default function AdminLoginPage() {
             <div className="w-16 h-16 bg-[color-mix(in_srgb,var(--accent)_10%,white)] rounded-2xl flex items-center justify-center mx-auto mb-4">
               <ShieldCheck className="w-8 h-8 text-[var(--accent)]" />
             </div>
-            <h1 className="text-2xl font-black text-slate-900 dark:text-white">Connexion Admin</h1>
-            <p className="text-sm text-slate-500 mt-1">Accès réservé aux administrateurs GCFI</p>
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white">{t.admin_login.title}</h1>
+            <p className="text-sm text-slate-500 mt-1">{t.admin_login.subtitle}</p>
           </div>
 
           {error && (
@@ -111,12 +134,12 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input type="email" placeholder="Email administrateur" value={email}
+              <input type="email" placeholder={t.admin_login.email_placeholder} value={email}
                 onChange={e => setEmail(e.target.value)} required className={inputCls} />
             </div>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input type={showPwd ? 'text' : 'password'} placeholder="Mot de passe" value={password}
+              <input type={showPwd ? 'text' : 'password'} placeholder={t.admin_login.password_placeholder} value={password}
                 onChange={e => setPassword(e.target.value)} required className={`${inputCls} pr-12`} />
               <button type="button" onClick={() => setShowPwd(v => !v)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
@@ -125,7 +148,7 @@ export default function AdminLoginPage() {
             </div>
             <button type="submit" disabled={loading}
               className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg disabled:opacity-50">
-              {loading ? 'Connexion...' : 'Se connecter'}
+              {loading ? t.admin_login.loading_text : t.admin_login.login_btn}
             </button>
           </form>
         </div>

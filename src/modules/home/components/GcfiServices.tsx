@@ -27,15 +27,30 @@ import {
   Scissors,
   Clapperboard,
   Image as ImageIcon,
-  Film,
   X,
-  Maximize2,
-  CheckCircle
+  CheckCircle,
+  Wrench,
+  Server,
+  Cpu,
+  Database,
+  Phone,
+  Monitor,
+  Satellite,
+  Film,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { AnimatePresence } from 'motion/react';
+import { supabase } from '@/shared/lib/supabase';
 
-const services = [
+/* ── Map icon name → composant Lucide ─────────────────────────── */
+const ICON_MAP: Record<string, React.ElementType> = {
+  Network, Video, TrafficCone, ShieldCheck, KeySquare, Construction,
+  Wifi, Radio, Globe, Lock, Zap, HardDrive, Truck, Gamepad2,
+  LineChart, Megaphone, Palette, Play, Tv, Scissors, Clapperboard,
+  Film, Wrench, Server, Cpu, Database, Phone, Monitor, Satellite,
+};
+
+const STATIC_SERVICES = [
   {
     title: "Network (LAN, WAN, WIFI)",
     description: "Conception et mise en œuvre d'infrastructures réseaux robustes pour une connectivité optimale.",
@@ -208,9 +223,36 @@ const colorClasses: Record<string, string> = {
 };
 
 export default function GcfiServices() {
-  const [selectedGallery, setSelectedGallery] = React.useState<any[] | null>(null);
-  const [activeMedia, setActiveMedia] = React.useState<any>(null);
   const [selectedService, setSelectedService] = React.useState<any | null>(null);
+
+  // ── Chargement dynamique depuis Supabase ───────────────────────
+  const [dbServices, setDbServices] = React.useState<any[]>([]);
+  const [loadingServices, setLoadingServices] = React.useState(true);
+
+  React.useEffect(() => {
+    supabase
+      .from('services')
+      .select('*')
+      .eq('is_active', true)
+      .order('order_index', { ascending: true })
+      .then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          const resolved = data.map((s: any) => ({
+            ...s,
+            icon: ICON_MAP[s.icon] || Wrench,
+            gallery: s.gallery || [],
+          }));
+          setDbServices(resolved);
+        } else {
+          // Fallback si la DB est vide ou inaccessible
+          setDbServices(STATIC_SERVICES);
+        }
+        setLoadingServices(false);
+      });
+  }, []);
+
+  // Source unique : DB (avec fallback sur statiques si DB vide/inaccessible)
+  const services = loadingServices ? [] : dbServices;
 
   const GalleryModal = () => (
     <AnimatePresence>
@@ -274,86 +316,6 @@ export default function GcfiServices() {
           </motion.div>
         </motion.div>
       )}
-
-      {selectedGallery && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-xl"
-          onClick={() => setSelectedGallery(null)}
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-white dark:bg-slate-800 w-full max-w-6xl rounded-[2.5rem] overflow-hidden shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-              <div>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">Galerie de Réalisations</h3>
-                <p className="text-slate-500 text-sm">Découvrez nos projets concrets et notre savoir-faire en action.</p>
-              </div>
-              <button 
-                onClick={() => setSelectedGallery(null)}
-                className="p-3 bg-slate-100 dark:bg-slate-700 rounded-2xl hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            
-            <div className="p-8 max-h-[70vh] overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {selectedGallery.map((item, idx) => (
-                  <motion.div
-                    key={idx}
-                    whileHover={{ scale: 1.02 }}
-                    className="relative aspect-video rounded-2xl overflow-hidden group cursor-pointer border border-slate-200 dark:border-slate-700"
-                    onClick={() => setActiveMedia(item)}
-                  >
-                    {item.type === 'image' ? (
-                      <Image src={item.url} alt={item.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" />
-                    ) : (
-                      <div className="w-full h-full bg-slate-900 flex items-center justify-center">
-                        <Film className="w-12 h-12 text-white/50" />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Play className="w-12 h-12 text-white fill-current" />
-                        </div>
-                      </div>
-                    )}
-                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                      <p className="text-xs font-black uppercase tracking-widest">{item.title}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-
-      {activeMedia && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/95"
-          onClick={() => setActiveMedia(null)}
-        >
-          <button className="absolute top-8 right-8 text-white p-4">
-            <X className="w-8 h-8" />
-          </button>
-          <div className="max-w-5xl w-full" onClick={e => e.stopPropagation()}>
-            {activeMedia.type === 'image' ? (
-              <Image src={activeMedia.url} alt="" width={0} height={0} sizes="(max-width: 768px) 100vw, 80vw" className="w-full rounded-3xl" style={{ width: '100%', height: 'auto' }} />
-            ) : (
-              <video src={activeMedia.url} controls autoPlay className="w-full rounded-3xl" />
-            )}
-            <p className="text-white text-center mt-6 text-xl font-bold">{activeMedia.title}</p>
-          </div>
-        </motion.div>
-      )}
     </AnimatePresence>
   );
 
@@ -372,7 +334,7 @@ export default function GcfiServices() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-24">
-          {services.map((service, index) => (
+          {services.filter((s: any) => (s.order_index ?? 0) <= 10).map((service, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -407,16 +369,6 @@ export default function GcfiServices() {
                 >
                   En savoir plus <ChevronRight className="w-4 h-4 ml-1" />
                 </button>
-                {service.gallery && (
-                  <button 
-                    onClick={() => setSelectedGallery(service.gallery || null)}
-                    className="p-3 bg-slate-50 dark:bg-slate-700 rounded-xl text-slate-400 hover:text-[#C1272D] hover:bg-red-50 transition-colors flex items-center gap-2 group/btn"
-                    title="Voir la galerie"
-                  >
-                    <Maximize2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:inline">Réalisations</span>
-                  </button>
-                )}
               </div>
             </motion.div>
           ))}
@@ -467,14 +419,6 @@ export default function GcfiServices() {
                   >
                     Explorer <ChevronRight className="w-4 h-4 ml-1" />
                   </button>
-                  {service.gallery && (
-                    <button 
-                      onClick={() => setSelectedGallery(service.gallery || null)}
-                      className="p-3 bg-slate-50 dark:bg-slate-700 rounded-xl text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors group/btn"
-                    >
-                      <Maximize2 className="w-4 h-4" />
-                    </button>
-                  )}
                 </div>
               </motion.div>
             ))}
@@ -525,14 +469,6 @@ export default function GcfiServices() {
                   >
                     Voir plus <ChevronRight className="w-4 h-4 ml-1" />
                   </button>
-                  {service.gallery && (
-                    <button 
-                      onClick={() => setSelectedGallery(service.gallery || null)}
-                      className="p-3 bg-slate-50 dark:bg-slate-700 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors group/btn"
-                    >
-                      <Maximize2 className="w-4 h-4" />
-                    </button>
-                  )}
                 </div>
               </motion.div>
             ))}

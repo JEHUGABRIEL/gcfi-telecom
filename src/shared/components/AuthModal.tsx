@@ -5,10 +5,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, LogIn, UserPlus, Shield, Mail, Lock, User, ArrowLeft, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/shared/lib/supabase';
 import { useAuth } from '@/shared/context/AuthContext';
+import { useLang } from '@/shared/context/LanguageContext';
 
 type AuthMode = 'login' | 'signup' | 'forgot';
 
 export default function AuthModal() {
+  const { t } = useLang();
   const { showAuthModal, setShowAuthModal } = useAuth();
   const [mode, setMode]           = useState<AuthMode>('login');
   const [email, setEmail]         = useState('');
@@ -50,7 +52,7 @@ export default function AuthModal() {
     try {
       if (mode === 'signup') {
         if (password !== confirm) {
-          setError('Les mots de passe ne correspondent pas.');
+          setError(t.auth.error_pwd_mismatch);
           setLoading(false);
           return;
         }
@@ -59,14 +61,14 @@ export default function AuthModal() {
           options: { data: { full_name: fullName } },
         });
         if (error) throw error;
-        setSuccess('Compte créé ! Vérifiez votre boîte email pour confirmer votre adresse.');
+        setSuccess(t.auth.success_signup);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         close();
       }
-    } catch (err: any) {
-      setError(translateError(err.message));
+    } catch (err: unknown) {
+      setError(translateError(err instanceof Error ? err.message : String(err)));
     } finally {
       setLoading(false);
     }
@@ -85,10 +87,10 @@ export default function AuthModal() {
         body: JSON.stringify({ email }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Erreur lors de la demande');
-      setSuccess('Lien envoyé ! Consultez votre boîte email pour réinitialiser votre mot de passe.');
-    } catch (err: any) {
-      setError(translateError(err.message));
+      if (!res.ok) throw new Error(data.error || t.common.error);
+      setSuccess(t.auth.success_forgot);
+    } catch (err: unknown) {
+      setError(translateError(err instanceof Error ? err.message : String(err)));
     } finally {
       setLoading(false);
     }
@@ -139,14 +141,14 @@ export default function AuthModal() {
                   {mode === 'forgot' && <Mail     className="w-7 h-7 text-[var(--accent)]" />}
                 </div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">
-                  {mode === 'login'  && 'Connexion'}
-                  {mode === 'signup' && 'Créer un compte'}
-                  {mode === 'forgot' && 'Mot de passe oublié'}
+                  {mode === 'login'  && t.auth.login_title}
+                  {mode === 'signup' && t.auth.signup_title}
+                  {mode === 'forgot' && t.auth.forgot_title}
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
-                  {mode === 'login'  && 'Accédez à votre espace GCFI.'}
-                  {mode === 'signup' && 'Rejoignez la communauté GCFI.'}
-                  {mode === 'forgot' && 'Entrez votre email pour recevoir un lien de réinitialisation.'}
+                  {mode === 'login'  && t.auth.login_sub}
+                  {mode === 'signup' && t.auth.signup_sub}
+                  {mode === 'forgot' && t.auth.forgot_sub}
                 </p>
               </div>
 
@@ -171,12 +173,12 @@ export default function AuthModal() {
                 <form onSubmit={handleForgot} className="space-y-4">
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                    <input type="email" placeholder="Votre adresse email" value={email}
+                    <input type="email" placeholder={t.auth.forgot_email_placeholder} value={email}
                       onChange={e => setEmail(e.target.value)} required className={inputCls} />
                   </div>
                   <button type="submit" disabled={loading}
                     className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg disabled:opacity-50">
-                    {loading ? 'Envoi...' : 'Envoyer le lien'}
+                    {loading ? t.auth.sending_text : t.auth.forgot_btn}
                   </button>
                 </form>
               )}
@@ -188,18 +190,18 @@ export default function AuthModal() {
                     {mode === 'signup' && (
                       <div className="relative">
                         <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                        <input type="text" placeholder="Nom complet" value={fullName}
+                        <input type="text" placeholder={t.auth.name_placeholder} value={fullName}
                           onChange={e => setFullName(e.target.value)} required className={inputCls} />
                       </div>
                     )}
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                      <input type="email" placeholder="Email" value={email}
+                      <input type="email" placeholder={t.auth.email_placeholder} value={email}
                         onChange={e => setEmail(e.target.value)} required className={inputCls} />
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                      <input type={showPwd ? 'text' : 'password'} placeholder="Mot de passe" value={password}
+                      <input type={showPwd ? 'text' : 'password'} placeholder={t.auth.password_placeholder} value={password}
                         onChange={e => setPassword(e.target.value)} required className={`${inputCls} pr-12`} />
                       <button type="button" onClick={() => setShowPwd(v => !v)}
                         className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
@@ -210,7 +212,7 @@ export default function AuthModal() {
                     {mode === 'signup' && (
                       <div className="relative">
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                        <input type={showPwd ? 'text' : 'password'} placeholder="Confirmer le mot de passe"
+                        <input type={showPwd ? 'text' : 'password'} placeholder={t.auth.confirm_placeholder}
                           value={confirm} onChange={e => setConfirm(e.target.value)} required
                           className={`${inputCls} pr-12 ${confirm && confirm !== password ? 'ring-2 ring-red-400' : confirm && confirm === password ? 'ring-2 ring-green-400' : ''}`} />
                         {confirm && (
@@ -225,14 +227,14 @@ export default function AuthModal() {
                       <div className="text-right">
                         <button type="button" onClick={() => switchMode('forgot')}
                           className="text-xs font-semibold text-[var(--accent)] hover:underline">
-                          Mot de passe oublié ?
+                          {t.auth.forgot_link}
                         </button>
                       </div>
                     )}
 
                     <button type="submit" disabled={loading}
                       className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-[color-mix(in_srgb,var(--accent)_15%,transparent)] disabled:opacity-50 mt-2">
-                      {loading ? 'Traitement...' : mode === 'login' ? 'Se connecter' : "S'inscrire"}
+                      {loading ? t.auth.loading_text : mode === 'login' ? t.auth.login_btn : t.auth.signup_btn}
                     </button>
                   </form>
 
@@ -243,7 +245,7 @@ export default function AuthModal() {
                     </div>
                     <div className="relative flex justify-center">
                       <span className="bg-white dark:bg-slate-800 px-4 text-[10px] uppercase font-black tracking-widest text-slate-400">
-                        Ou continuer avec
+                        {t.auth.or_continue}
                       </span>
                     </div>
                   </div>
@@ -257,15 +259,15 @@ export default function AuthModal() {
                       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                     </svg>
-                    Continuer avec Google
+                    {t.auth.google_btn}
                   </button>
 
                   {/* Switch mode */}
                   <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
-                    {mode === 'login' ? "Pas encore de compte ?" : "Déjà inscrit ?"}
+                    {mode === 'login' ? t.auth.no_account : t.auth.has_account}
                     <button onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
                       className="ml-1.5 font-bold text-[var(--accent)] hover:underline">
-                      {mode === 'login' ? "S'inscrire" : "Se connecter"}
+                      {mode === 'login' ? t.auth.switch_signup : t.auth.switch_login}
                     </button>
                   </p>
                 </>
@@ -275,7 +277,7 @@ export default function AuthModal() {
               {success && (
                 <button onClick={() => switchMode('login')}
                   className="w-full mt-4 py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">
-                  Retour à la connexion
+                  {t.auth.back_to_login}
                 </button>
               )}
             </div>

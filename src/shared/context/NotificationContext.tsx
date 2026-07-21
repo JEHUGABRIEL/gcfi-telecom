@@ -48,7 +48,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             id: `global-${n.id}`,
             title: n.title,
             message: n.message,
-            type: n.type as any,
+            type: n.type as AppNotification['type'],
             read: localStorage.getItem(`read-global-${n.id}`) === 'true',
             timestamp: new Date(n.created_at)
           }));
@@ -76,7 +76,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           id: `global-${n.id}`,
           title: n.title,
           message: n.message,
-          type: n.type as any,
+          type: n.type as AppNotification['type'],
           read: false,
           timestamp: new Date(n.created_at)
         };
@@ -114,7 +114,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             id: n.id,
             title: n.title,
             message: n.message,
-            type: n.type as any,
+            type: n.type as AppNotification['type'],
             read: n.status === 'read',
             timestamp: new Date(n.created_at)
           }));
@@ -142,7 +142,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             id: n.id,
             title: n.title,
             message: n.message,
-            type: n.type as any,
+            type: n.type as AppNotification['type'],
             read: n.status === 'read',
             timestamp: new Date(n.created_at)
           }, ...prev]);

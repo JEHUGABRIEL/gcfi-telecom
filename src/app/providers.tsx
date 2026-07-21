@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/shared/context/ThemeContext';
 import { AuthProvider } from '@/shared/context/AuthContext';
 import { NotificationProvider } from '@/shared/context/NotificationContext';
 import { ContactProvider } from '@/shared/context/ContactContext';
+import { LanguageProvider } from '@/shared/context/LanguageContext';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import AuthModal from '@/shared/components/AuthModal';
 
@@ -34,9 +35,10 @@ function getQueryClient() {
 export function Providers({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <ErrorBoundary>
+          <ThemeProvider>
           <AuthProvider>
             <NotificationProvider>
               <ContactProvider>
@@ -45,8 +47,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
               </ContactProvider>
             </NotificationProvider>
           </AuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+          </ThemeProvider>
+        </ErrorBoundary>
+      </LanguageProvider>
+    </QueryClientProvider>
   );
 }

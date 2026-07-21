@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Shield, Database, Lock, Mail, Eye, Trash2, FileText, Phone } from 'lucide-react';
+import { useLang } from '@/shared/context/LanguageContext';
 
 const LAST_UPDATED = '29 mai 2025';
 const CONTACT_EMAIL = 'gcfitelecom@gmail.com';
@@ -47,6 +48,7 @@ function Li({ children }: { children: React.ReactNode }) {
 }
 
 export default function PrivacyPage() {
+  const { t } = useLang();
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
       {/* Hero */}
@@ -63,19 +65,18 @@ export default function PrivacyPage() {
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)]">
-                  Données personnelles
+                  {t.privacy_page.hero_badge}
                 </p>
                 <h1 className="text-3xl font-black text-slate-900 dark:text-white">
-                  Politique de Confidentialité
+                  {t.privacy_page.hero_title}
                 </h1>
               </div>
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm">
-              Dernière mise à jour : <strong className="text-slate-700 dark:text-slate-300">{LAST_UPDATED}</strong>
+              {t.privacy_page.last_update} : <strong className="text-slate-700 dark:text-slate-300">{LAST_UPDATED}</strong>
             </p>
             <p className="mt-4 text-slate-600 dark:text-slate-400 leading-relaxed">
-              {COMPANY_NAME} s'engage à protéger la vie privée de ses utilisateurs. Cette politique explique
-              quelles données nous collectons, pourquoi, comment nous les utilisons, et quels sont vos droits.
+              {t.privacy_page.hero_paragraph.replace('{COMPANY_NAME}', COMPANY_NAME)}
             </p>
           </motion.div>
         </div>
@@ -85,10 +86,8 @@ export default function PrivacyPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-6">
 
         {/* 1. Responsable du traitement */}
-        <Section icon={FileText} title="1. Responsable du traitement">
-          <p>
-            Le responsable du traitement de vos données personnelles est :
-          </p>
+        <Section icon={FileText} title={t.privacy_page.section1_title}>
+          <p>{t.privacy_page.section1_controller}</p>
           <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-5 mt-2 space-y-1">
             <p><strong className="text-slate-700 dark:text-slate-300">{COMPANY_NAME}</strong></p>
             <p>{COMPANY_ADDRESS}</p>
@@ -102,249 +101,149 @@ export default function PrivacyPage() {
         </Section>
 
         {/* 2. Données collectées */}
-        <Section icon={Database} title="2. Données que nous collectons">
-          <p>Selon votre utilisation du site, nous collectons les données suivantes :</p>
+        <Section icon={Database} title={t.privacy_page.section2_title}>
+          <p>{t.privacy_page.section2_intro}</p>
 
           <div className="space-y-4 mt-2">
             <div>
-              <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">Lors de la création d'un compte :</p>
+              <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">{t.privacy_page.section2_account}</p>
               <ul className="space-y-1">
-                <Li>Nom complet</Li>
-                <Li>Adresse email</Li>
-                <Li>Photo de profil (optionnelle, via Google OAuth)</Li>
+                {(t.privacy_page.section2_account_items as unknown as string[]).map((item, i) => <Li key={i}>{item}</Li>)}
               </ul>
             </div>
             <div>
-              <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">Lors d'une commande :</p>
+              <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">{t.privacy_page.section2_order}</p>
               <ul className="space-y-1">
-                <Li>Articles commandés et quantités</Li>
-                <Li>Montant total</Li>
-                <Li>Email associé au compte</Li>
+                {(t.privacy_page.section2_order_items as unknown as string[]).map((item, i) => <Li key={i}>{item}</Li>)}
               </ul>
             </div>
             <div>
-              <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">Lors de l'abonnement à la newsletter :</p>
+              <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">{t.privacy_page.section2_newsletter}</p>
               <ul className="space-y-1">
-                <Li>Adresse email</Li>
-                <Li>Date d'inscription</Li>
+                {(t.privacy_page.section2_newsletter_items as unknown as string[]).map((item, i) => <Li key={i}>{item}</Li>)}
               </ul>
             </div>
             <div>
-              <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">Données techniques collectées automatiquement :</p>
+              <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">{t.privacy_page.section2_tech}</p>
               <ul className="space-y-1">
-                <Li>Adresse IP (gérée par Supabase, utilisée pour la sécurité de la session)</Li>
-                <Li>Type de navigateur et système d'exploitation</Li>
-                <Li>Pages visitées et durée de navigation (si analytics activé)</Li>
+                {(t.privacy_page.section2_tech_items as unknown as string[]).map((item, i) => <Li key={i}>{item}</Li>)}
               </ul>
             </div>
           </div>
         </Section>
 
         {/* 3. Finalités */}
-        <Section icon={Eye} title="3. Pourquoi nous utilisons vos données">
-          <p>Vos données sont utilisées exclusivement pour les finalités suivantes :</p>
+        <Section icon={Eye} title={t.privacy_page.section3_title}>
+          <p>{t.privacy_page.section3_intro}</p>
           <ul className="space-y-2 mt-2">
-            <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Gestion de votre compte :</strong>{' '}
-              authentification, accès à votre espace personnel, historique de commandes.
-            </Li>
-            <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Traitement des commandes :</strong>{' '}
-              transmission de votre commande via WhatsApp pour finalisation.
-            </Li>
-            <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Communication :</strong>{' '}
-              envoi de notifications relatives à votre compte ou vos commandes (si activées).
-            </Li>
-            <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Newsletter :</strong>{' '}
-              envoi d'actualités et offres GCFI si vous y avez souscrit.
-            </Li>
-            <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Sécurité :</strong>{' '}
-              prévention des fraudes, protection de nos systèmes.
-            </Li>
-            <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Amélioration du service :</strong>{' '}
-              analyse de la navigation pour améliorer l'expérience utilisateur.
-            </Li>
+            <Li><strong className="text-slate-700 dark:text-slate-300">Gestion de votre compte :</strong> {t.privacy_page.section3_item1}</Li>
+            <Li><strong className="text-slate-700 dark:text-slate-300">Traitement des commandes :</strong> {t.privacy_page.section3_item2}</Li>
+            <Li><strong className="text-slate-700 dark:text-slate-300">Communication :</strong> {t.privacy_page.section3_item3}</Li>
+            <Li><strong className="text-slate-700 dark:text-slate-300">Newsletter :</strong> {t.privacy_page.section3_item4}</Li>
+            <Li><strong className="text-slate-700 dark:text-slate-300">Sécurité :</strong> {t.privacy_page.section3_item5}</Li>
+            <Li><strong className="text-slate-700 dark:text-slate-300">Amélioration du service :</strong> {t.privacy_page.section3_item6}</Li>
           </ul>
           <p className="mt-4 text-xs bg-[var(--accent-light)] text-[var(--accent)] rounded-2xl px-4 py-3 font-medium">
-            Nous ne vendons, ne louons ni ne partageons vos données personnelles avec des tiers à des fins commerciales.
+            {t.privacy_page.section3_note}
           </p>
         </Section>
 
         {/* 4. Stockage et sécurité */}
-        <Section icon={Lock} title="4. Stockage et sécurité">
-          <p>Vos données sont hébergées et sécurisées via les services suivants :</p>
+        <Section icon={Lock} title={t.privacy_page.section4_title}>
+          <p>{t.privacy_page.section4_intro}</p>
           <ul className="space-y-2 mt-2">
             <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Supabase</strong> (base de données) —
-              infrastructure hébergée sur AWS, chiffrement en transit (TLS) et au repos (AES-256).
-              Politique de confidentialité :{' '}
-              <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer"
-                className="text-[var(--accent)] hover:underline">supabase.com/privacy</a>
+              <strong className="text-slate-700 dark:text-slate-300">Supabase</strong>{' (database) — '}
+              {t.privacy_page.section4_item1}{' '}
+              {t.privacy_page.section4_label_priv}{' '}
+              <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">supabase.com/privacy</a>
             </Li>
             <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Cloudinary</strong> (images téléversées) —
-              stockage sécurisé des médias.
-              Politique de confidentialité :{' '}
-              <a href="https://cloudinary.com/privacy" target="_blank" rel="noopener noreferrer"
-                className="text-[var(--accent)] hover:underline">cloudinary.com/privacy</a>
+              <strong className="text-slate-700 dark:text-slate-300">Cloudinary</strong>{' (uploaded images) — '}
+              {t.privacy_page.section4_item2}{' '}
+              {t.privacy_page.section4_label_priv}{' '}
+              <a href="https://cloudinary.com/privacy" target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">cloudinary.com/privacy</a>
             </Li>
             <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Vercel</strong> (hébergement du site) —
-              serveurs en Europe et Amérique du Nord.
-              Politique de confidentialité :{' '}
-              <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer"
-                className="text-[var(--accent)] hover:underline">vercel.com/legal/privacy-policy</a>
+              <strong className="text-slate-700 dark:text-slate-300">Vercel</strong>{' (site hosting) — '}
+              {t.privacy_page.section4_item3}{' '}
+              {t.privacy_page.section4_label_priv}{' '}
+              <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] hover:underline">vercel.com/legal/privacy-policy</a>
             </Li>
           </ul>
-          <p className="mt-4">
-            Les mots de passe ne sont jamais stockés en clair. L'authentification est gérée par
-            Supabase Auth, conforme aux standards OAuth 2.0 et PKCE.
-          </p>
-          <p className="mt-2">
-            Vos données sont conservées tant que votre compte est actif. En cas de suppression de compte,
-            elles sont effacées dans un délai de <strong className="text-slate-700 dark:text-slate-300">30 jours</strong>.
-          </p>
+          <p className="mt-4">{t.privacy_page.section4_passwords}</p>
+          <p className="mt-2">{t.privacy_page.section4_retention}</p>
         </Section>
 
         {/* 5. Cookies */}
-        <Section icon={Database} title="5. Cookies et technologies similaires">
-          <p>Notre site utilise les cookies suivants :</p>
+        <Section icon={Database} title={t.privacy_page.section5_title}>
+          <p>{t.privacy_page.section5_intro}</p>
           <div className="overflow-x-auto mt-2">
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-900/50">
-                  <th className="text-left p-3 rounded-tl-xl font-bold text-slate-700 dark:text-slate-300">Cookie</th>
-                  <th className="text-left p-3 font-bold text-slate-700 dark:text-slate-300">Finalité</th>
-                  <th className="text-left p-3 rounded-tr-xl font-bold text-slate-700 dark:text-slate-300">Durée</th>
+                  <th className="text-left p-3 rounded-tl-xl font-bold text-slate-700 dark:text-slate-300">{t.privacy_page.section5_table_cookie}</th>
+                  <th className="text-left p-3 font-bold text-slate-700 dark:text-slate-300">{t.privacy_page.section5_table_purpose}</th>
+                  <th className="text-left p-3 rounded-tr-xl font-bold text-slate-700 dark:text-slate-300">{t.privacy_page.section5_table_duration}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                <tr>
-                  <td className="p-3 font-mono text-[var(--accent)]">sb-*</td>
-                  <td className="p-3">Session d'authentification Supabase</td>
-                  <td className="p-3">Session / 7 jours</td>
-                </tr>
-                <tr>
-                  <td className="p-3 font-mono text-[var(--accent)]">theme</td>
-                  <td className="p-3">Préférence de thème (clair/sombre)</td>
-                  <td className="p-3">Persistent</td>
-                </tr>
-                <tr>
-                  <td className="p-3 font-mono text-[var(--accent)]">wishlist</td>
-                  <td className="p-3">Liste de souhaits (localStorage)</td>
-                  <td className="p-3">Persistent</td>
-                </tr>
-                <tr>
-                  <td className="p-3 font-mono text-[var(--accent)]">gcfi-newsletter-*</td>
-                  <td className="p-3">Statut d'abonnement newsletter</td>
-                  <td className="p-3">Persistent</td>
-                </tr>
+                {(t.privacy_page.section5_table_rows as unknown as {cookie:string;purpose:string;duration:string}[]).map((row, i) => (
+                  <tr key={i}>
+                    <td className="p-3 font-mono text-[var(--accent)]">{row.cookie}</td>
+                    <td className="p-3">{row.purpose}</td>
+                    <td className="p-3">{row.duration}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-          <p className="mt-4">
-            Ces cookies sont essentiels au bon fonctionnement du site. Vous pouvez les supprimer
-            via les paramètres de votre navigateur, ce qui entraînera la déconnexion de votre compte.
-          </p>
+          <p className="mt-4">{t.privacy_page.section5_note}</p>
         </Section>
 
         {/* 6. Vos droits */}
-        <Section icon={Shield} title="6. Vos droits (RGPD)">
-          <p>
-            Conformément au Règlement Général sur la Protection des Données (RGPD) et aux lois applicables,
-            vous disposez des droits suivants :
-          </p>
+        <Section icon={Shield} title={t.privacy_page.section6_title}>
+          <p>{t.privacy_page.section6_intro}</p>
           <ul className="space-y-3 mt-3">
-            <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Droit d'accès :</strong>{' '}
-              obtenir une copie de vos données personnelles que nous détenons.
-            </Li>
-            <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Droit de rectification :</strong>{' '}
-              corriger des données inexactes ou incomplètes (via votre espace profil).
-            </Li>
-            <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Droit à l'effacement :</strong>{' '}
-              demander la suppression de votre compte et de vos données.
-            </Li>
-            <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Droit à la portabilité :</strong>{' '}
-              recevoir vos données dans un format structuré et lisible.
-            </Li>
-            <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Droit d'opposition :</strong>{' '}
-              vous opposer au traitement de vos données à des fins marketing.
-            </Li>
-            <Li>
-              <strong className="text-slate-700 dark:text-slate-300">Désabonnement newsletter :</strong>{' '}
-              à tout moment en nous contactant par email.
-            </Li>
+            <Li><strong className="text-slate-700 dark:text-slate-300">Droit d'accès :</strong> {t.privacy_page.section6_item1}</Li>
+            <Li><strong className="text-slate-700 dark:text-slate-300">Droit de rectification :</strong> {t.privacy_page.section6_item2}</Li>
+            <Li><strong className="text-slate-700 dark:text-slate-300">Droit à l'effacement :</strong> {t.privacy_page.section6_item3}</Li>
+            <Li><strong className="text-slate-700 dark:text-slate-300">Droit à la portabilité :</strong> {t.privacy_page.section6_item4}</Li>
+            <Li><strong className="text-slate-700 dark:text-slate-300">Droit d'opposition :</strong> {t.privacy_page.section6_item5}</Li>
+            <Li><strong className="text-slate-700 dark:text-slate-300">Désabonnement newsletter :</strong> {t.privacy_page.section6_item6}</Li>
           </ul>
           <div className="mt-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4">
-            <p className="font-bold text-slate-700 dark:text-slate-300 mb-1">Pour exercer vos droits :</p>
+            <p className="font-bold text-slate-700 dark:text-slate-300 mb-1">{t.privacy_page.section6_exercise_title}</p>
             <p>
-              Contactez-nous à{' '}
-              <a href={`mailto:${CONTACT_EMAIL}`} className="text-[var(--accent)] hover:underline font-medium">
-                {CONTACT_EMAIL}
-              </a>{' '}
-              en précisant votre demande. Nous nous engageons à vous répondre dans un délai de{' '}
-              <strong>30 jours ouvrés</strong>.
+              <a href={`mailto:${CONTACT_EMAIL}`} className="text-[var(--accent)] hover:underline font-medium">{CONTACT_EMAIL}</a>{' '}
+              {t.privacy_page.section6_exercise_text}
             </p>
           </div>
         </Section>
 
         {/* 7. Partage des données */}
-        <Section icon={Mail} title="7. Partage des données">
+        <Section icon={Mail} title={t.privacy_page.section7_title}>
+          <p>{t.privacy_page.section7_text1}</p>
           <p>
-            Vos données ne sont partagées qu'avec les sous-traitants strictement nécessaires au
-            fonctionnement du service (Supabase, Cloudinary, Vercel), tous soumis à des obligations
-            contractuelles de confidentialité.
+            {t.privacy_page.section7_text2}
           </p>
-          <p>
-            Dans le cadre du processus de commande, certaines informations (article, quantité, nom)
-            sont transmises via <strong className="text-slate-700 dark:text-slate-300">WhatsApp</strong>{' '}
-            à notre équipe commerciale pour finaliser votre achat. WhatsApp est soumis à la politique
-            de confidentialité de Meta Platforms Inc.
-          </p>
-          <p>
-            Nous pouvons être amenés à divulguer des données si la loi l'exige (réquisition judiciaire,
-            obligation légale).
-          </p>
+          <p>{t.privacy_page.section7_text3}</p>
         </Section>
 
         {/* 8. Mineurs */}
-        <Section icon={Shield} title="8. Protection des mineurs">
-          <p>
-            Notre site est destiné à un public adulte. Nous ne collectons pas sciemment de données
-            personnelles relatives à des personnes de moins de 16 ans. Si vous êtes parent ou tuteur
-            et pensez que votre enfant nous a fourni des données, contactez-nous immédiatement à{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[var(--accent)] hover:underline font-medium">
-              {CONTACT_EMAIL}
-            </a>.
-          </p>
+        <Section icon={Shield} title={t.privacy_page.section8_title}>
+          <p>{t.privacy_page.section8_text} <a href={`mailto:${CONTACT_EMAIL}`} className="text-[var(--accent)] hover:underline font-medium">{CONTACT_EMAIL}</a>.</p>
         </Section>
 
         {/* 9. Modifications */}
-        <Section icon={FileText} title="9. Modifications de cette politique">
-          <p>
-            Nous nous réservons le droit de modifier cette politique à tout moment. En cas de changement
-            substantiel, nous vous en informerons par email (si vous disposez d'un compte) ou via une
-            notification sur le site.
-          </p>
-          <p>
-            La version en vigueur est toujours accessible à l'adresse{' '}
-            <strong className="text-slate-700 dark:text-slate-300">gcfi-rca.com/confidentialite</strong>.
-            La date de dernière mise à jour est indiquée en haut de page.
-          </p>
+        <Section icon={FileText} title={t.privacy_page.section9_title}>
+          <p>{t.privacy_page.section9_text1}</p>
+          <p>{t.privacy_page.section9_text2}</p>
         </Section>
 
         {/* 10. Contact */}
-        <Section icon={Phone} title="10. Nous contacter">
-          <p>Pour toute question relative à cette politique ou à vos données personnelles :</p>
+        <Section icon={Phone} title={t.privacy_page.section10_title}>
+          <p>{t.privacy_page.section10_text}</p>
           <div className="mt-3 space-y-2">
             <div className="flex items-center gap-3">
               <Mail className="w-4 h-4 text-[var(--accent)] shrink-0" />
@@ -364,9 +263,9 @@ export default function PrivacyPage() {
       {/* Footer note */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 text-center">
         <p className="text-xs text-slate-400 dark:text-slate-600">
-          Cette politique de confidentialité s'applique au site{' '}
-          <strong>www.gcfi-rca.com</strong> et à tous ses sous-domaines.
-          Dernière mise à jour le {LAST_UPDATED}.
+          {t.privacy_page.footer_text}{' '}
+          <strong>www.gcfi-rca.com</strong>{' '}
+          {t.privacy_page.footer_suffix}{' '}{LAST_UPDATED}.
         </p>
       </div>
     </div>

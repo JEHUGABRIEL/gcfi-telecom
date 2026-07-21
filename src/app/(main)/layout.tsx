@@ -12,15 +12,15 @@ import ScrollProgress from '@/shared/components/ScrollProgress';
 import ScrollToTop from '@/shared/components/ScrollToTop';
 import FloatingContact from '@/shared/components/FloatingContact';
 import ContactModal from '@/shared/components/ContactModal';
+import AnnouncementBanner from '@/shared/components/AnnouncementBanner';
+
+const HeaderComponent = Header as React.ComponentType<{ onContactOpen: () => void }>;
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { isAdmin, loading: authLoading } = useAuth();
   const { isContactOpen, openContact, closeContact } = useContact();
   const pathname = usePathname();
   const isAdminRoute = pathname.startsWith('/admin');
-
-  // Show AdminHeader on admin routes even while auth is still loading,
-  // to prevent the client header from flashing during page refresh.
   const showAdminHeader = isAdmin || (authLoading && isAdminRoute);
 
   return (
@@ -29,7 +29,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {showAdminHeader ? (
         <AdminHeader />
       ) : (
-        <Header onContactOpen={openContact} />
+        <div className="sticky top-0 z-50">
+          <AnnouncementBanner />
+          <HeaderComponent onContactOpen={openContact} />
+        </div>
       )}
       <main>{children}</main>
       {!showAdminHeader && (

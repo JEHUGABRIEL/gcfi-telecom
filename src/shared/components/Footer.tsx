@@ -1,9 +1,46 @@
+'use client';
+
 import React from 'react';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import GcfiLogo from './GcfiLogo';
+import LanguageSwitcher from './LanguageSwitcher';
+import { useLang } from '@/shared/context/LanguageContext';
+
+/* ── Icônes SVG officielles des réseaux sociaux ──────────────── */
+const FacebookIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.791-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.883v2.255h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+  </svg>
+);
+
+const XIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+  </svg>
+);
+
+const LinkedinIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+  </svg>
+);
+
+const TikTokIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z"/>
+  </svg>
+);
+
+const SOCIAL_LINKS = [
+  { Icon: FacebookIcon, href: 'https://www.facebook.com/share/1EUN5LxJmK/?mibextid=wwXIfr', label: 'Facebook' },
+  { Icon: XIcon,        href: 'https://twitter.com',                                          label: 'X' },
+  { Icon: LinkedinIcon, href: 'https://linkedin.com',                                         label: 'LinkedIn' },
+  { Icon: TikTokIcon,   href: 'https://www.tiktok.com/@gcfi_telecom',                         label: 'TikTok' },
+];
 
 export default function Footer() {
+  const { t } = useLang();
   return (
     <footer className="bg-white dark:bg-slate-950 text-slate-900 dark:text-white pt-20 pb-10 transition-colors border-t border-slate-100 dark:border-slate-900/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -15,19 +52,13 @@ export default function Footer() {
               <GcfiLogo />
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-8 italic">
-              "Un groupe proche de votre entreprise !!!"
+              {t.footer.tagline}
             </p>
             <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed mb-8">
-              GAVEAUX - CHRISTIAN - FIRME - INFORMATIQUE. Votre partenaire pour le développement technologique.
+              {t.footer.description}
             </p>
             <div className="flex space-x-4">
-              {/* Liens sociaux — remplacer # par les vraies URLs */}
-              {[
-                { href: 'https://facebook.com', label: 'Facebook', svg: 'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z' },
-                { href: 'https://twitter.com',  label: 'Twitter', svg: 'M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z' },
-                { href: 'https://linkedin.com', label: 'LinkedIn', svg: 'M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2zM4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z' },
-                { href: 'https://instagram.com',label: 'Instagram', svg: 'M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 0 2.5 1.25 1.25 0 0 1 0-2.5M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10m0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z' },
-              ].map(({ href, label, svg }) => (
+              {SOCIAL_LINKS.map(({ Icon, href, label }) => (
                 <a
                   key={label}
                   href={href}
@@ -36,9 +67,7 @@ export default function Footer() {
                   aria-label={label}
                   className="w-10 h-10 bg-slate-200 dark:bg-white/5 rounded-full flex items-center justify-center hover:bg-[var(--accent)] hover:text-white transition-colors"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d={svg} />
-                  </svg>
+                  <Icon />
                 </a>
               ))}
             </div>
@@ -46,33 +75,33 @@ export default function Footer() {
 
           {/* Services */}
           <div>
-            <h3 className="text-lg font-bold mb-6 text-slate-900 dark:text-white">Nos Services</h3>
+            <h3 className="text-lg font-bold mb-6 text-slate-900 dark:text-white">{t.footer.services_title}</h3>
             <ul className="space-y-4 text-slate-500 dark:text-slate-400 text-sm">
-              <li><Link href="/formation" className="hover:text-[var(--accent)] transition-colors">Formations Télécom</Link></li>
-              <li><Link href="/boutique" className="hover:text-[var(--accent)] transition-colors">Boutique Équipements</Link></li>
-              <li><a href="mailto:gcfitelecom@gmail.com" className="hover:text-[var(--accent)] transition-colors">Expertise & Devis</a></li>
-              <li><Link href="/" className="hover:text-[var(--accent)] transition-colors">Réseaux LAN/WAN</Link></li>
+              <li><Link href="/formation" className="hover:text-[var(--accent)] transition-colors">{t.footer.service_formation}</Link></li>
+              <li><Link href="/boutique" className="hover:text-[var(--accent)] transition-colors">{t.footer.service_boutique}</Link></li>
+              <li><a href="/#contact" className="hover:text-[var(--accent)] transition-colors">{t.footer.service_devis}</a></li>
+              <li><Link href="/services" className="hover:text-[var(--accent)] transition-colors">{t.footer.service_reseau}</Link></li>
             </ul>
           </div>
 
-          {/* Liens utiles — ✅ Link react-router au lieu de a href="#" */}
+          {/* Liens utiles */}
           <div>
-            <h3 className="text-lg font-bold mb-6 text-slate-900 dark:text-white">Liens Utiles</h3>
+            <h3 className="text-lg font-bold mb-6 text-slate-900 dark:text-white">{t.footer.links_title}</h3>
             <ul className="space-y-4 text-slate-500 dark:text-slate-400 text-sm">
-              <li><Link href="/" className="hover:text-[var(--accent)] transition-colors">À propos de nous</Link></li>
-              <li><Link href="/" className="hover:text-[var(--accent)] transition-colors">Actualités</Link></li>
-              <li><Link href="/boutique" className="hover:text-[var(--accent)] transition-colors">Boutique</Link></li>
-              <li><Link href="/formation" className="hover:text-[var(--accent)] transition-colors">Nos Formations</Link></li>
+              <li><a href="/#contact" className="hover:text-[var(--accent)] transition-colors">{t.footer.link_contact}</a></li>
+              <li><Link href="/blog" className="hover:text-[var(--accent)] transition-colors">{t.footer.link_blog}</Link></li>
+              <li><Link href="/boutique" className="hover:text-[var(--accent)] transition-colors">{t.footer.link_shop}</Link></li>
+              <li><Link href="/formation" className="hover:text-[var(--accent)] transition-colors">{t.footer.link_trainings}</Link></li>
             </ul>
           </div>
 
           {/* Contact */}
           <div>
-            <h3 className="text-lg font-bold mb-6 text-slate-900 dark:text-white">Contact</h3>
+            <h3 className="text-lg font-bold mb-6 text-slate-900 dark:text-white">{t.footer.contact_title}</h3>
             <ul className="space-y-4 text-slate-500 dark:text-slate-400 text-sm">
               <li className="flex items-start">
                 <MapPin className="w-5 h-5 mr-3 text-[var(--accent)] shrink-0" />
-                <span>Rue du Marché Lakouanga (RCA)</span>
+                <span>{t.footer.address}</span>
               </li>
               <li className="flex items-center">
                 <Phone className="w-5 h-5 mr-3 text-[var(--accent)] shrink-0" />
@@ -92,11 +121,12 @@ export default function Footer() {
         </div>
 
         <div className="pt-10 border-t border-slate-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-400 text-xs">
-          <p>© {new Date().getFullYear()} GCFI Centrafrique. Tous droits réservés.</p>
-          <div className="flex space-x-6">
-            <Link href="/confidentialite" className="hover:text-slate-900 dark:hover:text-white transition-colors">Confidentialité</Link>
-            <Link href="/confidentialite#5-cookies-et-technologies-similaires" className="hover:text-slate-900 dark:hover:text-white transition-colors">Cookies</Link>
-            <Link href="/conditions" className="hover:text-slate-900 dark:hover:text-white transition-colors">Conditions d'utilisation</Link>
+          <p>© {new Date().getFullYear()} {t.footer.copyright} {t.footer.rights}</p>
+          <div className="flex items-center gap-6">
+            <LanguageSwitcher />
+            <Link href="/confidentialite" className="hover:text-slate-900 dark:hover:text-white transition-colors">{t.footer.privacy}</Link>
+            <Link href="/confidentialite#5-cookies-et-technologies-similaires" className="hover:text-slate-900 dark:hover:text-white transition-colors">{t.footer.cookies}</Link>
+            <Link href="/conditions" className="hover:text-slate-900 dark:hover:text-white transition-colors">{t.footer.terms}</Link>
           </div>
         </div>
       </div>

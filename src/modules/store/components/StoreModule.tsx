@@ -7,37 +7,137 @@ import Fuse from 'fuse.js';
 import {
   ShoppingCart, Search, Filter, Star, ShoppingBag, X,
   Plus, Minus, Trash2, ArrowUpDown, TrendingUp, MessageSquare,
-  AlertCircle, ChevronRight, Heart
+  AlertCircle, ChevronRight, ChevronLeft, Heart, ArrowRight, Server, Zap, Wifi
 } from 'lucide-react';
 import { Product, CartItem } from '@/shared/types';
 import { cn } from '@/shared/lib/utils';
 import { useAuth } from '@/shared/context/AuthContext';
+import { useLang } from '@/shared/context/LanguageContext';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { useProducts, useSaveCart } from '@/shared/lib/queries';
 
-const sortOptions = [
-  { label: 'Popularité', value: 'popularity' },
-  { label: 'Prix croissant', value: 'price-asc' },
-  { label: 'Prix décroissant', value: 'price-desc' },
-  { label: 'Note client', value: 'rating' }
-];
+const needsUnoptimized = (src: string | undefined | null) =>
+  typeof src === 'string' && !src.includes('cloudinary') && !src.includes('unsplash');
+
+function getSortOptions(t: any) {
+  const opts = t.boutique.sort_options as unknown as string[];
+  return [
+    { label: opts[0], value: 'popularity' },
+    { label: opts[1], value: 'price-asc' },
+    { label: opts[2], value: 'price-desc' },
+    { label: opts[3], value: 'rating' },
+  ];
+}
+
+/* ── Carte produit réutilisable ──────────────────────────────── */
+function ProductCard({ product, wishlist, onToggleWishlist, onAddToCart, onSelect }: {
+  product: Product;
+  wishlist: string[];
+  onToggleWishlist: (id: string, e: React.MouseEvent) => void;
+  onAddToCart: (p: Product) => void;
+  onSelect: (p: Product) => void;
+}) {
+  const { t } = useLang();
+  return (
+    <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+      className="group bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:shadow-2xl transition-all shadow-sm flex flex-col cursor-pointer"
+      onClick={() => onSelect(product)}>
+      <div className="relative h-48 overflow-hidden">
+        <Image src={product.image} alt={product.name} fill
+          className="object-cover group-hover:scale-110 transition-transform duration-500"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          unoptimized={needsUnoptimized(product.image)} />
+        {(product.discount ?? 0) > 0 && (
+          <span className="absolute top-3 left-3 bg-[var(--accent)] text-white text-[10px] font-black px-2 py-1 rounded-full shadow">
+            -{product.discount ?? 0}%
+          </span>
+        )}
+        <button onClick={e => onToggleWishlist(product.id, e)}
+          className={cn("absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-lg",
+            wishlist.includes(product.id)
+              ? "bg-[var(--accent)] text-white"
+              : "bg-white/90 dark:bg-slate-800/90 text-slate-400 hover:text-[var(--accent)]")}>
+          <Heart className={cn("w-4 h-4", wishlist.includes(product.id) && "fill-current")} />
+        </button>
+      </div>
+      <div className="p-5 flex-1 flex flex-col">
+        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)] mb-1">{product.category}</p>
+        <h3 className="font-bold text-slate-900 dark:text-white mb-2 group-hover:text-[var(--accent)] transition-colors">{product.name}</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 flex-1">{product.description}</p>
+        <div className="flex items-center justify-between mt-auto">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            {(product.discount ?? 0) > 0 ? (
+              <>
+                <p className="text-lg font-black text-[var(--accent)]">
+                  {Math.round(product.price * (1 - (product.discount ?? 0) / 100)).toLocaleString()}
+                  <span className="text-xs font-bold ml-1">FCFA</span>
+                </p>
+                <p className="text-xs text-slate-400 line-through">{product.price.toLocaleString()}</p>
+                <span className="text-[10px] font-black bg-[var(--accent)] text-white px-1.5 py-0.5 rounded-full">-{product.discount}%</span>
+              </>
+            ) : (
+              <p className="text-lg font-black text-[var(--accent)]">
+                {product.price.toLocaleString()} <span className="text-xs font-bold">FCFA</span>
+              </p>
+            )}
+          </div>
+          <button onClick={e => { e.stopPropagation(); onAddToCart(product); }}
+            className="flex items-center gap-1.5 bg-[var(--accent)] text-white px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all">
+            <Plus className="w-3.5 h-3.5" /> {t.boutique.add}
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function StoreModule() {
   const { user, profile, requireAuth } = useAuth();
+  const { t, lang } = useLang();
+  const { data: allProducts = [], isLoading: productsLoading } = useProducts(lang);
 
-  const { data: allProducts = [], isLoading: productsLoading } = useProducts();
+  // Déduplication : si la DB a des doublons malgré le filtre langue, on garde le 1er
+  const dedupedProducts = React.useMemo(() => {
+    const seen = new Set<string>();
+    return allProducts.filter(p => {
+      const key = p.name?.toLowerCase().trim();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [allProducts]);
 
   const categories = React.useMemo(() =>
-    ['Tous', ...Array.from(new Set(allProducts.map(p => p.category).filter(Boolean)))],
-    [allProducts]
+    ['Tous', ...Array.from(new Set(dedupedProducts.map(p => p.category).filter(Boolean)))],
+    [dedupedProducts]
   );
 
   const [visibleCount, setVisibleCount] = React.useState(8);
+  const [heroSlide, setHeroSlide] = React.useState(0);
+
+  const SLIDES = React.useMemo(() =>
+    (t.store_slides as unknown as any[]).map((s: any, i: number) => ({
+      src: i === 0 ? '/team/475980817_1823719051736129_3598959440558530252_n.jpg'
+        : ['https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=1600',
+           'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&q=80&w=1600',
+           'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=1600',
+           'https://images.unsplash.com/photo-1601445638532-1e3b7d10f63f?auto=format&fit=crop&q=80&w=1600'][i - 1],
+      tag: s.tag,
+      title: s.title,
+      sub: s.sub,
+    })),
+    [t]
+  );
+
+  React.useEffect(() => {
+    const t = setInterval(() => setHeroSlide(s => (s + 1) % SLIDES.length), 5000);
+    return () => clearInterval(t);
+  }, []);
   const [showPromoBanner, setShowPromoBanner] = React.useState(true);
   const promoProducts = React.useMemo(
-    () => allProducts.filter(p => (p as any).is_promo || (p as any).discount > 0).slice(0, 4),
-    [allProducts]
+    () => dedupedProducts.filter(p => p.is_promo || (p.discount ?? 0) > 0).slice(0, 4),
+    [dedupedProducts]
   );
   const [wishlist, setWishlist] = React.useState<string[]>([]);
   // Hydratation : localStorage lu après montage uniquement pour éviter le mismatch SSR/client.
@@ -54,11 +154,11 @@ export default function StoreModule() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showSuggestions, setShowSuggestions] = React.useState(false);
 
-  const fuse = React.useMemo(() => new Fuse(allProducts, {
+  const fuse = React.useMemo(() => new Fuse(dedupedProducts, {
     keys: ['name', 'description', 'category'],
     threshold: 0.35,
     minMatchCharLength: 2,
-  }), [allProducts]);
+  }), [dedupedProducts]);
 
   const suggestions = React.useMemo(() => {
     if (!searchQuery.trim() || searchQuery.length < 2) return [];
@@ -114,7 +214,7 @@ export default function StoreModule() {
   }, []);
 
   const filteredProducts = React.useMemo(() => {
-    let result = allProducts;
+    let result = dedupedProducts;
     if (searchQuery.trim()) result = fuse.search(searchQuery).map(r => r.item);
     result = result.filter(p =>
       p.price >= minPrice && p.price <= maxPrice &&
@@ -126,7 +226,7 @@ export default function StoreModule() {
       if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
       return (b.popularity || 0) - (a.popularity || 0);
     });
-  }, [allProducts, searchQuery, minPrice, maxPrice, selectedCategory, sortBy, fuse]);
+  }, [dedupedProducts, searchQuery, minPrice, maxPrice, selectedCategory, sortBy, fuse]);
 
   const hasMore = visibleCount < filteredProducts.length;
 
@@ -217,7 +317,56 @@ export default function StoreModule() {
   }
 
   return (
-    <section className="py-16 bg-white dark:bg-slate-900 transition-colors">
+    <div className="min-h-screen bg-white dark:bg-slate-900">
+
+      {/* ── Hero slideshow ── */}
+      <div className="relative h-[50vh] min-h-[360px] overflow-hidden">
+        <AnimatePresence mode="sync">
+          <motion.div key={heroSlide}
+            initial={{ opacity: 0, scale: 1.04 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 1.1 }} className="absolute inset-0">
+            <Image src={SLIDES[heroSlide].src} alt={SLIDES[heroSlide].tag}
+              fill className="object-cover" sizes="100vw" priority
+              unoptimized={SLIDES[heroSlide].src.startsWith('/')} />
+          </motion.div>
+        </AnimatePresence>
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-slate-900/50 to-slate-900/80" />
+        <div className="relative h-full flex flex-col items-center justify-center text-center px-4 pt-16">
+          <AnimatePresence mode="wait">
+            <motion.div key={heroSlide}
+              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.45 }} className="flex flex-col items-center">
+              <span className="inline-block px-4 py-1.5 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full text-xs font-black uppercase tracking-widest text-white mb-4">
+                {SLIDES[heroSlide].tag}
+              </span>
+              <h1 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight max-w-3xl">
+                {SLIDES[heroSlide].title}
+              </h1>
+              <p className="text-white/80 max-w-xl">{SLIDES[heroSlide].sub}</p>
+            </motion.div>
+          </AnimatePresence>
+          <motion.a href="#products" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+            className="mt-8 inline-flex items-center gap-2 px-6 py-3 bg-[#C1272D] text-white rounded-xl font-bold text-sm hover:bg-red-600 transition-all shadow-lg">
+            {t.boutique.explore_cta} <ArrowRight className="w-4 h-4" />
+          </motion.a>
+        </div>
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
+          {SLIDES.map((_, i) => (
+            <button key={i} onClick={() => setHeroSlide(i)}
+              className={cn('h-1 rounded-full transition-all', i === heroSlide ? 'w-6 bg-white' : 'w-2 bg-white/40')} />
+          ))}
+        </div>
+        <button onClick={() => setHeroSlide(s => (s - 1 + SLIDES.length) % SLIDES.length)}
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/25 transition-all">
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <button onClick={() => setHeroSlide(s => (s + 1) % SLIDES.length)}
+          className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/25 transition-all">
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+
+    <section id="products" className="py-8 bg-white dark:bg-slate-900 transition-colors">
       {/* ── Bannière Produits en Promotion ──────────────────── */}
       <AnimatePresence>
         {showPromoBanner && promoProducts.length > 0 && (
@@ -234,17 +383,18 @@ export default function StoreModule() {
                 <div className="hidden sm:flex gap-2 shrink-0">
                   {promoProducts.slice(0, 3).map(p => (
                     <div key={p.id} className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 shrink-0 relative">
-                      {p.image && <Image src={p.image} alt={p.name} fill className="object-cover" sizes="64px" />}
+                      {p.image && <Image src={p.image} alt={p.name} fill className="object-cover" sizes="64px"
+                        unoptimized={needsUnoptimized(p.image)} />}
                     </div>
                   ))}
                 </div>
                 {/* Texte */}
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-black text-sm uppercase tracking-widest">
-                    🔥 Promotions en cours
+                    {t.boutique.promos_title}
                   </p>
                   <p className="text-white/70 text-xs mt-0.5">
-                    {promoProducts.length} produit{promoProducts.length > 1 ? 's' : ''} à prix réduit
+                    {promoProducts.length} {t.boutique.promos_subtitle}{(promoProducts.length > 1 ? 's' : '')}
                   </p>
                 </div>
                 {/* CTA */}
@@ -253,7 +403,7 @@ export default function StoreModule() {
                     onClick={() => { setShowPromoBanner(false); document.getElementById('promo-section')?.scrollIntoView({ behavior: 'smooth' }); }}
                     className="bg-white text-[var(--accent)] text-xs font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl hover:bg-red-50 transition-colors whitespace-nowrap"
                   >
-                    Voir les offres
+                    {t.boutique.promos_cta}
                   </button>
                   <button onClick={() => setShowPromoBanner(false)}
                     className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
@@ -268,19 +418,19 @@ export default function StoreModule() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Boutique GCFI</h2>
-            <p className="text-slate-500 dark:text-slate-400">Équipements réseaux et terminaux mobiles certifiés.</p>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{t.boutique.title}</h2>
+            <p className="text-slate-500 dark:text-slate-400">{t.boutique.subtitle}</p>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setIsFilterOpen(!isFilterOpen)}
               className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 rounded-2xl text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-              <Filter className="w-4 h-4" /> Filtres
+              <Filter className="w-4 h-4" /> {t.boutique.filter_btn}
             </button>
             <motion.button onClick={() => setIsCartOpen(true)}
               animate={cartBump ? { scale: [1, 1.2, 1] } : {}}
               className="relative flex items-center gap-2 px-4 py-2.5 bg-[var(--accent)] rounded-2xl text-sm font-bold text-white shadow-lg shadow-[var(--accent)]/20 hover:bg-[var(--accent-hover)] transition-colors">
               <ShoppingCart className="w-4 h-4" />
-              Panier
+              {t.boutique.cart}
               {cartCount > 0 && (
                 <span className="absolute -top-2 -right-2 w-5 h-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full text-[10px] font-black flex items-center justify-center">
                   {cartCount}
@@ -293,7 +443,7 @@ export default function StoreModule() {
         {/* Search */}
         <div className="relative mb-6">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-          <input type="text" placeholder="Rechercher un produit..."
+          <input type="text" placeholder={t.boutique.placeholder}
             value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[var(--accent)] transition-all" />
@@ -302,7 +452,8 @@ export default function StoreModule() {
               {suggestions.map(s => (
                 <button key={s.id} onMouseDown={() => { setSearchQuery(s.name); setShowSuggestions(false); }}
                   className="w-full px-4 py-3 text-left text-sm flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                  <Image src={s.image} alt={s.name} width={40} height={40} className="rounded-xl object-cover" />
+                  <Image src={s.image} alt={s.name} width={40} height={40} className="rounded-xl object-cover"
+                    unoptimized={needsUnoptimized(s.image)} />
                   <div>
                     <p className="font-bold text-slate-900 dark:text-white">{s.name}</p>
                     <p className="text-xs text-[var(--accent)] font-bold">{s.price.toLocaleString()} FCFA</p>
@@ -320,7 +471,7 @@ export default function StoreModule() {
               className="overflow-hidden mb-8">
               <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Catégorie</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">{t.boutique.filter_category}</label>
                   <div className="flex flex-wrap gap-2">
                     {categories.map(cat => (
                       <button key={cat} onClick={() => setSelectedCategory(cat)}
@@ -332,13 +483,13 @@ export default function StoreModule() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Prix max : {maxPrice.toLocaleString()} FCFA</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">{t.boutique.filter_price} {maxPrice.toLocaleString()} FCFA</label>
                   <input type="range" min="0" max="500000" step="5000" value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))} className="w-full accent-[var(--accent)]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Trier par</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">{t.boutique.sort}</label>
                   <div className="flex flex-wrap gap-2">
-                    {sortOptions.map(opt => (
+                    {getSortOptions(t).map(opt => (
                       <button key={opt.value} onClick={() => setSortBy(opt.value)}
                         className={cn("px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 transition-all",
                           sortBy === opt.value ? "bg-[var(--accent)] text-white" : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300")}>
@@ -352,57 +503,49 @@ export default function StoreModule() {
           )}
         </AnimatePresence>
 
-        {/* Products grid */}
+        {/* Products — grouped by category when "Tous" selected, flat grid otherwise */}
         {filteredProducts.length === 0 ? (
           <div className="text-center py-20">
             <ShoppingBag className="w-16 h-16 text-slate-200 dark:text-slate-700 mx-auto mb-4" />
-            <p className="text-slate-500 dark:text-slate-400 font-bold">Aucun produit trouvé</p>
+            <p className="text-slate-500 dark:text-slate-400 font-bold">{t.boutique.empty}</p>
           </div>
-        ) : (
+        ) : selectedCategory !== 'Tous' ? (
+          /* ── Catégorie unique : grille classique ── */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.slice(0, visibleCount).map((product) => (
-              <motion.div key={product.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                className="group bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:shadow-2xl transition-all shadow-sm flex flex-col cursor-pointer"
-                onClick={() => setSelectedProduct(product)}>
-                <div className="relative h-48 overflow-hidden">
-                  <Image src={product.image} alt={product.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" />
-                  {(product as any).discount > 0 && (
-                    <span className="absolute top-3 left-3 bg-[var(--accent)] text-white text-[10px] font-black px-2 py-1 rounded-full shadow">
-                      -{(product as any).discount}%
-                    </span>
-                  )}
-                  <button onClick={e => toggleWishlist(product.id, e)}
-                    className={cn("absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-lg",
-                      wishlist.includes(product.id) ? "bg-[var(--accent)] text-white" : "bg-white/90 dark:bg-slate-800/90 text-slate-400 hover:text-[var(--accent)]")}>
-                    <Heart className={cn("w-4 h-4", wishlist.includes(product.id) && "fill-current")} />
-                  </button>
+              <ProductCard key={product.id} product={product}
+                wishlist={wishlist} onToggleWishlist={toggleWishlist}
+                onAddToCart={addToCart} onSelect={setSelectedProduct} />
+            ))}
+          </div>
+        ) : (
+          /* ── Toutes catégories : regroupées ── */
+          <div className="space-y-14">
+            {Array.from(
+              filteredProducts.reduce((map, p) => {
+                const cat = p.category || 'Autres';
+                if (!map.has(cat)) map.set(cat, []);
+                map.get(cat)!.push(p);
+                return map;
+              }, new Map<string, typeof filteredProducts>())
+            ).map(([cat, items]) => (
+              <div key={cat}>
+                {/* Category header */}
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800" />
+                  <span className="px-4 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 shrink-0">
+                    {cat}
+                  </span>
+                  <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800" />
                 </div>
-                <div className="p-5 flex-1 flex flex-col">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)] mb-1">{product.category}</p>
-                  <h3 className="font-bold text-slate-900 dark:text-white mb-2 group-hover:text-[var(--accent)] transition-colors">{product.name}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 flex-1">{product.description}</p>
-                  <div className="flex items-center justify-between mt-auto">
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      {(product as any).discount > 0 ? (
-                        <>
-                          <p className="text-lg font-black text-[var(--accent)]">
-                            {Math.round(product.price * (1 - (product as any).discount / 100)).toLocaleString()}
-                            <span className="text-xs font-bold ml-1">FCFA</span>
-                          </p>
-                          <p className="text-xs text-slate-400 line-through">{product.price.toLocaleString()}</p>
-                          <span className="text-[10px] font-black bg-[var(--accent)] text-white px-1.5 py-0.5 rounded-full">-{(product as any).discount}%</span>
-                        </>
-                      ) : (
-                        <p className="text-lg font-black text-[var(--accent)]">{product.price.toLocaleString()} <span className="text-xs font-bold">FCFA</span></p>
-                      )}
-                    </div>
-                    <button onClick={e => { e.stopPropagation(); addToCart(product); }}
-                      className="flex items-center gap-1.5 bg-[var(--accent)] text-white px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all">
-                      <Plus className="w-3.5 h-3.5" /> Ajouter
-                    </button>
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {items.map((product) => (
+                    <ProductCard key={product.id} product={product}
+                      wishlist={wishlist} onToggleWishlist={toggleWishlist}
+                      onAddToCart={addToCart} onSelect={setSelectedProduct} />
+                  ))}
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         )}
@@ -424,25 +567,26 @@ export default function StoreModule() {
                 <X className="w-5 h-5" />
               </button>
               <div className="md:w-5/12 h-64 md:h-full relative">
-                <Image src={selectedProduct.image} alt={selectedProduct.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 400px" />
+                <Image src={selectedProduct.image} alt={selectedProduct.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 400px"
+                  unoptimized={needsUnoptimized(selectedProduct.image)} />
               </div>
               <div className="p-8 md:w-7/12">
                 <p className="text-xs font-black uppercase tracking-widest text-[var(--accent)] mb-2">{selectedProduct.category}</p>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">{selectedProduct.name}</h2>
                 <div className="flex items-center gap-2 mb-4">
                   {[...Array(5)].map((_, i) => <Star key={i} className={cn("w-4 h-4", i < Math.floor(selectedProduct.rating || 0) ? "text-yellow-400 fill-current" : "text-slate-300")} />)}
-                  <span className="text-xs text-slate-500 dark:text-slate-400">({selectedProduct.reviewsCount || 0} avis)</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">({selectedProduct.reviewsCount || 0} {t.boutique.reviews_label})</span>
                 </div>
                 <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">{selectedProduct.description}</p>
                 <div className="flex items-baseline gap-3 mb-6">
-                  {(selectedProduct as any).discount > 0 ? (
+                  {(selectedProduct.discount ?? 0) > 0 ? (
                     <>
                       <p className="text-3xl font-black text-[var(--accent)]">
-                        {Math.round(selectedProduct.price * (1 - (selectedProduct as any).discount / 100)).toLocaleString()}
+                        {Math.round(selectedProduct.price * (1 - (selectedProduct.discount ?? 0) / 100)).toLocaleString()}
                         <span className="text-sm font-bold ml-1">FCFA</span>
                       </p>
                       <p className="text-lg text-slate-400 line-through">{selectedProduct.price.toLocaleString()}</p>
-                      <span className="bg-[var(--accent)] text-white text-xs font-black px-2 py-1 rounded-full">-{(selectedProduct as any).discount}%</span>
+                      <span className="bg-[var(--accent)] text-white text-xs font-black px-2 py-1 rounded-full">-{selectedProduct.discount}%</span>
                     </>
                   ) : (
                     <p className="text-3xl font-black text-[var(--accent)]">{selectedProduct.price.toLocaleString()} <span className="text-sm font-bold">FCFA</span></p>
@@ -450,7 +594,7 @@ export default function StoreModule() {
                 </div>
                 <button onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }}
                   className="w-full bg-[var(--accent)] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-[var(--accent)]/20 hover:bg-[var(--accent-hover)] flex items-center justify-center gap-2">
-                  <ShoppingCart className="w-4 h-4" /> Ajouter au panier
+                  <ShoppingCart className="w-4 h-4" /> {t.boutique.add_cart_btn}
                 </button>
               </div>
             </motion.div>
@@ -467,18 +611,19 @@ export default function StoreModule() {
             <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30 }}
               className="relative w-full max-w-sm h-full bg-white dark:bg-slate-900 shadow-2xl flex flex-col">
               <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="text-xl font-black text-slate-900 dark:text-white">Mon Panier <span className="text-[var(--accent)]">({cartCount})</span></h3>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">{t.boutique.cart_title} <span className="text-[var(--accent)]">({cartCount})</span></h3>
                 <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"><X className="w-5 h-5" /></button>
               </div>
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {cart.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center">
                     <ShoppingBag className="w-16 h-16 text-slate-200 dark:text-slate-700 mb-4" />
-                    <p className="text-slate-500 font-bold">Votre panier est vide</p>
+                    <p className="text-slate-500 font-bold">{t.boutique.cart_empty}</p>
                   </div>
                 ) : cart.map(item => (
                   <div key={item.id} className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl">
-                    <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-xl object-cover" />
+                    <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-xl object-cover"
+                      unoptimized={needsUnoptimized(item.image)} />
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{item.name}</p>
                       <p className="text-[var(--accent)] font-black text-sm">{(item.price * item.quantity).toLocaleString()} FCFA</p>
@@ -497,11 +642,11 @@ export default function StoreModule() {
               {cart.length > 0 && (
                 <div className="p-6 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex justify-between mb-4">
-                    <span className="font-bold text-slate-900 dark:text-white">Total</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{t.boutique.total}</span>
                     <span className="font-black text-[var(--accent)]">{cartTotal.toLocaleString()} FCFA</span>
                   </div>
                   <button onClick={handleCheckout} className="w-full bg-[var(--accent)] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-[var(--accent)]/20 flex items-center justify-center gap-2 hover:bg-[var(--accent-hover)]">
-                    <MessageSquare className="w-4 h-4" /> Commander via WhatsApp
+                    <MessageSquare className="w-4 h-4" /> {t.boutique.checkout_whatsapp}
                   </button>
                 </div>
               )}
@@ -519,10 +664,10 @@ export default function StoreModule() {
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
               className="relative bg-white dark:bg-slate-800 rounded-3xl p-8 text-center shadow-2xl max-w-sm w-full">
               <AlertCircle className="w-12 h-12 text-[var(--accent)] mx-auto mb-4" />
-              <h3 className="font-black text-slate-900 dark:text-white mb-2">Retirer du panier ?</h3>
+              <h3 className="font-black text-slate-900 dark:text-white mb-2">{t.boutique.remove_confirm}</h3>
               <div className="flex gap-3 mt-6">
-                <button onClick={() => setItemToDelete(null)} className="flex-1 py-3 rounded-2xl font-black text-xs uppercase bg-slate-100 dark:bg-slate-700">Annuler</button>
-                <button onClick={() => removeFromCart(itemToDelete)} className="flex-1 py-3 rounded-2xl font-black text-xs uppercase bg-[var(--accent)] text-white">Retirer</button>
+                <button onClick={() => setItemToDelete(null)} className="flex-1 py-3 rounded-2xl font-black text-xs uppercase bg-slate-100 dark:bg-slate-700">{t.boutique.cancel}</button>
+                <button onClick={() => removeFromCart(itemToDelete)} className="flex-1 py-3 rounded-2xl font-black text-xs uppercase bg-[var(--accent)] text-white">{t.boutique.remove_btn}</button>
               </div>
             </motion.div>
           </div>
@@ -537,10 +682,11 @@ export default function StoreModule() {
               toast.type === 'add' ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-700 dark:border-slate-200"
                                    : "bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400 border-red-100 dark:border-red-800")}>
             {toast.type === 'add' ? <ChevronRight className="w-4 h-4" /> : <TrendingUp className="w-4 h-4" />}
-            <span className="text-sm font-bold">{toast.type === 'add' ? `${toast.name} ajouté` : `${toast.name} retiré`}</span>
+            <span className="text-sm font-bold">{toast.type === 'add' ? `${toast.name} ${t.boutique.toast_added}` : `${toast.name} ${t.boutique.toast_removed}`}</span>
           </motion.div>
         )}
       </AnimatePresence>
     </section>
+    </div>
   );
 }

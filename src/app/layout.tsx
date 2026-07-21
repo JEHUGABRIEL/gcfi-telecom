@@ -1,6 +1,8 @@
+import React from 'react';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Providers } from './providers';
+// @ts-ignore: allow importing global CSS without type declarations
 import '../index.css';
 
 const inter = Inter({
@@ -17,6 +19,10 @@ export const metadata: Metadata = {
   description: 'Leader en télécommunication, formation IT et équipements réseau en République Centrafricaine.',
   keywords: ['télécom', 'formation', 'cybersécurité', 'réseau', 'RCA', 'Bangui', 'GCFI'],
   metadataBase: new URL('https://www.gcfi-rca.com'),
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+  },
   openGraph: {
     siteName: 'GCFI Telecom',
     locale: 'fr_FR',
@@ -26,15 +32,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-
   return (
     <html lang="fr" suppressHydrationWarning className={inter.variable}>
       <head>
         {supabaseUrl && <link rel="preconnect" href={supabaseUrl} />}
         <link rel="preconnect" href="https://res.cloudinary.com" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Prevent flash of wrong theme before React hydrates */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}else{document.documentElement.classList.remove('dark');document.documentElement.style.colorScheme='light';}}catch(e){}})();`,
