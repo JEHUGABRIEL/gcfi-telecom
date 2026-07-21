@@ -232,7 +232,7 @@ export default function HomeView() {
 
   React.useEffect(() => {
     const nextIndex = (carouselIndex + 1) % 3;
-    const img = new Image();
+    const img = new window.Image();
     img.src = BIRTHDAY_IMAGES[nextIndex];
   }, [carouselIndex, BIRTHDAY_IMAGES]);
 
