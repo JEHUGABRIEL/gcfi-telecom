@@ -7,6 +7,7 @@ import { motion } from 'motion/react';
 import { ArrowLeft, Clock, Tag, GraduationCap, CheckCircle2, Phone, Share2, Users, Award } from 'lucide-react';
 import { useCourses } from '@/shared/lib/queries';
 import { useLang } from '@/shared/context/LanguageContext';
+import { trackEnroll, trackViewItem } from '@/shared/lib/ga-events';
 import type { Course } from '@/shared/types';
 
 export default function CourseDetail() {
@@ -22,6 +23,14 @@ export default function CourseDetail() {
   }, [course, isLoading, router]);
 
   const handleContact = () => {
+    if (course) {
+      trackEnroll({
+        id: course.id,
+        title: course.title,
+        price: course.price,
+        category: course.category,
+      });
+    }
     window.open(
       `https://wa.me/237681371449?text=${encodeURIComponent(t.course_detail.enroll_message + ' "' + (course?.title ?? '') + '"')}`,
       '_blank'
@@ -40,6 +49,18 @@ export default function CourseDetail() {
       </div>
     );
   }
+
+  // Page vue — tracker la consultation de la formation
+  React.useEffect(() => {
+    if (course) {
+      trackViewItem({
+        id: course.id,
+        name: course.title,
+        price: course.price,
+        category: course.category,
+      });
+    }
+  }, [course?.id]);
 
   if (!course) return null;
 

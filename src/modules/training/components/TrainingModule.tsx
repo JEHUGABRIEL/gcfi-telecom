@@ -11,6 +11,7 @@ import { useAuth } from '@/shared/context/AuthContext';
 import { useTrainings } from '@/shared/lib/queries';
 import { useContact } from '@/shared/context/ContactContext';
 import { useLang } from '@/shared/context/LanguageContext';
+import { trackEnroll } from '@/shared/lib/ga-events';
 
 function getSortOptions(t: any) {
   return [
@@ -90,10 +91,16 @@ export default function TrainingModule() {
     });
   }, [courses, searchQuery, selectedTag, sortBy, fuse]);
 
-  const handleEnroll = (courseTitle: string, price: number) => {
+  const handleEnroll = (course: Course) => {
     requireAuth(() => {
+      trackEnroll({
+        id: course.id,
+        title: course.title,
+        price: course.price,
+        category: course.category,
+      });
       const userName = profile?.full_name || 'Client';
-      const message = `${t.formation_page.enroll_intro} ${userName}. ${t.formation_page.enroll_want}\n\n- *${courseTitle}*\n- ${t.formation_page.enroll_price} ${price.toLocaleString()} FCFA\n\n${t.formation_page.enroll_thanks}`;
+      const message = `${t.formation_page.enroll_intro} ${userName}. ${t.formation_page.enroll_want}\n\n- *${course.title}*\n- ${t.formation_page.enroll_price} ${course.price.toLocaleString()} FCFA\n\n${t.formation_page.enroll_thanks}`;
       window.open(`https://wa.me/237681371449?text=${encodeURIComponent(message)}`, '_blank');
     });
   };
@@ -196,7 +203,7 @@ export default function TrainingModule() {
                   </ul>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <button onClick={() => { handleEnroll(selectedCourse.title, selectedCourse.price); setSelectedCourse(null); }}
+                  <button onClick={() => { handleEnroll(selectedCourse); setSelectedCourse(null); }}
                     className="flex-1 bg-[#C1272D] text-white py-4 rounded-2xl font-bold shadow-xl shadow-blue-500/20 hover:bg-[#1E4D8C] transition-all flex items-center justify-center gap-3 active:scale-95">
                     {t.formation_page.enroll_whatsapp}
                   </button>
@@ -353,7 +360,7 @@ export default function TrainingModule() {
                       )}
                     </div>
                     <div className="mt-4">
-                      <button onClick={() => handleEnroll(course.title, course.price)}
+                      <button onClick={() => handleEnroll(course)}
                         className="w-full bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center hover:bg-[#C1272D] hover:text-white transition-all group">
                         {t.formation_page.enroll_btn} <ChevronRight className="ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </button>

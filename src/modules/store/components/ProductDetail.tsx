@@ -8,6 +8,7 @@ import { ArrowLeft, Star, ShoppingCart, Heart, Share2, Shield, Truck, RefreshCw,
 import { useProducts } from '@/shared/lib/queries';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useLang } from '@/shared/context/LanguageContext';
+import { trackAddToCart, trackViewItem } from '@/shared/lib/ga-events';
 import type { Product } from '@/shared/types';
 
 export default function ProductDetail() {
@@ -30,6 +31,15 @@ export default function ProductDetail() {
 
   const handleAddToCart = () => {
     if (!user) { setShowAuthModal(true); return; }
+    if (product) {
+      trackAddToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: 1,
+        category: product.category,
+      });
+    }
     window.dispatchEvent(new CustomEvent('gcfi:add-to-cart', { detail: product }));
     setAdded(true);
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -48,6 +58,18 @@ export default function ProductDetail() {
       </div>
     );
   }
+
+  // Page vue — tracker la consultation
+  React.useEffect(() => {
+    if (product) {
+      trackViewItem({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        category: product.category,
+      });
+    }
+  }, [product?.id]);
 
   if (!product) return null;
 

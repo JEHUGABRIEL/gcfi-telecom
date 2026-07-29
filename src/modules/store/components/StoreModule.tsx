@@ -16,6 +16,7 @@ import { useLang } from '@/shared/context/LanguageContext';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { useProducts, useSaveCart } from '@/shared/lib/queries';
+import { trackAddToCart, trackRemoveFromCart, trackBeginCheckout } from '@/shared/lib/ga-events';
 
 const needsUnoptimized = (src: string | undefined | null) =>
   typeof src === 'string' && !src.includes('cloudinary') && !src.includes('unsplash');
@@ -246,6 +247,13 @@ export default function StoreModule() {
       saveCart(next);
       return next;
     });
+    trackAddToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      category: product.category,
+    });
     setToast({ name: product.name, type: 'add' });
     setCartBump(true);
     if (bumpTimer.current)  clearTimeout(bumpTimer.current);
@@ -257,6 +265,12 @@ export default function StoreModule() {
   const removeFromCart = (productId: string) => {
     const item = cart.find(i => i.id === productId);
     if (item) {
+      trackRemoveFromCart({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        category: item.category,
+      });
       setToast({ name: item.name, type: 'remove' });
       if (toastTimer.current) clearTimeout(toastTimer.current);
       toastTimer.current = setTimeout(() => setToast(null), 3000);
@@ -290,6 +304,16 @@ export default function StoreModule() {
           }]);
         }
       } catch (err) { logError('StoreModule/checkout', err); }
+      trackBeginCheckout({
+        items: cart.map(i => ({
+          id: i.id,
+          name: i.name,
+          price: i.price,
+          quantity: i.quantity,
+          category: i.category,
+        })),
+        total: cartTotal,
+      });
       window.open(`https://wa.me/237681371449?text=${encodeURIComponent(message)}`, '_blank');
       setCart([]); setIsCartOpen(false); clearCartInDB();
     });

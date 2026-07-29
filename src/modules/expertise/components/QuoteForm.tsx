@@ -4,6 +4,7 @@ import { Send, CheckCircle, X, FileText, Phone, Mail, Building2, MessageSquare, 
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { useLang } from '@/shared/context/LanguageContext';
+import { trackFormSubmit, trackFormError } from '@/shared/lib/ga-events';
 import type { QuoteServiceType } from '@/shared/types';
 
 // ✅ Rate limiting côté client — 3 devis max par heure
@@ -59,6 +60,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
     }
 
     if (!form.full_name || !form.email || !form.service_type || !form.message) {
+      trackFormError('quote', 'validation');
       setError(q.error_required);
       return;
     }
@@ -67,6 +69,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
     const { allowed, remainingMs } = checkRateLimit();
     if (!allowed) {
       const mins = Math.ceil(remainingMs / 60000);
+      trackFormError('quote', 'rate_limit');
       setError(q.error_rate_limit.replace('{mins}', String(mins)).replace('{s}', mins > 1 ? 's' : ''));
       return;
     }
@@ -85,9 +88,11 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
         status:       'nouveau',
       }]);
       if (err) throw err;
+      trackFormSubmit('quote', form.service_type || undefined);
       setStep('success');
     } catch (err) {
       logError('QuoteForm/submit', err);
+      trackFormError('quote', 'server');
       setError(q.error_generic);
     } finally {
       setLoading(false);

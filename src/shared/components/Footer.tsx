@@ -6,6 +6,7 @@ import Link from 'next/link';
 import GcfiLogo from './GcfiLogo';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useLang } from '@/shared/context/LanguageContext';
+import { trackPhoneClick, trackSocialClick } from '@/shared/lib/ga-events';
 
 /* ── Icônes SVG officielles des réseaux sociaux ──────────────── */
 const FacebookIcon = () => (
@@ -65,6 +66,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
+                  onClick={() => trackSocialClick(label)}
                   className="w-10 h-10 bg-slate-200 dark:bg-white/5 rounded-full flex items-center justify-center hover:bg-[var(--accent)] hover:text-white transition-colors"
                 >
                   <Icon />
@@ -105,9 +107,11 @@ export default function Footer() {
               </li>
               <li className="flex items-center">
                 <Phone className="w-5 h-5 mr-3 text-[var(--accent)] shrink-0" />
-                <div>
-                  <p>+236 72 72 72 08</p>
-                  <p>+236 75 50 03 24</p>
+                <div className="space-y-1">
+                  <a href="tel:+23672727208" onClick={() => trackPhoneClick('footer')}
+                    className="block hover:text-[var(--accent)] transition-colors">+236 72 72 72 08</a>
+                  <a href="tel:+23675500324" onClick={() => trackPhoneClick('footer')}
+                    className="block hover:text-[var(--accent)] transition-colors">+236 75 50 03 24</a>
                 </div>
               </li>
               <li className="flex items-center">

@@ -3,6 +3,7 @@ import React from 'react';
 import { Phone, MessageCircle, FileText, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import QuoteForm from '@/modules/expertise/components/QuoteForm';
+import { trackWhatsAppClick, trackPhoneClick } from '@/shared/lib/ga-events';
 
 export default function FloatingContact() {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -33,6 +34,7 @@ export default function FloatingContact() {
                 href="https://wa.me/23672727208 "
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackWhatsAppClick('floating')}
                 className="flex items-center gap-3 bg-green-500 text-white px-6 py-3 rounded-full shadow-xl hover:bg-green-600 transition-all font-bold group"
               >
                 <MessageCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -42,6 +44,7 @@ export default function FloatingContact() {
               {/* Appeler */}
               <a
                 href="tel:+23675500324"
+                onClick={() => trackPhoneClick('floating')}
                 className="flex items-center gap-3 bg-blue-600 text-white px-6 py-3 rounded-full shadow-xl hover:bg-blue-700 transition-all font-bold group"
               >
                 <Phone className="w-5 h-5 group-hover:scale-110 transition-transform" />
