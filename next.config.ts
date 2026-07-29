@@ -11,11 +11,12 @@ const csp = [
   // Styles : Tailwind injecte des styles en ligne
   "style-src 'self' 'unsafe-inline'",
   // Images : CDN et fournisseurs utilisés
-  "img-src 'self' data: blob: https://*.supabase.co https://res.cloudinary.com https://images.unsplash.com https://i.pravatar.cc https://upload.wikimedia.org https://picsum.photos https://ui-avatars.com https://lh3.googleusercontent.com https://www.google.com",
+  // Images : CDN et fournisseurs utilisés (inclut domaine Supabase personnalisé)
+  "img-src 'self' data: blob: https://*.supabase.co https://auth.gcfi-rca.com https://res.cloudinary.com https://images.unsplash.com https://i.pravatar.cc https://upload.wikimedia.org https://picsum.photos https://ui-avatars.com https://lh3.googleusercontent.com https://www.google.com",
   // Polices : Google Fonts (Inter)
   "font-src 'self' https://fonts.gstatic.com data:",
-  // Connexions API : Supabase, Analytics, Cloudinary
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.googletagmanager.com https://www.google-analytics.com https://res.cloudinary.com",
+  // Connexions API : Supabase (dont domaine personnalisé), Analytics, Cloudinary
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://auth.gcfi-rca.com wss://auth.gcfi-rca.com https://www.googletagmanager.com https://www.google-analytics.com https://res.cloudinary.com",
   // Cadres : Google OAuth
   "frame-src 'self' https://accounts.google.com",
   // Soumissions de formulaires
@@ -49,6 +50,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'i.pravatar.cc' },
       { protocol: 'https', hostname: 'upload.wikimedia.org' },
       { protocol: 'https', hostname: '*.supabase.co' },
+      { protocol: 'https', hostname: 'auth.gcfi-rca.com' },
       { protocol: 'https', hostname: 'picsum.photos' },
       { protocol: 'https', hostname: 'ui-avatars.com' },
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
