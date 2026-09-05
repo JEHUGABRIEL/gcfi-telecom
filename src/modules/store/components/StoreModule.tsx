@@ -314,7 +314,7 @@ export default function StoreModule() {
         })),
         total: cartTotal,
       });
-      window.open(`https://wa.me/237681371449?text=${encodeURIComponent(message)}`, '_blank');
+      window.open(`https://wa.me/23672727208?text=${encodeURIComponent(message)}`, '_blank');
       setCart([]); setIsCartOpen(false); clearCartInDB();
     });
   };

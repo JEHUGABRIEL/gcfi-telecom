@@ -15,7 +15,7 @@ const settingsSchema = z.object({
   fullName: z.string().min(2, "Le nom complet est requis"),
   displayName: z.string().min(2, "Le nom d'affichage est requis"),
   bio: z.string().max(200, "La bio ne peut pas dépasser 200 caractères").optional(),
-  phone: z.string().regex(/^\+(?:[0-9] ?){6,14}[0-9]$/, "Format international requis (ex: +237681371449)").optional().or(z.literal('')),
+  phone: z.string().regex(/^\+(?:[0-9] ?){6,14}[0-9]$/, "Format international requis (ex: +236 72 00 00 00)").optional().or(z.literal('')),
 });
 
 type SettingsFormData = z.infer<typeof settingsSchema>;

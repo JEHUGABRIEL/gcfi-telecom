@@ -40,7 +40,7 @@ export const productSchema = (product: Product) => ({
   price: product.price,
   priceCurrency: 'XAF',
   availability: 'https://schema.org/InStock',
-  url: `https://www.gcfi-rca.com/#/boutique/${product.id}`,
+  url: `https://www.gcfi-rca.com/boutique/${product.id}`,
 });
 
 export const courseSchema = (course: Course) => ({
@@ -53,7 +53,7 @@ export const courseSchema = (course: Course) => ({
     '@type': 'Organization',
     name: 'GCFI Telecom',
   },
-  url: `https://www.gcfi-rca.com/#/formation/${course.id}`,
+  url: `https://www.gcfi-rca.com/formation/${course.id}`,
   price: course.price,
   priceCurrency: 'XAF',
   category: course.category,

@@ -107,12 +107,8 @@ export default function Footer() {
               </li>
               <li className="flex items-center">
                 <Phone className="w-5 h-5 mr-3 text-[var(--accent)] shrink-0" />
-                <div className="space-y-1">
-                  <a href="tel:+23672727208" onClick={() => trackPhoneClick('footer')}
-                    className="block hover:text-[var(--accent)] transition-colors">+236 72 72 72 08</a>
-                  <a href="tel:+23675500324" onClick={() => trackPhoneClick('footer')}
-                    className="block hover:text-[var(--accent)] transition-colors">+236 75 50 03 24</a>
-                </div>
+                <a href="tel:+23672727208" onClick={() => trackPhoneClick('footer')}
+                  className="block hover:text-[var(--accent)] transition-colors">+236 72 72 72 08</a>
               </li>
               <li className="flex items-center">
                 <Mail className="w-5 h-5 mr-3 text-[var(--accent)] shrink-0" />

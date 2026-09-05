@@ -28,7 +28,7 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<voi
           <li>✓ Support client prioritaire</li>
         </ul>
         <div style="margin: 30px 0; text-align: center;">
-          <a href="https://www.gcfi-rca.com/#/profil" style="background: #C1272D; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+          <a href="https://www.gcfi-rca.com/profil" style="background: #C1272D; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
             Accéder à mon compte
           </a>
         </div>
@@ -109,7 +109,7 @@ export async function sendOrderConfirmationEmail(
         </div>
 
         <div style="margin: 30px 0; text-align: center;">
-          <a href="https://www.gcfi-rca.com/#/profil" style="background: #C1272D; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+          <a href="https://www.gcfi-rca.com/profil" style="background: #C1272D; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
             Suivre ma commande
           </a>
         </div>
@@ -171,14 +171,14 @@ export async function sendCourseEnrollmentEmail(
         </div>
 
         <div style="margin: 30px 0; text-align: center;">
-          <a href="https://www.gcfi-rca.com/#/profil" style="background: #C1272D; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+          <a href="https://www.gcfi-rca.com/profil" style="background: #C1272D; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
             Accéder à la formation
           </a>
         </div>
 
         <p style="font-size: 12px; color: #999; line-height: 1.6;">
           Questions ? Contactez notre équipe pédagogique à formation@gcfi-rca.com<br>
-          Support WhatsApp : +236 61 37 14 49
+          Support WhatsApp : +236 72 72 72 08
         </p>
       </div>
     </div>

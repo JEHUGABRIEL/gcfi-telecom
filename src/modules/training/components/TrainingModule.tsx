@@ -101,7 +101,7 @@ export default function TrainingModule() {
       });
       const userName = profile?.full_name || 'Client';
       const message = `${t.formation_page.enroll_intro} ${userName}. ${t.formation_page.enroll_want}\n\n- *${course.title}*\n- ${t.formation_page.enroll_price} ${course.price.toLocaleString()} FCFA\n\n${t.formation_page.enroll_thanks}`;
-      window.open(`https://wa.me/237681371449?text=${encodeURIComponent(message)}`, '_blank');
+      window.open(`https://wa.me/23672727208?text=${encodeURIComponent(message)}`, '_blank');
     });
   };
 

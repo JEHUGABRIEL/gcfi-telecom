@@ -32,7 +32,7 @@ export default function CourseDetail() {
       });
     }
     window.open(
-      `https://wa.me/237681371449?text=${encodeURIComponent(t.course_detail.enroll_message + ' "' + (course?.title ?? '') + '"')}`,
+      `https://wa.me/23672727208?text=${encodeURIComponent(t.course_detail.enroll_message + ' "' + (course?.title ?? '') + '"')}`,
       '_blank'
     );
   };
