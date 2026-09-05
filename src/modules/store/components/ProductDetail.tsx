@@ -108,6 +108,16 @@ export default function ProductDetail() {
             <span className="absolute top-4 left-4 bg-[#C1272D] text-white text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
               {product.category}
             </span>
+            {/* Galerie photos */}
+            {((product as any).gallery ?? []).length > 0 && (
+              <div className="mt-4 grid grid-cols-4 gap-3">
+                {((product as any).gallery ?? []).map((src: string, i: number) => (
+                  <div key={`${src}-${i}`} className="aspect-square rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800 relative">
+                    <Image src={src} alt={`${product.name} ${i + 1}`} fill className="object-cover" sizes="96px" />
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
 
           {/* Infos */}

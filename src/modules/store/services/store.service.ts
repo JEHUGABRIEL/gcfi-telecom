@@ -8,6 +8,7 @@ export const StoreService = {
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .is('deleted_at', null)
         .order('popularity', { ascending: false });
       if (error) throw error;
       return (data || []) as Product[];

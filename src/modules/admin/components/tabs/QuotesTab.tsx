@@ -1,12 +1,12 @@
 import React from 'react';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
-import { motion } from 'motion/react';
-import { FileText, Mail, Phone, Building2, Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { FileText, Mail, Phone, Building2, Clock, CheckCircle, XCircle, RefreshCw, ChevronRight } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { useLang } from '@/shared/context/LanguageContext';
 import type { Quote } from '@/shared/types';
 import Pagination from '@/shared/components/ui/Pagination';
+import AdminTable from '@/shared/components/ui/AdminTable';
 
 const PAGE_SIZE = 10;
 
@@ -36,6 +36,7 @@ export default function QuotesTab() {
     const { data, error, count } = await supabase
       .from('quotes')
       .select('*', { count: 'exact' })
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .range(from, to);
 
@@ -78,56 +79,70 @@ export default function QuotesTab() {
         <div className="text-center py-16 text-slate-400"><FileText className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>{ap.quote_empty}</p></div>
       ) : (
         <>
-        <div className="grid gap-3">
-          {quotes.map(q => {
-            const cfg = STATUS_CONFIG[q.status];
-            const Icon = cfg.icon;
-            return (
-              <motion.div key={q.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 cursor-pointer hover:border-[#C1272D]/30 transition-all"
-                onClick={() => setSelected(selected?.id === q.id ? null : q)}>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 flex-wrap mb-2">
-                      <p className="font-bold text-slate-900 dark:text-white">{q.full_name}</p>
-                      <span className={cn('px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1', cfg.color)}>
-                        <Icon className="w-3 h-3" />{getStatusLabel(q.status)}
-                      </span>
-                      <span className="text-xs font-bold text-[#C1272D] bg-red-50 dark:bg-red-900/10 px-2.5 py-0.5 rounded-full">{q.service_type}</span>
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
-                      <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{q.email}</span>
-                      {q.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{q.phone}</span>}
-                      {q.company && <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{q.company}</span>}
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-slate-400 whitespace-nowrap shrink-0">
-                    {new Date(q.created_at).toLocaleDateString('fr-FR')}
-                  </span>
+        <AdminTable
+          columns={[
+            {
+              header: ap.table_visitor,
+              cell: (q) => (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-bold text-slate-900 dark:text-white">{q.full_name}</p>
+                  <span className="text-xs font-bold text-[#C1272D] bg-red-50 dark:bg-red-900/10 px-2.5 py-0.5 rounded-full">{q.service_type}</span>
                 </div>
-
-                {selected?.id === q.id && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
-                    <p className="text-sm text-slate-600 dark:text-slate-300 mb-4 italic">"{q.message}"</p>
-                    {q.budget && <p className="text-xs text-slate-500 dark:text-slate-400 mb-4"><strong>{ap.quote_budget} :</strong> {q.budget}</p>}
-                    <div className="flex flex-wrap gap-2">
-                      {(Object.keys(STATUS_CONFIG) as Quote['status'][]).map(s => (
-                        <button key={s} onClick={e => { e.stopPropagation(); updateStatus(q.id, s); }}
-                          className={cn('px-3 py-1.5 rounded-xl text-xs font-bold transition-all border', q.status === s ? STATUS_CONFIG[s].color + ' border-transparent' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-[#C1272D] hover:text-[#C1272D]')}>
-                          {getStatusLabel(s)}
-                        </button>
-                      ))}
-                      <a href={`mailto:${q.email}?subject=Votre demande de devis GCFI - ${q.service_type}`} onClick={e => e.stopPropagation()}
-                        className="px-3 py-1.5 bg-[#C1272D] text-white rounded-xl text-xs font-bold hover:bg-[#1E4D8C] transition-all ml-auto flex items-center gap-1">
-                        <Mail className="w-3 h-3" /> {ap.quote_reply}
-                      </a>
-                    </div>
-                  </motion.div>
-                )}
-              </motion.div>
-            );
-          })}
-        </div>
+              ),
+            },
+            {
+              header: ap.table_contact,
+              cell: (q) => (
+                <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+                  <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{q.email}</span>
+                  {q.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{q.phone}</span>}
+                  {q.company && <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{q.company}</span>}
+                </div>
+              ),
+            },
+            {
+              header: ap.users_label_status,
+              cell: (q) => {
+                const cfg = STATUS_CONFIG[q.status];
+                const Icon = cfg.icon;
+                return (
+                  <span className={cn('px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 w-fit', cfg.color)}>
+                    <Icon className="w-3 h-3" />{getStatusLabel(q.status)}
+                  </span>
+                );
+              },
+            },
+            { header: ap.table_date, cell: (q) => <span className="text-[10px] text-slate-400 whitespace-nowrap">{new Date(q.created_at).toLocaleDateString('fr-FR')}</span> },
+            {
+              header: '',
+              align: 'right' as const,
+              cell: (q) => <ChevronRight className={cn('w-4 h-4 text-slate-300 dark:text-slate-600 ml-auto transition-transform', selected?.id === q.id && 'rotate-90 text-[#C1272D]')} />,
+            },
+          ]}
+          data={quotes}
+          getKey={(q) => q.id}
+          onRowClick={(q) => setSelected(selected?.id === q.id ? null : q)}
+          renderExpanded={(q) => (
+            <div>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mb-4 italic">"{q.message}"</p>
+              {q.budget && <p className="text-xs text-slate-500 dark:text-slate-400 mb-4"><strong>{ap.quote_budget} :</strong> {q.budget}</p>}
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(STATUS_CONFIG) as Quote['status'][]).map(s => (
+                  <button key={s} onClick={e => { e.stopPropagation(); updateStatus(q.id, s); }}
+                    className={cn('px-3 py-1.5 rounded-xl text-xs font-bold transition-all border', q.status === s ? STATUS_CONFIG[s].color + ' border-transparent' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-[#C1272D] hover:text-[#C1272D]')}>
+                    {getStatusLabel(s)}
+                  </button>
+                ))}
+                <a href={`mailto:${q.email}?subject=Votre demande de devis GCFI - ${q.service_type}`} onClick={e => e.stopPropagation()}
+                  className="px-3 py-1.5 bg-[#C1272D] text-white rounded-xl text-xs font-bold hover:bg-[#1E4D8C] transition-all ml-auto flex items-center gap-1">
+                  <Mail className="w-3 h-3" /> {ap.quote_reply}
+                </a>
+              </div>
+            </div>
+          )}
+          isExpanded={(q) => selected?.id === q.id}
+          minWidth="800px"
+        />
         <Pagination
           page={page}
           totalPages={totalPages}

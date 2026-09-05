@@ -14,8 +14,8 @@ export const AdminService = {
       ] = await Promise.all([
         supabase.from('profiles').select('*').order('created_at', { ascending: false }),
         supabase.from('orders').select('*').order('created_at', { ascending: false }),
-        supabase.from('trainings').select('*').order('created_at', { ascending: false }),
-        supabase.from('products').select('*').order('created_at', { ascending: false }),
+        supabase.from('trainings').select('*').is('deleted_at', null).order('created_at', { ascending: false }),
+        supabase.from('products').select('*').is('deleted_at', null).order('created_at', { ascending: false }),
         supabase.from('comments').select('*').order('created_at', { ascending: false }),
         supabase.from('global_notifications').select('*').order('created_at', { ascending: false })
       ]);
@@ -28,7 +28,8 @@ export const AdminService = {
 
   async deleteItem(table: string, id: string): Promise<boolean> {
     try {
-      const { error } = await supabase.from(table).delete().eq('id', id);
+      // Soft delete : on marque la ligne au lieu de la supprimer
+      const { error } = await supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq('id', id);
       if (error) throw error;
       return true;
     } catch (err) {

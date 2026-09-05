@@ -56,12 +56,19 @@ export default function AuthModal() {
           setLoading(false);
           return;
         }
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email, password,
           options: { data: { full_name: fullName } },
         });
         if (error) throw error;
-        setSuccess(t.auth.success_signup);
+        // Si Supabase renvoie déjà une session, l'email n'a pas besoin d'être confirmé
+        // avant l'accès (auto-confirmation) — l'utilisateur est déjà connecté, inutile
+        // de lui afficher un message qui prétend le contraire.
+        if (data.session) {
+          close();
+        } else {
+          setSuccess(t.auth.success_signup);
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;

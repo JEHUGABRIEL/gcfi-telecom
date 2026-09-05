@@ -41,6 +41,7 @@ import {
 import { cn } from '@/shared/lib/utils';
 import { AnimatePresence } from 'motion/react';
 import { supabase } from '@/shared/lib/supabase';
+import { useContact } from '@/shared/context/ContactContext';
 
 /* ── Map icon name → composant Lucide ─────────────────────────── */
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -223,6 +224,7 @@ const colorClasses: Record<string, string> = {
 };
 
 export default function GcfiServices() {
+  const { openContact } = useContact();
   const [selectedService, setSelectedService] = React.useState<any | null>(null);
 
   // ── Chargement dynamique depuis Supabase ───────────────────────
@@ -233,6 +235,7 @@ export default function GcfiServices() {
     supabase
       .from('services')
       .select('*')
+      .is('deleted_at', null)
       .eq('is_active', true)
       .order('order_index', { ascending: true })
       .then(({ data, error }) => {
@@ -307,8 +310,8 @@ export default function GcfiServices() {
               </ul>
             </div>
 
-            <button 
-              onClick={() => setSelectedService(null)}
+            <button
+              onClick={() => { setSelectedService(null); openContact(); }}
               className="w-full bg-[#C1272D] text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
             >
               Demander un devis

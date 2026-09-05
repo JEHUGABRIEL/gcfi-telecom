@@ -52,17 +52,20 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
 
   const [allProducts, setAllProducts] = React.useState<Product[]>([]);
   const [allCourses, setAllCourses] = React.useState<Course[]>([]);
+  const [allPosts, setAllPosts] = React.useState<any[]>([]);
 
   const { lang } = useLang();
 
   React.useEffect(() => {
     const l = lang === 'en' ? 'en' : 'fr';
     Promise.all([
-      supabase.from('products').select('id, name, description, category, price, image').eq('lang', l),
-      supabase.from('trainings').select('*').eq('lang', l)
-    ]).then(([{ data: prods }, { data: trains }]) => {
+      supabase.from('products').select('id, name, description, category, price, image').eq('lang', l).is('deleted_at', null),
+      supabase.from('trainings').select('*').eq('lang', l).is('deleted_at', null),
+      supabase.from('blog_posts').select('id, title, excerpt, image').eq('published', true).is('deleted_at', null)
+    ]).then(([{ data: prods }, { data: trains }, { data: posts }]) => {
       setAllProducts((prods || []) as Product[]);
       setAllCourses((trains || []) as Course[]);
+      setAllPosts(posts || []);
     });
   }, [lang]);
 
@@ -82,6 +85,9 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
       ...allCourses
         .filter(c => c.title.toLowerCase().includes(query.toLowerCase()) || c.description.toLowerCase().includes(query.toLowerCase()))
         .map(c => ({ id: c.id, title: c.title, type: 'course' as const, module: 'training' as AppModule, image: c.image })),
+      ...allPosts
+        .filter(p => p.title?.toLowerCase().includes(query.toLowerCase()) || p.excerpt?.toLowerCase().includes(query.toLowerCase()))
+        .map(p => ({ id: p.id, title: p.title, type: 'news' as const, url: `/blog/${p.id}`, image: p.image })),
     ];
 
     setResults(searchResults.slice(0, 5));
@@ -93,7 +99,8 @@ export default function GlobalSearch({ isOpen: externalIsOpen, onClose }: Global
       const base = MODULE_ROUTES[result.module] ?? '/';
       router.push(`${base}?item=${result.id}`);
     } else if (result.url) {
-      window.open(result.url, '_blank');
+      if (result.url.startsWith('/')) router.push(result.url);
+      else window.open(result.url, '_blank');
     }
     setIsOpen(false);
     setQuery('');

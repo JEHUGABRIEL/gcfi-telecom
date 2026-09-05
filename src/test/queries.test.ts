@@ -7,6 +7,7 @@ import React from 'react';
 const mockEq  = vi.fn().mockReturnThis();
 const mockOrder = vi.fn();
 const mockSelect = vi.fn();
+const mockIs = vi.fn();
 
 vi.mock('@/shared/lib/supabase', () => ({
   supabase: {
@@ -48,7 +49,9 @@ describe('useProducts', () => {
     ];
 
     mockSelect.mockReturnValue({
-      order: mockOrder.mockReturnValue(Promise.resolve({ data: products, error: null })),
+      is: mockIs.mockReturnValue({
+        order: mockOrder.mockReturnValue(Promise.resolve({ data: products, error: null })),
+      }),
     });
 
     localStorage.setItem('gcfi-lang', 'fr');
@@ -71,7 +74,9 @@ describe('useProducts', () => {
     ];
 
     mockSelect.mockReturnValue({
-      order: mockOrder.mockReturnValue(Promise.resolve({ data: products, error: null })),
+      is: mockIs.mockReturnValue({
+        order: mockOrder.mockReturnValue(Promise.resolve({ data: products, error: null })),
+      }),
     });
 
     localStorage.setItem('gcfi-lang', 'en');
@@ -86,9 +91,11 @@ describe('useProducts', () => {
 
   it("propage les erreurs Supabase", async () => {
     mockSelect.mockReturnValue({
-      order: mockOrder.mockReturnValue(
-        Promise.resolve({ data: null, error: { message: 'Erreur réseau', code: 'NETWORK' } })
-      ),
+      is: mockIs.mockReturnValue({
+        order: mockOrder.mockReturnValue(
+          Promise.resolve({ data: null, error: { message: 'Erreur réseau', code: 'NETWORK' } })
+        ),
+      }),
     });
 
     const { result } = renderHook(() => useProducts(), { wrapper: createWrapper() });

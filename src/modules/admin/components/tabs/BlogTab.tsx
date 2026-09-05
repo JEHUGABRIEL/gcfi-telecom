@@ -5,8 +5,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { Plus, Trash2, RefreshCw, BookOpen, Edit, X, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import ImageUpload from '@/shared/components/ImageUpload';
+import RichTextEditor from '@/shared/components/RichTextEditor';
+import { sanitizeHtml } from '@/shared/lib/sanitize';
 import { motion, AnimatePresence } from 'motion/react';
 import Pagination from '@/shared/components/ui/Pagination';
+import AdminTable from '@/shared/components/ui/AdminTable';
 import { useActivityLog } from '@/shared/hooks/useActivityLog';
 import { useLang } from '@/shared/context/LanguageContext';
 
@@ -36,7 +39,7 @@ function ConfirmModal({ message, onConfirm, onCancel, title, cancelText, confirm
   );
 }
 
-const EMPTY = { title: '', excerpt: '', content: '', category: '', author: '', tags: '', image: '', read_time: '5', published: false };
+const EMPTY = { title: '', excerpt: '', content: '', category: '', author: '', tags: '', image: '', read_time: '5', published: false, gallery: [] as string[] };
 
 export default function BlogTab() {
   const { t } = useLang();
@@ -58,7 +61,7 @@ export default function BlogTab() {
   const { data: posts = [], isLoading: loading } = useQuery({
     queryKey: ['admin', 'blog_posts'],
     queryFn: async () => {
-      const { data } = await supabase.from('blog_posts').select('*').order('created_at', { ascending: false });
+      const { data } = await supabase.from('blog_posts').select('*').is('deleted_at', null).order('created_at', { ascending: false });
       return data || [];
     },
     staleTime: 2 * 60 * 1000,
@@ -75,6 +78,7 @@ export default function BlogTab() {
       category: p.category ?? '', author: p.author ?? '',
       tags: (p.tags || []).join(', '), image: p.image ?? '',
       read_time: p.read_time?.toString() ?? '5', published: p.published ?? false,
+      gallery: p.gallery ?? [],
     });
     setShowForm(true);
   };
@@ -84,10 +88,11 @@ export default function BlogTab() {
     setSaveError(null);
     setSaving(true);
     const payload = {
-      title: form.title.trim(), excerpt: form.excerpt.trim(), content: form.content.trim(),
+      title: form.title.trim(), excerpt: form.excerpt.trim(), content: sanitizeHtml(form.content).trim(),
       category: form.category.trim(), author: form.author.trim() || ap.blog_field_author_placeholder,
       tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
       image: form.image || null, read_time: Number(form.read_time) || 5,
+      gallery: (form as any).gallery || [],
       published: (form as any).published,
     };
     try {
@@ -118,7 +123,7 @@ export default function BlogTab() {
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    await supabase.from('blog_posts').delete().eq('id', deleteTarget.id);
+    await supabase.from('blog_posts').update({ deleted_at: new Date().toISOString() }).eq('id', deleteTarget.id);
     logActivity({ action: 'deleted', entity: 'blog', entity_id: deleteTarget.id, label: `${ap.blog_toast_deleted}: ${deleteTarget.title}` });
     setDelete(null);
     invalidate();
@@ -182,12 +187,40 @@ export default function BlogTab() {
                     <textarea value={form.excerpt} onChange={set('excerpt')} rows={2} placeholder={ap.blog_field_excerpt_placeholder} className={inputCls} />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">{ap.blog_field_content}</label>
-                    <textarea value={form.content} onChange={set('content')} rows={10} placeholder={ap.blog_field_content_placeholder} className={inputCls + ' resize-y'} />
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block">{ap.blog_field_content}</label>
+                    <RichTextEditor
+                      value={form.content}
+                      onChange={html => setForm(f => ({ ...f, content: html }))}
+                      placeholder={ap.blog_field_content_placeholder}
+                    />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block">{ap.blog_field_cover}</label>
                     <ImageUpload value={form.image} onChange={url => setForm(f => ({ ...f, image: url }))} folder="gcfi/blog" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block">{ap.content_gallery}</label>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3 items-start">
+                      {((form as any).gallery || []).map((src: string, i: number) => (
+                        <div key={`${src}-${i}`} className="relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 group">
+                          <Image src={src} alt={`${ap.content_gallery} ${i + 1}`} fill className="object-cover" sizes="160px" />
+                          <button
+                            type="button"
+                            onClick={() => setForm((f: any) => ({ ...f, gallery: (f.gallery || []).filter((_: string, idx: number) => idx !== i) }))}
+                            className="absolute top-1 right-1 p-1 bg-slate-900/60 backdrop-blur-sm rounded-md text-white hover:bg-red-600 transition-colors"
+                            aria-label={ap.content_gallery}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                      <ImageUpload
+                        value=""
+                        folder="gcfi/blog"
+                        placeholder={ap.content_add_photo}
+                        onChange={(url: string) => setForm((f: any) => ({ ...f, gallery: [...(f.gallery || []), url] }))}
+                      />
+                    </div>
                   </div>
                   <div className="sm:col-span-2 flex items-center gap-3">
                     <button type="button"
@@ -240,40 +273,51 @@ export default function BlogTab() {
         </div>
       ) : (
         <>
-          <div className="space-y-3">
-            {posts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(p => (
-              <div key={p.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-4">
-                {p.image && <Image src={p.image} alt={p.title} width={56} height={56} className="rounded-xl object-cover shrink-0" />}
-                {!p.image && <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0"><BookOpen className="w-6 h-6 text-slate-400" /></div>}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className="font-bold text-slate-900 dark:text-white truncate">{p.title}</p>
-                    <span className={`shrink-0 text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${p.published ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                      {p.published ? ap.blog_status_published : ap.blog_status_draft}
-                    </span>
+          <AdminTable
+            columns={[
+              {
+                header: ap.table_title,
+                cell: (p) => (
+                  <div className="flex items-center gap-3">
+                    {p.image
+                      ? <Image src={p.image} alt={p.title} width={44} height={44} className="rounded-lg object-cover shrink-0" />
+                      : <div className="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0"><BookOpen className="w-5 h-5 text-slate-400" /></div>}
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-900 dark:text-white truncate">{p.title}</p>
+                      <span className={`inline-block mt-0.5 text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${p.published ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
+                        {p.published ? ap.blog_status_published : ap.blog_status_draft}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 mt-1">
-                    {p.category && <span className="text-xs text-[#C1272D] font-bold">{p.category}</span>}
-                    <span className="text-xs text-slate-400">{p.author}</span>
-                    <span className="text-xs text-slate-400">{new Date(p.created_at).toLocaleDateString('fr-FR')}</span>
+                ),
+              },
+              { header: ap.table_category, cell: (p) => p.category ? <span className="text-xs text-[#C1272D] font-bold">{p.category}</span> : <span className="text-slate-300">—</span> },
+              { header: ap.blog_field_author, cell: (p) => <span className="text-sm text-slate-600 dark:text-slate-300">{p.author}</span> },
+              { header: ap.table_date, cell: (p) => <span className="text-xs text-slate-400 whitespace-nowrap">{new Date(p.created_at).toLocaleDateString('fr-FR')}</span> },
+              {
+                header: ap.table_actions,
+                align: 'right' as const,
+                cell: (p) => (
+                  <div className="flex gap-1 justify-end">
+                    <button onClick={() => togglePublish(p.id, p.published, p.title)}
+                      className="p-2 text-slate-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/10 rounded-lg transition-colors"
+                      title={p.published ? ap.blog_tooltip_unpublish : ap.blog_tooltip_publish}>
+                      {p.published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                    <button onClick={() => startEdit(p)} className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setDelete({ id: p.id, title: p.title })} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  <button onClick={() => togglePublish(p.id, p.published, p.title)}
-                    className="p-2 text-slate-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/10 rounded-lg transition-colors"
-                    title={p.published ? ap.blog_tooltip_unpublish : ap.blog_tooltip_publish}>
-                    {p.published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                  <button onClick={() => startEdit(p)} className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => setDelete({ id: p.id, title: p.title })} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+                ),
+              },
+            ]}
+            data={posts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
+            getKey={(p) => p.id}
+            minWidth="800px"
+          />
           <Pagination
             page={page}
             totalPages={Math.ceil(posts.length / PAGE_SIZE)}

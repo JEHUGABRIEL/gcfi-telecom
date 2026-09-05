@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import { Providers } from './providers';
+import { SITE_URL } from '@/shared/lib/site-url';
 import CookieConsentBanner from '@/shared/components/CookieConsentBanner';
 import AnalyticsTracker from '@/shared/components/AnalyticsTracker';
 // @ts-ignore: allow importing global CSS without type declarations
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
   },
   description: 'Leader en télécommunication, formation IT et équipements réseau en République Centrafricaine.',
   keywords: ['télécom', 'formation', 'cybersécurité', 'réseau', 'RCA', 'Bangui', 'GCFI'],
-  metadataBase: new URL('https://www.gcfi-rca.com'),
+  metadataBase: new URL(SITE_URL),
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',

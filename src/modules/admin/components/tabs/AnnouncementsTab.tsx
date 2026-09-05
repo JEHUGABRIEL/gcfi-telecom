@@ -5,8 +5,12 @@ import { logError } from '@/shared/lib/supabase-helpers';
 import { Plus, Trash2, RefreshCw, Megaphone, AlertTriangle, Edit, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAdminToast, AdminToast } from '@/shared/components/AdminToast';
+import AdminTable from '@/shared/components/ui/AdminTable';
+import Pagination from '@/shared/components/ui/Pagination';
 import { useActivityLog } from '@/shared/hooks/useActivityLog';
 import { useLang } from '@/shared/context/LanguageContext';
+
+const PAGE_SIZE = 10;
 
 const BG_OPTIONS = [
   { value: 'red',    preview: 'bg-[#C1272D]' },
@@ -52,6 +56,7 @@ export default function AnnouncementsTab() {
   const [deleteTarget, setDeleteTarget] = React.useState<{ id: string; message: string } | null>(null);
   const [form, setForm]                 = React.useState(EMPTY);
   const [saveError, setSaveError]       = React.useState<string | null>(null);
+  const [page, setPage]                 = React.useState(1);
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
@@ -59,7 +64,7 @@ export default function AnnouncementsTab() {
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['admin', 'announcements'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('announcements').select('*').is('deleted_at', null).order('created_at', { ascending: false });
       if (error) { logError('AnnouncementsTab/fetch', error); return []; }
       return data || [];
     },
@@ -93,7 +98,7 @@ export default function AnnouncementsTab() {
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    await supabase.from('announcements').delete().eq('id', deleteTarget.id);
+    await supabase.from('announcements').update({ deleted_at: new Date().toISOString() }).eq('id', deleteTarget.id);
     logActivity({ action: 'deleted', entity: 'notifications', entity_id: deleteTarget.id, label: `${ap.ann_deleted}: ${deleteTarget.message.slice(0, 40)}` });
     setDeleteTarget(null); invalidate(); showToast(ap.ann_deleted);
   };
@@ -220,47 +225,64 @@ export default function AnnouncementsTab() {
             <p className="text-xs mt-1">{ap.ann_empty_hint}</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {items.map((item: any) => {
-              const bgPreview = BG_MAP[item.bg_color] ?? 'bg-[#C1272D]';
-              return (
-                <motion.div key={item.id} layout
-                  className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">
-                  {/* Preview bandeau */}
-                  <div className={`${bgPreview} px-4 py-2 flex items-center gap-2`}>
-                    <Megaphone className="w-3.5 h-3.5 text-white/80 shrink-0" />
-                    <p className="text-white text-xs font-bold truncate flex-1">{item.message}</p>
-                    {item.link_label && <span className="text-white/80 text-xs underline shrink-0">{item.link_label}</span>}
-                  </div>
-                  {/* Controls */}
-                  <div className="px-4 py-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${item.is_active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
-                        {item.is_active ? ap.ann_status_visible_short : ap.ann_status_hidden_short}
-                      </span>
-                      {item.link_url && (
-                        <span className="text-[10px] text-slate-400 truncate max-w-[120px]">{item.link_url}</span>
-                      )}
+        <>
+          <AdminTable
+            columns={[
+              {
+                header: ap.ann_message_label,
+                cell: (item: any) => {
+                  const bgPreview = BG_MAP[item.bg_color] ?? 'bg-[#C1272D]';
+                  return (
+                    <div className={`${bgPreview} px-3 py-2 rounded-lg flex items-center gap-2 max-w-md`}>
+                      <Megaphone className="w-3.5 h-3.5 text-white/80 shrink-0" />
+                      <p className="text-white text-xs font-bold truncate flex-1">{item.message}</p>
+                      {item.link_label && <span className="text-white/80 text-xs underline shrink-0">{item.link_label}</span>}
                     </div>
-                    <div className="flex gap-1 shrink-0">
-                      <button onClick={() => toggleActive(item)} title={item.is_active ? ap.ann_status_hidden_short : ap.ann_status_visible_short}
-                        className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-colors">
-                        <span className="text-xs font-bold">{item.is_active ? '⏸' : '▶'}</span>
-                      </button>
-                      <button onClick={() => startEdit(item)}
-                        className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => setDeleteTarget({ id: item.id, message: item.message })}
-                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                  );
+                },
+              },
+              { header: ap.table_link, cell: (item: any) => item.link_url ? <span className="text-xs text-slate-400 truncate block max-w-[160px]">{item.link_url}</span> : <span className="text-slate-300">—</span> },
+              {
+                header: ap.users_label_status,
+                cell: (item: any) => (
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${item.is_active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
+                    {item.is_active ? ap.ann_status_visible_short : ap.ann_status_hidden_short}
+                  </span>
+                ),
+              },
+              {
+                header: ap.table_actions,
+                align: 'right' as const,
+                cell: (item: any) => (
+                  <div className="flex gap-1 justify-end">
+                    <button onClick={() => toggleActive(item)} title={item.is_active ? ap.ann_status_hidden_short : ap.ann_status_visible_short}
+                      className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-colors">
+                      <span className="text-xs font-bold">{item.is_active ? '⏸' : '▶'}</span>
+                    </button>
+                    <button onClick={() => startEdit(item)}
+                      className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setDeleteTarget({ id: item.id, message: item.message })}
+                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                </motion.div>
-              );
-            })}
-          </div>
+                ),
+              },
+            ]}
+            data={items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
+            getKey={(item: any) => item.id}
+            minWidth="760px"
+          />
+          <Pagination
+            page={page}
+            totalPages={Math.ceil(items.length / PAGE_SIZE)}
+            totalItems={items.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        </>
         )}
       </div>
     </>

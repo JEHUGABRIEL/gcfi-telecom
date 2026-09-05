@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Newspaper, ChevronRight, ExternalLink, RefreshCw, Radio, TrendingUp, Cpu, Mail, CheckCircle2, X } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { supabase } from '@/shared/lib/supabase';
+import { sanitizeHtml } from '@/shared/lib/sanitize';
 import { useNews } from '@/shared/lib/queries';
 import { useLang } from '@/shared/context/LanguageContext';
 import type { NewsItem } from '@/shared/types';
@@ -252,9 +253,14 @@ export default function NewsFeed() {
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4 line-clamp-2 group-hover:text-[#C1272D] transition-colors leading-snug">
                           {item.title}
                         </h3>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-8 line-clamp-2 leading-relaxed italic">
-                          {item.excerpt}
-                        </p>
+                        {/<[a-z][\s\S]*>/i.test(item.excerpt) ? (
+                          <div className="rich-editor-content text-slate-500 dark:text-slate-400 text-sm mb-8 line-clamp-2 italic"
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.excerpt) }} />
+                        ) : (
+                          <p className="text-slate-500 dark:text-slate-400 text-sm mb-8 line-clamp-2 leading-relaxed italic">
+                            {item.excerpt}
+                          </p>
+                        )}
                         <a href={item.url} target="_blank" rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#C1272D] hover:gap-3 transition-all">
                           {n.read_more} <ChevronRight className="w-4 h-4" />

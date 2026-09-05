@@ -7,12 +7,13 @@ import Fuse from 'fuse.js';
 import {
   ShoppingCart, Search, Filter, Star, ShoppingBag, X,
   Plus, Minus, Trash2, ArrowUpDown, TrendingUp, MessageSquare,
-  AlertCircle, ChevronRight, ChevronLeft, Heart, ArrowRight, Server, Zap, Wifi
+  AlertCircle, ChevronRight, Heart, ArrowRight, Server, Zap, Wifi
 } from 'lucide-react';
 import { Product, CartItem } from '@/shared/types';
 import { cn } from '@/shared/lib/utils';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useLang } from '@/shared/context/LanguageContext';
+import { useNotifications } from '@/shared/context/NotificationContext';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { useProducts, useSaveCart } from '@/shared/lib/queries';
@@ -96,6 +97,7 @@ function ProductCard({ product, wishlist, onToggleWishlist, onAddToCart, onSelec
 export default function StoreModule() {
   const { user, profile, requireAuth } = useAuth();
   const { t, lang } = useLang();
+  const { addNotification } = useNotifications();
   const { data: allProducts = [], isLoading: productsLoading } = useProducts(lang);
 
   // Déduplication : si la DB a des doublons malgré le filtre langue, on garde le 1er
@@ -295,13 +297,16 @@ export default function StoreModule() {
       const message = `Bonjour GCFI, je suis ${userName}. Commande :\n\n${itemsList}\n\n*Total : ${total} FCFA*`;
       try {
         if (user) {
-          await supabase.from('orders').insert([{
+          const { error: orderError } = await supabase.from('orders').insert([{
             customer_id: user.id,
             customer_email: user.email,
             total: cartTotal,
             items: cart,
             status: 'En préparation'
           }]);
+          if (!orderError) {
+            addNotification({ title: t.admin_page.notif_order_placed, message: t.admin_page.notif_order_placed_msg, type: 'order' });
+          }
         }
       } catch (err) { logError('StoreModule/checkout', err); }
       trackBeginCheckout({
@@ -374,20 +379,6 @@ export default function StoreModule() {
             {t.boutique.explore_cta} <ArrowRight className="w-4 h-4" />
           </motion.a>
         </div>
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
-          {SLIDES.map((_, i) => (
-            <button key={i} onClick={() => setHeroSlide(i)}
-              className={cn('h-1 rounded-full transition-all', i === heroSlide ? 'w-6 bg-white' : 'w-2 bg-white/40')} />
-          ))}
-        </div>
-        <button onClick={() => setHeroSlide(s => (s - 1 + SLIDES.length) % SLIDES.length)}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/25 transition-all">
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <button onClick={() => setHeroSlide(s => (s + 1) % SLIDES.length)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/25 transition-all">
-          <ChevronRight className="w-5 h-5" />
-        </button>
       </div>
 
     <section id="products" className="py-8 bg-white dark:bg-slate-900 transition-colors">
@@ -590,19 +581,19 @@ export default function StoreModule() {
               <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 z-10 p-2 bg-white/20 backdrop-blur-md rounded-full text-white md:text-slate-900 dark:md:text-white">
                 <X className="w-5 h-5" />
               </button>
-              <div className="md:w-5/12 h-64 md:h-full relative">
+              <div className="md:w-5/12 h-64 md:h-auto relative shrink-0">
                 <Image src={selectedProduct.image} alt={selectedProduct.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 400px"
                   unoptimized={needsUnoptimized(selectedProduct.image)} />
               </div>
-              <div className="p-8 md:w-7/12">
-                <p className="text-xs font-black uppercase tracking-widest text-[var(--accent)] mb-2">{selectedProduct.category}</p>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">{selectedProduct.name}</h2>
-                <div className="flex items-center gap-2 mb-4">
+              <div className="p-8 md:p-10 md:w-7/12 flex flex-col justify-center">
+                <p className="text-xs font-black uppercase tracking-widest text-[var(--accent)] mb-3">{selectedProduct.category}</p>
+                <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mb-3 leading-tight">{selectedProduct.name}</h2>
+                <div className="flex items-center gap-2 mb-5">
                   {[...Array(5)].map((_, i) => <Star key={i} className={cn("w-4 h-4", i < Math.floor(selectedProduct.rating || 0) ? "text-yellow-400 fill-current" : "text-slate-300")} />)}
                   <span className="text-xs text-slate-500 dark:text-slate-400">({selectedProduct.reviewsCount || 0} {t.boutique.reviews_label})</span>
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">{selectedProduct.description}</p>
-                <div className="flex items-baseline gap-3 mb-6">
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-7 mb-8">{selectedProduct.description}</p>
+                <div className="flex items-baseline gap-3 mb-8">
                   {(selectedProduct.discount ?? 0) > 0 ? (
                     <>
                       <p className="text-3xl font-black text-[var(--accent)]">

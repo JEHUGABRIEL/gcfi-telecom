@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 
 type Role = 'client' | 'admin';
 type BlockType = '1h' | '24h' | '7d' | '30d' | 'permanent';
-type Action = 'setRole' | 'block' | 'unblock';
+type Action = 'setRole' | 'block' | 'unblock' | 'updateProfile';
 
 // Helper : client authentifié (lit la session depuis les cookies de la requête)
 async function createAuthClient() {
@@ -68,13 +68,56 @@ export async function PATCH(
   }
 
   const isSuperAdmin = callerProfile.role === 'superadmin';
+  const isSelf = userId === user.id;
 
-  // 3. Empêcher toute action sur soi-même
-  if (userId === user.id) {
+  // 3. Parser le body et dispatcher l'action
+  let body: { action: Action; role?: Role; blockType?: BlockType; full_name?: string; avatar_url?: string; bio?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Corps de requête invalide' }, { status: 400 });
+  }
+
+  const { action } = body;
+
+  // ── Mise à jour du profil (nom, photo, bio) — autorisée aussi sur soi-même ──
+  if (action === 'updateProfile') {
+    const update: Record<string, unknown> = {};
+    if (typeof body.full_name === 'string') update.full_name = body.full_name.trim().slice(0, 100);
+    if (typeof body.avatar_url === 'string') update.avatar_url = body.avatar_url;
+    if (typeof body.bio === 'string') update.bio = body.bio.slice(0, 200);
+    if (Object.keys(update).length === 0) {
+      return NextResponse.json({ error: 'Champs invalides' }, { status: 400 });
+    }
+
+    // Sur un autre utilisateur : gardes superadmin / permissions
+    if (!isSelf) {
+      const { data: targetProfile } = await adminClient
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+      if (!targetProfile) {
+        return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
+      }
+      if (targetProfile.role === 'superadmin') {
+        return NextResponse.json({ error: 'Impossible de modifier un superadmin' }, { status: 403 });
+      }
+      if (!isSuperAdmin && targetProfile.role !== 'client') {
+        return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
+      }
+    }
+
+    const { error } = await adminClient.from('profiles').update(update).eq('id', userId);
+    if (error) return NextResponse.json({ error: 'Échec de la mise à jour' }, { status: 500 });
+    return NextResponse.json({ success: true });
+  }
+
+  // ── Autres actions : interdites sur soi-même et sur les superadmins ──
+  if (isSelf) {
     return NextResponse.json({ error: 'Action impossible sur votre propre compte' }, { status: 403 });
   }
 
-  // 4. Récupérer le profil cible
   const { data: targetProfile } = await adminClient
     .from('profiles')
     .select('role')
@@ -85,25 +128,13 @@ export async function PATCH(
     return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
   }
 
-  // 5. Interdire toute action sur un superadmin
   if (targetProfile.role === 'superadmin') {
     return NextResponse.json({ error: 'Impossible de modifier un superadmin' }, { status: 403 });
   }
 
-  // 6. Un admin simple ne peut agir que sur les clients
   if (!isSuperAdmin && targetProfile.role !== 'client') {
     return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
   }
-
-  // 7. Parser le body et dispatcher l'action
-  let body: { action: Action; role?: Role; blockType?: BlockType };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Corps de requête invalide' }, { status: 400 });
-  }
-
-  const { action } = body;
 
   switch (action) {
     case 'setRole': {

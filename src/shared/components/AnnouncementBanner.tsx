@@ -34,6 +34,7 @@ export default function AnnouncementBanner() {
       supabase
         .from('announcements')
         .select('id, message, link_label, link_url, bg_color')
+        .is('deleted_at', null)
         .eq('is_active', true)
         .eq('lang', lang)
         .order('created_at', { ascending: false })

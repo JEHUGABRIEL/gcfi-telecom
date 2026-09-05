@@ -52,7 +52,7 @@ const FORMATION_MENU = (t: Translations) => [
   { label: t.header.mega_training_items.isp,   desc: t.header.mega_training_descs.isp,   href: '/formation' },
 ];
 
-function MegaMenu({ type, onClose, t }: { type: 'services' | 'formations'; onClose: () => void; t: Translations }) {
+function MegaMenu({ type, onClose, onContactOpen, t }: { type: 'services' | 'formations'; onClose: () => void; onContactOpen: () => void; t: Translations }) {
   const services = SERVICES_MENU(t);
   const formations = FORMATION_MENU(t);
 
@@ -88,10 +88,10 @@ function MegaMenu({ type, onClose, t }: { type: 'services' | 'formations'; onClo
                 <h3 className="text-xl font-black text-white leading-tight mb-3">{t.header.mega_services_subtitle}</h3>
                 <p className="text-sm text-slate-400">{t.header.mega_services_desc}</p>
               </div>
-              <Link href="/#contact" onClick={onClose}
+              <button onClick={() => { onClose(); onContactOpen(); }}
                 className="mt-6 flex items-center gap-2 bg-[#C1272D] text-white px-4 py-3 rounded-xl text-sm font-bold hover:bg-red-700 transition-colors">
                 {t.header.mega_services_cta} <ArrowRight className="w-4 h-4 ml-auto" />
-              </Link>
+              </button>
             </div>
           </div>
         ) : (
@@ -292,7 +292,7 @@ export default function Header({ onContactOpen }: HeaderProps) {
 
         {/* Mega menu */}
         <AnimatePresence>
-          {megaMenu && <MegaMenu type={megaMenu} onClose={closeMega} t={t} />}
+          {megaMenu && <MegaMenu type={megaMenu} onClose={closeMega} onContactOpen={onContactOpen} t={t} />}
         </AnimatePresence>
       </header>
 

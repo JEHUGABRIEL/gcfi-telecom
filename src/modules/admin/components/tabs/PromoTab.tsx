@@ -6,6 +6,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Tag, Percent, RefreshCw, Search, ShoppingBag, GraduationCap, AlertTriangle, X } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { useLang } from '@/shared/context/LanguageContext';
+import Pagination from '@/shared/components/ui/Pagination';
+
+const PAGE_SIZE = 10;
 
 type PromoSection = 'produits' | 'formations';
 
@@ -45,10 +48,11 @@ function ConfirmModal({ message, onConfirm, onCancel, title, cancelText, confirm
   );
 }
 
-/* ── Composant de ligne d'article ────────────────────────────── */
-function ItemRow({ item, label, onUpdate, translations }: {
+/* ── Composant de ligne d'article (rangée de tableau) ────────── */
+function ItemRow({ item, label, onUpdate, translations, idx }: {
   item: Item; label: string; onUpdate: (id: string, discount: number, is_promo: boolean) => void;
   translations: { promo: string; saving: string; saved: string; save: string; };
+  idx: number;
 }) {
   const [discount, setDiscount] = React.useState(item.discount ?? 0);
   const [isPromo, setIsPromo] = React.useState(item.is_promo ?? false);
@@ -68,44 +72,51 @@ function ItemRow({ item, label, onUpdate, translations }: {
   const changed = discount !== (item.discount ?? 0) || isPromo !== (item.is_promo ?? false);
 
   return (
-    <div className={cn(
-      "flex items-center gap-4 p-4 rounded-2xl border transition-all",
-      isPromo ? "border-[#C1272D]/30 bg-red-50/50 dark:bg-red-900/10" : "border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800"
+    <tr className={cn(
+      'border-t border-slate-100 dark:border-slate-700/60 transition-colors',
+      idx % 2 === 0 ? 'bg-white dark:bg-transparent' : 'bg-slate-50/80 dark:bg-slate-700/25',
+      isPromo && 'bg-red-50/50 dark:bg-red-900/10'
     )}>
-      {/* Image */}
-      <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-700 shrink-0 relative">
-        {item.image ? <Image src={item.image} alt={label} fill className="object-cover" sizes="48px" /> : (
-          <div className="w-full h-full flex items-center justify-center text-slate-300">
-            <ShoppingBag className="w-5 h-5" />
+      {/* Article */}
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700 shrink-0 relative">
+            {item.image ? <Image src={item.image} alt={label} fill className="object-cover" sizes="44px" /> : (
+              <div className="w-full h-full flex items-center justify-center text-slate-300">
+                <ShoppingBag className="w-5 h-5" />
+              </div>
+            )}
           </div>
-        )}
-      </div>
-
-      {/* Infos */}
-      <div className="flex-1 min-w-0">
-        <p className="font-bold text-slate-900 dark:text-white text-sm truncate">{label}</p>
-        <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-xs text-slate-400">{item.category}</span>
-          <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{item.price.toLocaleString()} FCFA</span>
+          <p className="font-bold text-slate-900 dark:text-white text-sm truncate max-w-[260px]">{label}</p>
+        </div>
+      </td>
+      {/* Catégorie */}
+      <td className="px-4 py-3">
+        <span className="text-xs text-slate-500 dark:text-slate-400">{item.category}</span>
+      </td>
+      {/* Prix */}
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{item.price.toLocaleString()} FCFA</span>
           {discount > 0 && (
             <span className="text-xs font-black text-[#C1272D]">→ {discountedPrice.toLocaleString()} FCFA</span>
           )}
         </div>
-      </div>
-
+      </td>
       {/* Toggle Promo */}
-      <div className="flex flex-col items-center gap-1 shrink-0">
-        <button type="button"
-          onClick={() => setIsPromo(v => !v)}
-          className={cn('relative w-10 h-5 rounded-full transition-colors', isPromo ? 'bg-[#C1272D]' : 'bg-slate-200 dark:bg-slate-600')}>
-          <span className={cn('absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform', isPromo ? 'translate-x-5' : 'translate-x-0.5')} />
-        </button>
-        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{translations.promo}</span>
-      </div>
-
-      {/* Discount */}
-      <div className="flex items-center gap-1 shrink-0">
-        <div className="relative w-20">
+      <td className="px-4 py-3">
+        <div className="flex flex-col items-center gap-1">
+          <button type="button"
+            onClick={() => setIsPromo(v => !v)}
+            className={cn('relative w-10 h-5 rounded-full transition-colors', isPromo ? 'bg-[#C1272D]' : 'bg-slate-200 dark:bg-slate-600')}>
+            <span className={cn('absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform', isPromo ? 'translate-x-5' : 'translate-x-0.5')} />
+          </button>
+          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{translations.promo}</span>
+        </div>
+      </td>
+      {/* Remise */}
+      <td className="px-4 py-3">
+        <div className="relative w-24">
           <input
             type="number" min="0" max="90" value={discount}
             onChange={e => { setDiscount(Math.min(90, Math.max(0, Number(e.target.value)))); }}
@@ -113,21 +124,22 @@ function ItemRow({ item, label, onUpdate, translations }: {
           />
           <Percent className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
         </div>
-      </div>
-
-      {/* Save */}
-      <button
-        onClick={save} disabled={saving || !changed}
-        className={cn(
-          "shrink-0 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-          saved ? "bg-green-100 text-green-700"
-          : changed ? "bg-[#C1272D] text-white hover:opacity-90"
-          : "bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed"
-        )}
-      >
-        {saving ? translations.saving : saved ? translations.saved : translations.save}
-      </button>
-    </div>
+      </td>
+      {/* Enregistrer */}
+      <td className="px-4 py-3 text-right">
+        <button
+          onClick={save} disabled={saving || !changed}
+          className={cn(
+            "px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+            saved ? "bg-green-100 text-green-700"
+            : changed ? "bg-[#C1272D] text-white hover:opacity-90"
+            : "bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed"
+          )}
+        >
+          {saving ? translations.saving : saved ? translations.saved : translations.save}
+        </button>
+      </td>
+    </tr>
   );
 }
 
@@ -140,6 +152,7 @@ export default function PromoTab() {
   const [search, setSearch] = React.useState('');
   const [filterPromo, setFilterPromo] = React.useState(false);
   const [resetTarget, setResetTarget] = React.useState<'all' | null>(null);
+  const [page, setPage] = React.useState(1);
 
   const table = section === 'produits' ? 'products' : 'trainings';
   const queryKey = ['admin', 'promo', section];
@@ -172,6 +185,11 @@ export default function PromoTab() {
     const matchPromo = !filterPromo || i.is_promo;
     return matchSearch && matchPromo;
   });
+
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Retour à la première page quand les filtres changent
+  React.useEffect(() => { setPage(1); }, [search, filterPromo, section]);
 
   const promoCount = items.filter(i => i.is_promo).length;
 
@@ -263,22 +281,46 @@ export default function PromoTab() {
           <p>{ap.promo_empty}</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {filtered.map(item => (
-            <ItemRow
-              key={item.id}
-              item={item}
-              label={item.name || item.title || ''}
-              onUpdate={updateItem}
-              translations={{
-                promo: ap.promo_item_promo,
-                saving: ap.promo_saving,
-                saved: ap.promo_saved,
-                save: ap.promo_save,
-              }}
-            />
-          ))}
+        <>
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+          <table className="w-full text-sm" style={{ minWidth: 880 }}>
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-800/80">
+                <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 whitespace-nowrap">{ap.table_item}</th>
+                <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 whitespace-nowrap">{ap.table_category}</th>
+                <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 whitespace-nowrap">{ap.product_price}</th>
+                <th className="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 whitespace-nowrap">{ap.table_promo}</th>
+                <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 whitespace-nowrap">{ap.table_discount}</th>
+                <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 whitespace-nowrap">{ap.table_actions}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginated.map((item, idx) => (
+                <ItemRow
+                  key={item.id}
+                  item={item}
+                  label={item.name || item.title || ''}
+                  idx={idx}
+                  onUpdate={updateItem}
+                  translations={{
+                    promo: ap.promo_item_promo,
+                    saving: ap.promo_saving,
+                    saved: ap.promo_saved,
+                    save: ap.promo_save,
+                  }}
+                />
+              ))}
+            </tbody>
+          </table>
         </div>
+        <Pagination
+          page={page}
+          totalPages={Math.ceil(filtered.length / PAGE_SIZE)}
+          totalItems={filtered.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+        </>
       )}
     </div>
   );

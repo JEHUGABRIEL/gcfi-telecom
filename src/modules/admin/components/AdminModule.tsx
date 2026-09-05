@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import Image from 'next/image';
 import { 
   Users,
   ShoppingBag,
@@ -10,8 +11,6 @@ import {
   FileText,
   Star,
   Award,
-  TrendingUp,
-  ChevronRight,
   CheckCircle,
   Clock,
   AlertCircle,
@@ -31,7 +30,8 @@ import {
   RefreshCw,
   Tag,
   Wrench,
-  Megaphone as MegaphoneIcon
+  Megaphone as MegaphoneIcon,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { supabase } from '@/shared/lib/supabase';
@@ -55,13 +55,15 @@ import AnnouncementsTab from './tabs/AnnouncementsTab';
 import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  useAdminUsers, useAdminOrders, useAdminTrainings,
   useAdminProducts, useAdminComments, useAdminNotifications,
 } from '@/shared/lib/queries';
 import { useAdminToast, AdminToast } from '@/shared/components/AdminToast';
 
 const VALID_TABS = ['overview','notifications','orders','users','formations','produits','stock','commentaires','devis','temoignages','realisations','partenaires','actualites','blog','promotions','services','annonces'] as const;
 type AdminTab = typeof VALID_TABS[number];
+
+// Tables qui supportent le soft delete (les autres — logs, notifications — restent en suppression dure)
+const SOFT_DELETE_TABLES = ['products', 'trainings', 'blog_posts', 'testimonials', 'achievements', 'partners', 'news', 'services', 'announcements', 'quotes'];
 
 interface SidebarItem {
   id: AdminTab;
@@ -78,7 +80,7 @@ const AdminModule = () => {
   const { t } = useLang();
   const { addNotification } = useNotifications();
   const { toast, showToast, dismiss } = useAdminToast();
-  const { user: adminUser, isAdmin: isAuthorized, loading: authLoading } = useAuth();
+  const { user: adminUser, profile: adminProfile, isAdmin: isAuthorized, loading: authLoading, setShowSignOutModal } = useAuth();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = React.useState<AdminTab>(() => {
     const param = searchParams.get('tab') as AdminTab;
@@ -91,9 +93,6 @@ const AdminModule = () => {
   const [sendSuccess, setSendSuccess] = React.useState(false);
   
   const queryClient = useQueryClient();
-  const { data: users = [] }            = useAdminUsers(isAuthorized);
-  const { data: orders = [] }           = useAdminOrders(isAuthorized);
-  const { data: trainings = [] }        = useAdminTrainings(isAuthorized);
   const { data: products = [] }         = useAdminProducts(isAuthorized);
   const { data: comments = [] }         = useAdminComments(isAuthorized);
   const { data: allNotifications = [] } = useAdminNotifications(isAuthorized);
@@ -111,10 +110,6 @@ const AdminModule = () => {
 
   // Delete Confirmation State
   const [deleteConfirmation, setDeleteConfirmation] = React.useState<{ id: string, table: string } | null>(null);
-
-  const refreshAll = React.useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['admin'] });
-  }, [queryClient]);
 
   React.useEffect(() => {
     if (!isAuthorized) return;
@@ -147,6 +142,54 @@ const AdminModule = () => {
     };
   }, [isAuthorized, addNotification, queryClient]);
 
+  // Alertes temps réel : devis reçus, nouvelles inscriptions, et
+  // ajout / modification / suppression de produits, formations, articles.
+  React.useEffect(() => {
+    if (!isAuthorized) return;
+    const ap2 = t.admin_page;
+
+    const entityAlert = (
+      payload: { eventType: string; new?: any; old?: any },
+      nameKey: string,
+      labels: Record<string, string>
+    ) => {
+      const row = (payload.eventType === 'DELETE' ? payload.old : payload.new) as any;
+      const name = row?.[nameKey] ? String(row[nameKey]) : '';
+      // Un soft delete arrive comme UPDATE avec deleted_at renseigné → on l'annonce comme suppression
+      const eventType = payload.eventType === 'UPDATE' && row?.deleted_at ? 'DELETE' : payload.eventType;
+      const title = labels[eventType];
+      if (title) addNotification({ title, message: name, type: 'info' });
+    };
+
+    const channel = supabase
+      .channel('admin_content_alerts')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'quotes' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const q = payload.new as any;
+          const who = q.email || q.full_name || ap2.notif_unknown_customer;
+          addNotification({ title: ap2.notif_new_quote, message: `${who}${q.service_type ? ` — ${q.service_type}` : ''}`, type: 'info' });
+        }
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, (payload) => {
+        const p = payload.new as any;
+        addNotification({ title: ap2.notif_new_signup, message: p.email || '', type: 'info' });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) =>
+        entityAlert(payload, 'name', { INSERT: ap2.notif_product_added, UPDATE: ap2.notif_product_updated, DELETE: ap2.notif_product_deleted })
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trainings' }, (payload) =>
+        entityAlert(payload, 'title', { INSERT: ap2.notif_training_added, UPDATE: ap2.notif_training_updated, DELETE: ap2.notif_training_deleted })
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blog_posts' }, (payload) =>
+        entityAlert(payload, 'title', { INSERT: ap2.notif_blog_added, UPDATE: ap2.notif_blog_updated, DELETE: ap2.notif_blog_deleted })
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAuthorized, addNotification, t]);
+
   const handleCreateOrUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
@@ -175,7 +218,9 @@ const AdminModule = () => {
     if (!deleteConfirmation) return;
     const { id, table } = deleteConfirmation;
     try {
-      const { error } = await supabase.from(table).delete().eq('id', id);
+      const { error } = SOFT_DELETE_TABLES.includes(table)
+        ? await supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq('id', id)
+        : await supabase.from(table).delete().eq('id', id);
       if (error) throw error;
       setDeleteConfirmation(null);
       queryClient.invalidateQueries({ queryKey: ['admin'] });
@@ -251,7 +296,8 @@ const AdminModule = () => {
 
       queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] });
     } catch (err) {
-      logError("AdminModule: Error completing order", err)
+      logError("AdminModule: Error completing order", err);
+      showToast(ap.order_complete_error, 'error');
     }
   };
 
@@ -331,35 +377,6 @@ const AdminModule = () => {
     );
   }
 
-  const calculateStats = () => {
-    const totalUsers = users.length;
-    const totalOrders = orders.length;
-    const activeTrainings = trainings.length;
-    
-    // Revenue from completed orders this month
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    const monthlyRevenue = orders
-      .filter(o => {
-        const orderDate = new Date(o.created_at);
-        return o.status === 'completed' && 
-               orderDate.getMonth() === currentMonth && 
-               orderDate.getFullYear() === currentYear;
-      })
-      .reduce((sum, o) => sum + (Number(o.total_amount) || Number(o.total) || 0), 0);
-
-    return [
-      { label: t.admin_page.stat_users, value: totalUsers.toLocaleString(), icon: Users, color: 'blue', change: '+12%' },
-      { label: t.admin_page.stat_orders, value: totalOrders.toLocaleString(), icon: ShoppingBag, color: 'emerald', change: '+8%' },
-      { label: t.admin_page.stat_active_courses, value: activeTrainings.toLocaleString(), icon: GraduationCap, color: 'red', change: '0%' },
-      { label: t.admin_page.stat_monthly_revenue, value: `${(monthlyRevenue / 1000).toFixed(1)}k F`, icon: TrendingUp, color: 'amber', change: '+15%' },
-    ];
-  };
-
-  const dynamicStats = calculateStats();
-
   const handleSendNotification = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!msgTitle || !msgContent) return;
@@ -383,7 +400,8 @@ const AdminModule = () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'notifications'] });
       setTimeout(() => setSendSuccess(false), 3000);
     } catch (error) {
-      logError("AdminModule: Error sending notification", error)
+      logError("AdminModule: Error sending notification", error);
+      showToast(t.admin_page.notify_error, 'error');
     } finally {
       setIsSending(false);
     }
@@ -430,86 +448,110 @@ const AdminModule = () => {
     },
   ];
 
+  // Contenu partagé de la sidebar (drawer mobile + panneau fixe desktop)
+  const sidebarBody = (
+    <div className="flex-1 overflow-y-auto p-3">
+      {sidebarGroups.map((group, groupIdx) => (
+        <div key={group.label} className={cn(groupIdx > 0 && "mt-3 pt-3 border-t border-slate-100 dark:border-slate-800")}>
+          <p className="px-3 pb-1 text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+            {group.label}
+          </p>
+          {group.items.map((item, idx) => {
+            const active = activeTab === item.id;
+            return (
+              <motion.button
+                key={item.id}
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.03 }}
+                onClick={() => { setActiveTab(item.id); setIsSidebarOpen(false); }}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all text-left mb-0.5",
+                  active
+                    ? "bg-red-50 text-[#C1272D] dark:bg-red-900/20 font-bold"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
+                )}
+              >
+                <span className={cn(
+                  "p-2 rounded-xl shrink-0 transition-all",
+                  active
+                    ? "bg-[#C1272D] text-white shadow-sm shadow-[#C1272D]/30"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                )}>
+                  <item.icon className="w-4 h-4" />
+                </span>
+                <span className="truncate">{item.label}</span>
+                {active && (
+                  <span className="ml-auto w-2 h-2 rounded-full bg-[#C1272D] shrink-0" />
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+
+  const sidebarFooter = (
+    <div className="px-4 py-4 border-t border-slate-100 dark:border-slate-800">
+      <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2.5">
+        <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
+          {adminProfile?.avatar_url ? (
+            <Image src={adminProfile.avatar_url} alt={adminProfile?.full_name ?? 'Admin'} width={36} height={36} className="w-full h-full object-cover" />
+          ) : (
+            <span className="w-full h-full flex items-center justify-center bg-[#C1272D] text-white text-sm font-black">
+              {adminProfile?.full_name?.charAt(0) ?? adminUser?.email?.[0].toUpperCase() ?? 'A'}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-black text-slate-900 dark:text-white truncate">{adminUser?.email?.split('@')[0]}</p>
+          <p className="text-[10px] text-[#C1272D] font-bold">{t.admin_page.admin_label}</p>
+        </div>
+      </div>
+      {/* Déconnexion */}
+      <button
+        onClick={() => setShowSignOutModal(true)}
+        className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-red-500 border border-red-200 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all"
+      >
+        <LogOut className="w-4 h-4" />
+        {t.admin_page.disconnect}
+      </button>
+    </div>
+  );
+
   return (
     <>
     <AdminToast toast={toast} onDismiss={dismiss} />
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pt-24 pb-12 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* Admin Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-[#C1272D] mb-1">{t.admin_page.dashboard}</p>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white">{t.admin_page.header_title.split(' ')[0]} <span className="text-[#C1272D]">{t.admin_page.header_title.split(' ')[1]}</span></h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t.admin_page.header_subtitle}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={refreshAll}
-              className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300"
-            >
-              <RefreshCw className="w-4 h-4" /> {t.admin_page.header_refresh}
-            </button>
-            <button className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300">
-              <BarChart3 className="w-4 h-4" /> {t.admin_page.header_report}
-            </button>
-            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-              <div className="w-8 h-8 rounded-full bg-[#C1272D] flex items-center justify-center text-white text-sm font-black shrink-0">
-                {adminUser?.email?.[0].toUpperCase() || 'A'}
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-xs font-black text-slate-900 dark:text-white leading-none">{adminUser?.email?.split('@')[0]}</p>
-                <p className="text-[10px] text-[#C1272D] font-bold mt-0.5">{t.admin_page.header_admin_badge}</p>
-              </div>
-            </div>
-          </div>
+    {/* Sidebar fixe — toujours visible sur desktop (lg+) */}
+    <aside className="hidden lg:flex fixed top-16 left-0 bottom-0 z-40 w-72 bg-white dark:bg-slate-900 shadow-2xl flex-col border-r border-slate-100 dark:border-slate-800">
+      {sidebarBody}
+      {sidebarFooter}
+    </aside>
+
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pt-24 pb-12 lg:pl-72 transition-colors">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* Admin Header — titre personnalisé selon l'onglet */}
+        <div className="mb-10">
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#C1272D] mb-1">{t.admin_page.dashboard}</p>
+          {(() => {
+            const meta = ap.page_meta[activeTab];
+            const words = (meta?.title ?? ap.header_title).split(' ');
+            const first = words[0] ?? '';
+            const rest = words.slice(1).join(' ');
+            return (
+              <h1 className="text-3xl font-black text-slate-900 dark:text-white">
+                {first}{rest ? <> <span className="text-[#C1272D]">{rest}</span></> : null}
+              </h1>
+            );
+          })()}
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{ap.page_meta[activeTab]?.subtitle ?? ap.header_subtitle}</p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
-          {dynamicStats.map((stat, idx) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.08 }}
-              className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden"
-            >
-              {/* Colored top accent bar */}
-              <div className={cn(
-                "h-1",
-                stat.color === 'blue'    && "bg-blue-500",
-                stat.color === 'emerald' && "bg-emerald-500",
-                stat.color === 'red'     && "bg-[#C1272D]",
-                stat.color === 'amber'   && "bg-amber-500",
-              )} />
-              <div className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div className={cn(
-                    "p-2.5 rounded-xl",
-                    stat.color === 'blue'    && "bg-blue-50 text-blue-600 dark:bg-blue-900/20",
-                    stat.color === 'emerald' && "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20",
-                    stat.color === 'red'     && "bg-red-50 text-[#C1272D] dark:bg-red-900/20",
-                    stat.color === 'amber'   && "bg-amber-50 text-amber-600 dark:bg-amber-900/20",
-                  )}>
-                    <stat.icon className="w-5 h-5" />
-                  </div>
-                  <span className={cn(
-                    "text-[10px] font-black uppercase px-2 py-0.5 rounded-full",
-                    stat.change.startsWith('+') ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20" : "bg-slate-100 text-slate-500 dark:bg-slate-700",
-                  )}>
-                    {stat.change}
-                  </span>
-                </div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-0.5">{stat.label}</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{stat.value}</h3>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Nav bar: hamburger + active tab label */}
-        <div className="flex items-center gap-3 mb-6">
+        {/* Nav bar mobile : hamburger + libellé de l'onglet actif */}
+        <div className="flex items-center gap-3 mb-6 lg:hidden">
           <button
             onClick={() => setIsSidebarOpen(true)}
             className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300"
@@ -517,15 +559,11 @@ const AdminModule = () => {
             <Menu className="w-4 h-4" />
             {t.admin_page.header_nav}
           </button>
-          {/* Breadcrumb showing the current tab */}
           {(() => {
             const current = sidebarGroups.flatMap(g => g.items).find(i => i.id === activeTab);
             if (!current) return null;
             return (
-              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                <ChevronRight className="w-4 h-4" />
-                <span className="font-bold text-slate-900 dark:text-white">{current.label}</span>
-              </div>
+              <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{current.label}</span>
             );
           })()}
         </div>
@@ -540,7 +578,7 @@ const AdminModule = () => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm"
+                className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden"
                 onClick={() => setIsSidebarOpen(false)}
               />
               <motion.div
@@ -549,76 +587,20 @@ const AdminModule = () => {
                 animate={{ x: 0 }}
                 exit={{ x: '-100%' }}
                 transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-                className="fixed top-0 left-0 bottom-0 z-50 w-72 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+                className="fixed top-0 left-0 bottom-0 z-50 w-72 bg-white dark:bg-slate-900 shadow-2xl flex flex-col lg:hidden"
               >
-                {/* Drawer header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#C1272D]">{t.admin_page.badge}</p>
-                    <p className="text-sm font-black text-slate-900 dark:text-white">{t.admin_page.header_nav}</p>
-                  </div>
+                {/* Drawer header — fermer */}
+                <div className="px-4 py-3 flex items-center justify-end shrink-0 border-b border-slate-100 dark:border-slate-800">
                   <button
                     onClick={() => setIsSidebarOpen(false)}
-                    className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                    className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                {/* Groups */}
-                <div className="flex-1 overflow-y-auto p-3">
-                  {sidebarGroups.map((group, groupIdx) => (
-                    <div key={group.label} className={cn(groupIdx > 0 && "mt-3 pt-3 border-t border-slate-100 dark:border-slate-800")}>
-                      <p className="px-3 pb-1 text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                        {group.label}
-                      </p>
-                      {group.items.map((item, idx) => {
-                        const active = activeTab === item.id;
-                        return (
-                          <motion.button
-                            key={item.id}
-                            initial={{ opacity: 0, x: -16 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: idx * 0.03 }}
-                            onClick={() => { setActiveTab(item.id); setIsSidebarOpen(false); }}
-                            className={cn(
-                              "w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all text-left mb-0.5",
-                              active
-                                ? "bg-red-50 text-[#C1272D] dark:bg-red-900/20 font-bold"
-                                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
-                            )}
-                          >
-                            <span className={cn(
-                              "p-2 rounded-xl shrink-0 transition-all",
-                              active
-                                ? "bg-[#C1272D] text-white shadow-sm shadow-[#C1272D]/30"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                            )}>
-                              <item.icon className="w-4 h-4" />
-                            </span>
-                            <span className="truncate">{item.label}</span>
-                            {active && (
-                              <span className="ml-auto w-2 h-2 rounded-full bg-[#C1272D] shrink-0" />
-                            )}
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Admin info at bottom */}
-                <div className="px-4 py-4 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2.5">
-                    <div className="w-9 h-9 rounded-full bg-[#C1272D] flex items-center justify-center text-white text-sm font-black shrink-0">
-                      {adminUser?.email?.[0].toUpperCase() || 'A'}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-black text-slate-900 dark:text-white truncate">{adminUser?.email?.split('@')[0]}</p>
-                      <p className="text-[10px] text-[#C1272D] font-bold">{t.admin_page.admin_label}</p>
-                    </div>
-                  </div>
-                </div>
+                {sidebarBody}
+                {sidebarFooter}
               </motion.div>
             </>
           )}
@@ -654,31 +636,11 @@ const AdminModule = () => {
                 </div>
               </div>
             )}
-            {activeTab === 'devis' && (
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6">
-                <QuotesTab />
-              </div>
-            )}
-            {activeTab === 'temoignages' && (
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6">
-                <ContentTab type="testimonials" />
-              </div>
-            )}
-            {activeTab === 'realisations' && (
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6">
-                <ContentTab type="achievements" />
-              </div>
-            )}
-            {activeTab === 'partenaires' && (
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6">
-                <ContentTab type="partners" />
-              </div>
-            )}
-            {activeTab === 'actualites' && (
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6">
-                <ContentTab type="news" />
-              </div>
-            )}
+            {activeTab === 'devis' && <QuotesTab />}
+            {activeTab === 'temoignages' && <ContentTab type="testimonials" />}
+            {activeTab === 'realisations' && <ContentTab type="achievements" />}
+            {activeTab === 'partenaires' && <ContentTab type="partners" />}
+            {activeTab === 'actualites' && <ContentTab type="news" />}
         </div>
       </div>
 

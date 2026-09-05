@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useInView } from 'motion/react';
 import {
-  Star, Award, ChevronLeft, ChevronRight, X, Calendar, ExternalLink,
+  Star, Award, ChevronLeft, ChevronRight, Calendar,
   ArrowRight, Network, Wifi, Globe, ShieldCheck, Zap, Radio,
   Target, Eye, Heart, Zap as ZapIcon, Users, CheckCircle,
   GraduationCap, ShoppingBag, Phone, Play, Gift, PartyPopper
@@ -14,7 +14,11 @@ import {
 import { useTestimonials, useAchievements, usePartners, useTrainings, useProducts } from '@/shared/lib/queries';
 import { cn } from '@/shared/lib/utils';
 import { useLang, type Translations } from '@/shared/context/LanguageContext';
+import { useContact } from '@/shared/context/ContactContext';
 import type { Testimonial, Achievement, Partner, Course } from '@/shared/types';
+
+const needsUnoptimized = (src: string | undefined | null) =>
+  typeof src === 'string' && !src.includes('cloudinary') && !src.includes('unsplash');
 
 /* ── Fallback structure (non-translated parts) ──────────────── */
 const FALLBACK_TESTIMONIAL_BASE = [
@@ -46,15 +50,6 @@ const fallbackPartners: Partner[] = [
 ];
 
 /* ── Données About (intégrées) ───────────────────────────────── */
-function getStats(t: Translations) {
-  const labels = t.home_page.stat_labels as unknown as string[];
-  return [
-    { value: '9+', label: labels[0] },
-    { value: '200+', label: labels[1] },
-    { value: '100+', label: labels[2] },
-    { value: '17', label: labels[3] },
-  ];
-}
 const VALUE_ICONS = [
   { icon: Heart,       color: 'text-rose-500',    bg: 'bg-rose-50 dark:bg-rose-900/20' },
   { icon: ZapIcon,     color: 'text-amber-500',   bg: 'bg-amber-50 dark:bg-amber-900/20' },
@@ -124,25 +119,6 @@ function BirthdayConfetti({ heroSlide }: { heroSlide: number }) {
   );
 }
 
-/* ── Composant compteur animé ────────────────────────────────── */
-function AnimatedStat({ value, label }: { value: string; label: string }) {
-  const ref  = React.useRef(null);
-  const inView = useInView(ref, { once: true });
-  return (
-    <div ref={ref} className="text-center">
-      <motion.p
-        initial={{ opacity: 0, y: 20 }}
-        animate={inView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.5 }}
-        className="text-4xl md:text-5xl font-black text-[#C1272D] mb-2"
-      >
-        {value}
-      </motion.p>
-      <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{label}</p>
-    </div>
-  );
-}
-
 /* ── Section wrapper animée ─────────────────────────────────── */
 function FadeIn({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const ref    = React.useRef(null);
@@ -157,6 +133,55 @@ function FadeIn({ children, className, delay = 0 }: { children: React.ReactNode;
       {children}
     </motion.div>
   );
+}
+
+/* ── Slider cartes : nb d'éléments visibles selon l'écran ────── */
+const CARD_SLIDER_BREAKPOINTS = [
+  { minWidth: 1024, perView: 3 }, // desktop
+  { minWidth: 768,  perView: 2 }, // tablette
+];
+function useResponsivePerView(): number {
+  // 1 carte par défaut (mobile + rendu SSR) pour éviter tout mismatch d'hydratation
+  const [perView, setPerView] = React.useState(1);
+  React.useEffect(() => {
+    const mqls = CARD_SLIDER_BREAKPOINTS.map(b => window.matchMedia(`(min-width: ${b.minWidth}px)`));
+    const update = () => {
+      const matched = CARD_SLIDER_BREAKPOINTS.find((_, i) => mqls[i].matches);
+      setPerView(matched?.perView ?? 1);
+    };
+    update();
+    mqls.forEach(m => m.addEventListener('change', update));
+    return () => mqls.forEach(m => m.removeEventListener('change', update));
+  }, []);
+  return perView;
+}
+
+// Fenêtre glissante : toujours `perView` éléments visibles, on avance d'un élément
+function useCardSlider(itemCount: number) {
+  const perView       = useResponsivePerView();
+  const [start, setStart] = React.useState(0);
+  const viewportRef   = React.useRef<HTMLDivElement | null>(null);
+  const [viewportWidth, setViewportWidth] = React.useState(0);
+
+  // Mesure la largeur du viewport pour un défilement précis en pixels
+  React.useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const measure = () => setViewportWidth(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const maxStart       = Math.max(0, itemCount - perView);
+  const safeStart      = Math.min(start, maxStart);
+  const hasOverflow    = itemCount > perView;
+  const positionCount  = maxStart + 1;
+  const next = () => setStart(s => (Math.min(s, maxStart) + 1) % positionCount);
+  const prev = () => setStart(s => (Math.min(s, maxStart) - 1 + positionCount) % positionCount);
+
+  return { perView, start: safeStart, setStart, next, prev, viewportRef, viewportWidth, hasOverflow, positionCount };
 }
 
 /* ── Images hero slideshow ───────────────────────────────────── */
@@ -174,6 +199,7 @@ const HERO_BASE = [
 /* ══════════════════════════════════════════════════════════════ */
 export default function HomeView() {
   const router = useRouter();
+  const { openContact } = useContact();
   const { t, lang } = useLang();
   const fallbackTestimonials = React.useMemo(() => buildFallbackTestimonials(t), [t]);
   const fallbackAchievements = React.useMemo(() => buildFallbackAchievements(t), [t]);
@@ -183,13 +209,12 @@ export default function HomeView() {
   const { data: trainings    = [] }                   = useTrainings(lang);
   const { data: products     = [] }                   = useProducts(lang);
 
-  const [testimonialIndex,    setTestimonialIndex]    = React.useState(0);
-  const [selectedAchievement, setSelectedAchievement] = React.useState<Achievement | null>(null);
-  const [fullscreenImage,     setFullscreenImage]     = React.useState<string | null>(null);
   const [heroSlide,           setHeroSlide]           = React.useState(0);
   const [carouselIndex, setCarouselIndex] = React.useState(0);
+  const [mvIndex, setMvIndex] = React.useState(0); // 0 = mission, 1 = vision
+  const achievementsSlider = useCardSlider(achievements.length);
+  const testimonialsSlider = useCardSlider(testimonials.length);
 
-  const STATS = React.useMemo(() => getStats(t), [t]);
   const VALUES = React.useMemo(() =>
     (t.about_page.values as unknown as {title:string;text:string}[]).map((v, i) => ({ ...v, ...VALUE_ICONS[i] })),
     [t]
@@ -223,6 +248,12 @@ export default function HomeView() {
     return () => clearInterval(t);
   }, []);
 
+  // Alternance indéfinie de la carte flottante Mission / Vision
+  React.useEffect(() => {
+    const t = setInterval(() => setMvIndex(i => (i + 1) % 2), 3500);
+    return () => clearInterval(t);
+  }, []);
+
   // Préchargement de l'image suivante du carrousel pour éliminer le temps de chargement
   const BIRTHDAY_IMAGES = React.useMemo(() => [
     '/9e_anniv/ChatGPT Image 21 juil. 2026, 13_12_04.png',
@@ -238,6 +269,7 @@ export default function HomeView() {
 
   const featuredTrainings = trainings.slice(0, 3);
   const featuredProducts  = products.slice(0, 4);
+
 
   return (
     <div className="bg-white dark:bg-slate-900 overflow-x-hidden">
@@ -357,73 +389,8 @@ export default function HomeView() {
         </div>
       </section>
 
-      {/* ══ 2. ANNIVERSAIRE 🎉 ═══════════════════════════════ */}
-      <section className="relative py-24 px-4 overflow-hidden bg-gradient-to-br from-[#C1272D]/5 via-white to-[#2563B0]/5 dark:from-[#C1272D]/10 dark:via-slate-900 dark:to-[#2563B0]/10 transition-colors">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#C1272D]/10 rounded-full blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#2563B0]/10 rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative max-w-7xl mx-auto">
-          <FadeIn>
-              <div className="relative h-[26rem] rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 group">
-                {/* Images du carrousel */}
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={carouselIndex}
-                    initial={{ opacity: 0, x: 60, scale: 0.97 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    exit={{ opacity: 0, x: -60, scale: 0.97 }}
-                    transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                    className="absolute inset-0"
-                  >
-                    <Image
-                      src={BIRTHDAY_IMAGES[carouselIndex]}
-                      alt={[
-                        '9e anniversaire GCFI',
-                        '9e anniversaire GCFI - célébration',
-                        '9e anniversaire GCFI - reconnaissance',
-                      ][carouselIndex]}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                      unoptimized
-                      priority
-                    />
-                    {/* Overlay gradient plus prononcé pour lisibilité */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10" />
-                  </motion.div>
-                </AnimatePresence>
-
-                {/* Texte overlay — badge + titre qui changent avec chaque image */}
-                <div className="absolute bottom-0 left-0 right-0 z-10 p-8">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={`text-${carouselIndex}`}
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.35, ease: 'easeOut' }}
-                    >
-                      <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-[#C1272D] to-[#2563B0] text-white text-xs font-bold rounded-full mb-3 shadow-lg">
-                        <PartyPopper className="w-3.5 h-3.5" />{' '}
-                        {(t.home_page.birthday_section.carousel_badges as unknown as string[])[carouselIndex]}
-                      </span>
-                      <h3 className="text-2xl md:text-3xl font-black text-white leading-tight max-w-lg drop-shadow-lg">
-                        {(t.home_page.birthday_section.carousel_titles as unknown as string[])[carouselIndex]}
-                      </h3>
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-
-
-              </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ══ 3. QUI SOMMES-NOUS ══════════════════════════════════ */}
-      <section className="py-24 px-4 bg-white dark:bg-slate-900">
+      {/* ══ 2. QUI SOMMES-NOUS ══════════════════════════════════ */}
+      <section className="py-16 px-4 bg-white dark:bg-slate-900">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-20 items-center">
             <FadeIn>
@@ -443,7 +410,7 @@ export default function HomeView() {
                 ))}
               </div>
               <div className="flex gap-4">
-                <button onClick={() => router.push('/#contact')}
+                <button onClick={openContact}
                   className="flex items-center gap-2 px-6 py-3 bg-[#C1272D] text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-all">
                   {t.home_page.section2_cta1} <ArrowRight className="w-4 h-4" />
                 </button>
@@ -454,31 +421,79 @@ export default function HomeView() {
               </div>
             </FadeIn>
 
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                {STATS.map((s, i) => (
-                  <FadeIn key={s.label} delay={i * 0.1}>
-                    <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 text-center">
-                      <AnimatedStat value={s.value} label={s.label} />
-                    </div>
-                  </FadeIn>
-                ))}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FadeIn delay={0.1}>
-                  <div className="bg-[#C1272D] rounded-2xl p-6 text-white">
-                    <Target className="w-6 h-6 mb-3 opacity-80" />
-                    <h3 className="font-black mb-2">{t.home_page.mission_title}</h3>
-                    <p className="text-xs text-white/80 leading-relaxed">{t.home_page.mission_text}</p>
+            <div className="relative pb-14">
+              {/* Carte anniversaire */}
+              <FadeIn>
+                <div className="relative h-[26rem] rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 group">
+                  {/* Images du carrousel */}
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={carouselIndex}
+                      initial={{ opacity: 0, x: 60, scale: 0.97 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: -60, scale: 0.97 }}
+                      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                      className="absolute inset-0"
+                    >
+                      <Image
+                        src={BIRTHDAY_IMAGES[carouselIndex]}
+                        alt={[
+                          '9e anniversaire GCFI',
+                          '9e anniversaire GCFI - célébration',
+                          '9e anniversaire GCFI - reconnaissance',
+                        ][carouselIndex]}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                        unoptimized
+                        priority
+                      />
+                      {/* Overlay gradient plus prononcé pour lisibilité */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10" />
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {/* Texte overlay — badge + titre qui changent avec chaque image */}
+                  <div className="absolute bottom-0 left-0 right-0 z-10 p-8">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={`text-${carouselIndex}`}
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.35, ease: 'easeOut' }}
+                      >
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-[#C1272D] to-[#2563B0] text-white text-xs font-bold rounded-full mb-3 shadow-lg">
+                          <PartyPopper className="w-3.5 h-3.5" />{' '}
+                          {(t.home_page.birthday_section.carousel_badges as unknown as string[])[carouselIndex]}
+                        </span>
+                        <h3 className="text-2xl md:text-3xl font-black text-white leading-tight max-w-lg drop-shadow-lg">
+                          {(t.home_page.birthday_section.carousel_titles as unknown as string[])[carouselIndex]}
+                        </h3>
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
-                </FadeIn>
-                <FadeIn delay={0.15}>
-                  <div className="bg-slate-900 dark:bg-slate-700 rounded-2xl p-6 text-white">
-                    <Eye className="w-6 h-6 mb-3 opacity-80" />
-                    <h3 className="font-black mb-2">{t.home_page.vision_title}</h3>
-                    <p className="text-xs text-white/80 leading-relaxed">{t.home_page.vision_text}</p>
-                  </div>
-                </FadeIn>
+                </div>
+              </FadeIn>
+
+              {/* Carte Mission / Vision flottante, superposée à la carte anniversaire, alterne indéfiniment */}
+              <div className="absolute -bottom-10 right-6 z-20 w-[72%] sm:w-64">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={mvIndex}
+                    initial={{ opacity: 0, y: 16, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -16, scale: 0.95 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    className={cn('rounded-2xl p-6 text-white shadow-2xl', mvIndex === 0 ? 'bg-[#C1272D]' : 'bg-slate-900 dark:bg-slate-700')}
+                  >
+                    {mvIndex === 0
+                      ? <Target className="w-6 h-6 mb-3 opacity-80" />
+                      : <Eye className="w-6 h-6 mb-3 opacity-80" />}
+                    <h3 className="font-black mb-2">{mvIndex === 0 ? t.home_page.mission_title : t.home_page.vision_title}</h3>
+                    <p className="text-xs text-white/80 leading-relaxed">{mvIndex === 0 ? t.home_page.mission_text : t.home_page.vision_text}</p>
+                  </motion.div>
+                </AnimatePresence>
               </div>
             </div>
           </div>
@@ -486,7 +501,7 @@ export default function HomeView() {
       </section>
 
       {/* ══ 4. PILIERS ══════════════════════════════════════════ */}
-      <section className="py-24 px-4">
+      <section className="py-16 px-4 bg-slate-50 dark:bg-slate-800/30">
         <div className="max-w-7xl mx-auto">
           <FadeIn className="text-center mb-16">
             <span className="text-xs font-black uppercase tracking-widest text-[#C1272D] block mb-3">{t.home_page.section3_tag}</span>
@@ -550,8 +565,65 @@ export default function HomeView() {
         </div>
       </section>
 
+      {/* ══ NOS PRODUITS POPULAIRES ═══════════════════════════════ */}
+      {featuredProducts.length > 0 && (
+        <section className="py-12 px-4 bg-white dark:bg-slate-900">
+          <div className="max-w-7xl mx-auto">
+            <FadeIn className="flex flex-wrap items-end justify-between gap-4 mb-10">
+              <div>
+                <span className="text-xs font-black uppercase tracking-widest text-[#C1272D] block mb-3">{t.home_page.products_tag}</span>
+                <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white">{t.home_page.products_title}</h2>
+              </div>
+              <Link href="/boutique" className="flex items-center gap-2 text-sm font-bold text-[#C1272D] hover:gap-3 transition-all shrink-0">
+                {t.home_page.products_link} <ArrowRight className="w-4 h-4" />
+              </Link>
+            </FadeIn>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.map((product, i) => (
+                <FadeIn key={product.id} delay={i * 0.08}>
+                  <div onClick={() => router.push('/boutique')}
+                    className="group bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:shadow-2xl transition-all shadow-sm cursor-pointer h-full flex flex-col">
+                    <div className="relative h-44 overflow-hidden">
+                      <Image src={product.image} alt={product.name} fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                        unoptimized={needsUnoptimized(product.image)} />
+                      {(product.discount ?? 0) > 0 && (
+                        <span className="absolute top-3 left-3 bg-[#C1272D] text-white text-[10px] font-black px-2 py-1 rounded-full shadow">
+                          -{product.discount}%
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-5 flex-1 flex flex-col">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#C1272D] mb-1">{product.category}</p>
+                      <h3 className="font-bold text-slate-900 dark:text-white mb-3 group-hover:text-[#C1272D] transition-colors line-clamp-2">{product.name}</h3>
+                      <div className="mt-auto flex items-baseline gap-2 flex-wrap">
+                        {(product.discount ?? 0) > 0 ? (
+                          <>
+                            <p className="text-lg font-black text-[#C1272D]">
+                              {Math.round(product.price * (1 - (product.discount ?? 0) / 100)).toLocaleString()}
+                              <span className="text-xs font-bold ml-1">FCFA</span>
+                            </p>
+                            <p className="text-xs text-slate-400 line-through">{product.price.toLocaleString()}</p>
+                          </>
+                        ) : (
+                          <p className="text-lg font-black text-[#C1272D]">
+                            {product.price.toLocaleString()} <span className="text-xs font-bold">FCFA</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ══ 5. SERVICES GRID (6 services) ═══════════════════════ */}
-      <section className="py-16 px-4 bg-slate-50 dark:bg-slate-800/30">
+      <section className="py-12 px-4 bg-slate-50 dark:bg-slate-800/30">
         <div className="max-w-7xl mx-auto">
           <FadeIn className="flex items-end justify-between mb-12">
             <div>
@@ -589,7 +661,7 @@ export default function HomeView() {
 
       {/* ══ 6. FORMATIONS EN VEDETTE ════════════════════════════ */}
       {featuredTrainings.length > 0 && (
-        <section className="py-24 px-4">
+        <section className="py-16 px-4 bg-white dark:bg-slate-900">
           <div className="max-w-7xl mx-auto">
             <FadeIn className="flex items-end justify-between mb-12">
               <div>
@@ -630,42 +702,96 @@ export default function HomeView() {
       )}
 
       {/* ══ 7. RÉALISATIONS ═════════════════════════════════════ */}
-      <section className="py-24 px-4 bg-slate-50 dark:bg-slate-800/30">
+      <section id="realisations" className="py-16 px-4 bg-slate-50 dark:bg-slate-800/30">
         <div className="max-w-7xl mx-auto">
           <FadeIn className="flex items-end justify-between mb-12">
             <div>
               <span className="text-xs font-black uppercase tracking-widest text-[#C1272D] block mb-2">{t.home_page.section6_tag}</span>
               <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white">{t.home_page.section6_title}</h2>
             </div>
-            <Award className="w-10 h-10 text-[#C1272D] opacity-20" />
+            {achievementsSlider.hasOverflow ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={achievementsSlider.prev}
+                  className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#C1272D] hover:border-[#C1272D] hover:text-white transition-all"
+                  aria-label="Réalisations précédentes"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={achievementsSlider.next}
+                  className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#C1272D] hover:border-[#C1272D] hover:text-white transition-all"
+                  aria-label="Réalisations suivantes"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            ) : (
+              <Award className="w-10 h-10 text-[#C1272D] opacity-20" />
+            )}
           </FadeIn>
-          <div className="grid md:grid-cols-3 gap-6">
-            {achievements.map((item, i) => (
-              <FadeIn key={item.id} delay={i * 0.08}>
-                <div className="group cursor-pointer" onClick={() => setSelectedAchievement(item)}>
-                  <div className="h-60 rounded-3xl overflow-hidden mb-4 relative">
-                    <Image src={item.image} alt={item.title} fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-700" sizes="33vw" />
-                    <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="bg-white/20 backdrop-blur-md p-4 rounded-full border border-white/30">
-                        <ExternalLink className="w-5 h-5 text-white" />
+          <FadeIn>
+            <div ref={achievementsSlider.viewportRef} className="overflow-hidden -mx-3">
+              <motion.div
+                className="flex"
+                animate={{ x: achievementsSlider.viewportWidth ? -achievementsSlider.start * (achievementsSlider.viewportWidth / achievementsSlider.perView) : 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {achievements.map(item => (
+                  <div key={item.id} className="w-full md:w-1/2 lg:w-1/3 shrink-0 px-3">
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/realisations/${item.id}`)}
+                      aria-label={`${t.home_page.section6_view} — ${item.title}`}
+                      className="group w-full h-full flex flex-col text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden hover:shadow-xl hover:border-[#C1272D]/40 hover:-translate-y-1.5 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C1272D]/70"
+                    >
+                      <div className="relative aspect-[4/3] overflow-hidden">
+                        <Image src={item.image} alt={item.title} fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-700"
+                          sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" />
+                        <div className="absolute inset-0 bg-linear-to-t from-slate-900/70 via-slate-900/10 to-transparent" />
+                        <span className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black text-white bg-slate-900/55 backdrop-blur-sm border border-white/15">
+                          <Calendar className="w-3 h-3" /> {item.year}
+                        </span>
+                        <div className="absolute inset-x-0 bottom-0 p-5 flex items-end justify-between gap-3">
+                          <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white/75">
+                            {t.home_page.section6_tag}
+                          </span>
+                          <span className="w-10 h-10 rounded-full bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center text-white opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-hover:bg-[#C1272D] group-hover:border-[#C1272D] transition-all duration-300">
+                            <ArrowRight className="w-4 h-4" />
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-bold text-white">
-                      {item.year}
-                    </div>
+                      <div className="flex flex-col flex-1 p-5">
+                        <h3 className="font-bold text-slate-900 dark:text-white leading-snug group-hover:text-[#C1272D] transition-colors">{item.title}</h3>
+                        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-3 flex-1">{item.description}</p>
+                        <span className="mt-5 inline-flex items-center gap-2 text-xs font-bold text-[#C1272D]">
+                          {t.home_page.section6_view}
+                          <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+                        </span>
+                      </div>
+                    </button>
                   </div>
-                  <h3 className="font-bold text-slate-900 dark:text-white mb-1 group-hover:text-[#C1272D] transition-colors">{item.title}</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">{item.description}</p>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
+                ))}
+              </motion.div>
+            </div>
+          </FadeIn>
+          {achievementsSlider.hasOverflow && (
+            <div className="flex justify-center gap-2 mt-8">
+              {Array.from({ length: achievementsSlider.positionCount }).map((_, i) => (
+                <button key={i}
+                  onClick={() => achievementsSlider.setStart(i)}
+                  aria-label={`Aller à la réalisation ${i + 1}`}
+                  className={cn('h-2 rounded-full transition-all',
+                    i === achievementsSlider.start ? 'w-6 bg-[#C1272D]' : 'w-2 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600')} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
       {/* ══ 8. VALEURS ══════════════════════════════════════════ */}
-      <section className="py-20 px-4 bg-slate-50 dark:bg-slate-800/30">
+      <section className="py-14 px-4 bg-white dark:bg-slate-900">
         <div className="max-w-7xl mx-auto">
           <FadeIn className="text-center mb-14">
             <span className="text-xs font-black uppercase tracking-widest text-[#C1272D] block mb-3">{t.home_page.section7_tag}</span>
@@ -688,7 +814,7 @@ export default function HomeView() {
       </section>
 
       {/* ══ 9. ILS NOUS FONT CONFIANCE ══════════════════════════ */}
-      <section className="py-14 px-4 bg-slate-50 dark:bg-slate-800/30 border-y border-slate-100 dark:border-slate-800">
+      <section className="py-10 px-4 bg-slate-50 dark:bg-slate-800/30 border-y border-slate-100 dark:border-slate-800">
         <div className="max-w-7xl mx-auto">
           <p className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-10">{t.home_page.section9_tag}</p>
           <div className="overflow-hidden">
@@ -706,78 +832,103 @@ export default function HomeView() {
       </section>
 
       {/* ══ 10. TÉMOIGNAGES ══════════════════════════════════════ */}
-      <section className="py-24 px-4">
+      <section className="py-16 px-4 bg-white dark:bg-slate-900">
         <div className="max-w-7xl mx-auto">
           <FadeIn className="flex items-end justify-between mb-12">
             <div>
               <span className="text-xs font-black uppercase tracking-widest text-[#C1272D] block mb-2">{t.home_page.section10_tag}</span>
               <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white">{t.home_page.section10_title}</h2>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => setTestimonialIndex(p => (p - 1 + testimonials.length) % testimonials.length)}
-                className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#C1272D] hover:border-[#C1272D] hover:text-white transition-all">
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button onClick={() => setTestimonialIndex(p => (p + 1) % testimonials.length)}
-                className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#C1272D] hover:border-[#C1272D] hover:text-white transition-all">
-                <ChevronRight className="w-5 h-5" />
-              </button>
+            {testimonialsSlider.hasOverflow ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={testimonialsSlider.prev}
+                  className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#C1272D] hover:border-[#C1272D] hover:text-white transition-all"
+                  aria-label="Avis précédent"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={testimonialsSlider.next}
+                  className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#C1272D] hover:border-[#C1272D] hover:text-white transition-all"
+                  aria-label="Avis suivant"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            ) : null}
+          </FadeIn>
+          <FadeIn>
+            <div ref={testimonialsSlider.viewportRef} className="overflow-hidden -mx-3">
+              <motion.div
+                className="flex"
+                animate={{ x: testimonialsSlider.viewportWidth ? -testimonialsSlider.start * (testimonialsSlider.viewportWidth / testimonialsSlider.perView) : 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {testimonials.map(testi => {
+                  const avatarSrc = testi.avatar_url || testi.avatar || `https://i.pravatar.cc/150?u=${testi.id}`;
+                  return (
+                    <div key={testi.id} className="w-full md:w-1/2 lg:w-1/3 shrink-0 px-3">
+                      <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-100 dark:border-slate-700 flex flex-col h-full">
+                        <div className="flex mb-5">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className={cn('w-4 h-4', i < testi.rating ? 'text-amber-400 fill-current' : 'text-slate-200 dark:text-slate-700')} />
+                          ))}
+                        </div>
+                        <p className="text-slate-700 dark:text-slate-300 italic mb-6 leading-relaxed flex-1">"{testi.content}"</p>
+                        <div className="flex items-center gap-3 mt-auto pt-4 border-t border-slate-100 dark:border-slate-700">
+                          <Image src={avatarSrc} alt={testi.name} width={40} height={40} className="rounded-full object-cover" />
+                          <div>
+                            <p className="font-bold text-slate-900 dark:text-white text-sm">{testi.name}</p>
+                            <p className="text-xs text-[#C1272D] font-semibold">{testi.role}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </motion.div>
             </div>
           </FadeIn>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[0, 1, 2].map(offset => {
-              const t = testimonials[(testimonialIndex + offset) % testimonials.length];
-              const avatarSrc = t.avatar_url || t.avatar || `https://i.pravatar.cc/150?u=${t.id}`;
-              return (
-                <motion.div key={`${t.id}-${testimonialIndex}-${offset}`}
-                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                  className={cn('bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-100 dark:border-slate-700 flex flex-col',
-                    offset === 1 ? 'hidden md:flex' : '', offset === 2 ? 'hidden lg:flex' : '')}>
-                  <div className="flex mb-5">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={cn('w-4 h-4', i < t.rating ? 'text-amber-400 fill-current' : 'text-slate-200 dark:text-slate-700')} />
-                    ))}
-                  </div>
-                  <p className="text-slate-700 dark:text-slate-300 italic mb-6 leading-relaxed flex-1">"{t.content}"</p>
-                  <div className="flex items-center gap-3 mt-auto pt-4 border-t border-slate-100 dark:border-slate-700">
-                    <Image src={avatarSrc} alt={t.name} width={40} height={40} className="rounded-full object-cover" />
-                    <div>
-                      <p className="font-bold text-slate-900 dark:text-white text-sm">{t.name}</p>
-                      <p className="text-xs text-[#C1272D] font-semibold">{t.role}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+          {testimonialsSlider.hasOverflow && (
+            <div className="flex justify-center gap-2 mt-8">
+              {Array.from({ length: testimonialsSlider.positionCount }).map((_, i) => (
+                <button key={i}
+                  onClick={() => testimonialsSlider.setStart(i)}
+                  aria-label={`Aller à l'avis ${i + 1}`}
+                  className={cn('h-2 rounded-full transition-all',
+                    i === testimonialsSlider.start ? 'w-6 bg-[#C1272D]' : 'w-2 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600')} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
       {/* ══ 11. CTA FINAL ═══════════════════════════════════════ */}
-      <section className="py-20 px-4">
+      <section className="py-14 px-4 bg-slate-50 dark:bg-slate-800/30">
         <div className="max-w-4xl mx-auto">
           <FadeIn>
-            <div className="relative bg-slate-900 dark:bg-slate-800 rounded-[2.5rem] overflow-hidden px-10 py-16 text-center">
+            <div className="relative bg-white dark:bg-slate-800 rounded-[2.5rem] overflow-hidden px-10 py-16 text-center border border-slate-200 dark:border-slate-700 shadow-xl">
               {/* Background deco */}
-              <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#C1272D]/20 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#C1272D]/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-blue-600/5 rounded-full blur-3xl pointer-events-none" />
 
-              <span className="inline-block px-4 py-1.5 bg-[#C1272D]/20 text-[#C1272D] rounded-full text-xs font-black uppercase tracking-widest mb-6 relative">
+              <span className="inline-block px-4 py-1.5 bg-[#C1272D]/10 text-[#C1272D] rounded-full text-xs font-black uppercase tracking-widest mb-6 relative">
                 {t.home_page.section11_tag}
               </span>
-              <h2 className="text-4xl md:text-5xl font-black text-white mb-5 relative leading-tight">
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-5 relative leading-tight">
                 {t.home_page.section11_title}
               </h2>
-              <p className="text-slate-400 mb-10 relative max-w-lg mx-auto text-lg">
+              <p className="text-slate-500 dark:text-slate-400 mb-10 relative max-w-lg mx-auto text-lg">
                 {t.home_page.section11_text}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center relative">
-                <button onClick={() => router.push('/#contact')}
+                <button onClick={openContact}
                   className="flex items-center justify-center gap-2 bg-[#C1272D] text-white px-8 py-4 rounded-2xl font-black text-sm hover:bg-red-600 transition-all shadow-lg shadow-red-500/20">
                   <Phone className="w-4 h-4" /> {t.home_page.section11_cta1}
                 </button>
                 <button onClick={() => router.push('/services')}
-                  className="flex items-center justify-center gap-2 bg-white/10 text-white border border-white/20 px-8 py-4 rounded-2xl font-black text-sm hover:bg-white/20 transition-all">
+                  className="flex items-center justify-center gap-2 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white border border-slate-200 dark:border-white/20 px-8 py-4 rounded-2xl font-black text-sm hover:bg-slate-200 dark:hover:bg-white/20 transition-all">
                   {t.home_page.section11_cta2} <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -786,54 +937,6 @@ export default function HomeView() {
         </div>
       </section>
 
-      {/* ══ Achievement Modal ════════════════════════════════════ */}
-      <AnimatePresence>
-        {selectedAchievement && (
-          <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setSelectedAchievement(null)}
-              className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-              className="relative bg-white dark:bg-slate-900 w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
-              <button onClick={() => setSelectedAchievement(null)}
-                className="absolute top-4 right-4 z-10 bg-white/90 dark:bg-slate-800 p-2 rounded-full hover:bg-[#C1272D] hover:text-white transition-all">
-                <X className="w-5 h-5" />
-              </button>
-              <div className="relative h-64">
-                <Image src={selectedAchievement.image} alt={selectedAchievement.title} fill className="object-cover" sizes="100vw" />
-                <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-4 left-6">
-                  <span className="text-white/70 text-xs font-bold uppercase tracking-widest flex items-center gap-1">
-                    <Calendar className="w-3 h-3" /> {selectedAchievement.year}
-                  </span>
-                </div>
-              </div>
-              <div className="p-8">
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4">{selectedAchievement.title}</h3>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{selectedAchievement.description}</p>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ══ Fullscreen image ════════════════════════════════════ */}
-      <AnimatePresence>
-        {fullscreenImage && (
-          <div className="fixed inset-0 z-110 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setFullscreenImage(null)} className="absolute inset-0 bg-black/95 backdrop-blur-xl" />
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-              className="relative max-w-4xl w-full">
-              <button onClick={() => setFullscreenImage(null)} className="absolute -top-14 right-0 p-3 text-white hover:text-red-400 transition-colors">
-                <X className="w-7 h-7" />
-              </button>
-              <Image src={fullscreenImage} alt="" width={0} height={0} sizes="100vw"
-                className="w-full rounded-2xl" style={{ width: '100%', height: 'auto' }} />
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

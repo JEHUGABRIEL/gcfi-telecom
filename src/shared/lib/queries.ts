@@ -41,6 +41,7 @@ export function useProducts(lang?: string) {
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .is('deleted_at', null)
         .order('popularity', { ascending: false });
       if (error) throw error;
       return (data || []) as Product[];
@@ -58,6 +59,7 @@ export function useTrainings(lang?: string) {
       const { data, error } = await supabase
         .from('trainings')
         .select('*')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
@@ -74,6 +76,7 @@ export function useNews() {
       const { data, error } = await supabase
         .from('news')
         .select('*')
+        .is('deleted_at', null)
         .order('published_at', { ascending: false })
         .limit(6);
       if (error) throw error;
@@ -127,6 +130,7 @@ export function useTestimonials(lang?: string) {
       const { data, error } = await supabase
         .from('testimonials')
         .select('*')
+        .is('deleted_at', null)
         .eq('status', 'approved')
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -145,6 +149,7 @@ export function useAchievements(lang?: string) {
       const { data, error } = await supabase
         .from('achievements')
         .select('*')
+        .is('deleted_at', null)
         .order('year', { ascending: false });
       if (error) throw error;
       return data || [];
@@ -162,6 +167,7 @@ export function usePartners(lang?: string) {
       const { data, error } = await supabase
         .from('partners')
         .select('*')
+        .is('deleted_at', null)
         .order('name');
       if (error) throw error;
       return data || [];
@@ -243,6 +249,7 @@ export function useAdminTrainings(enabled = true) {
       const { data, error } = await supabase
         .from('trainings')
         .select('*')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
@@ -259,6 +266,7 @@ export function useAdminProducts(enabled = true) {
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];

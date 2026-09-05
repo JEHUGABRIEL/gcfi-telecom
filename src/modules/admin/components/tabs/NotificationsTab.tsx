@@ -5,8 +5,12 @@ import { cn } from '@/shared/lib/utils';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { useAdminToast, AdminToast } from '@/shared/components/AdminToast';
+import AdminTable from '@/shared/components/ui/AdminTable';
+import Pagination from '@/shared/components/ui/Pagination';
 import { useActivityLog } from '@/shared/hooks/useActivityLog';
 import { useLang } from '@/shared/context/LanguageContext';
+
+const PAGE_SIZE = 10;
 
 interface Notification { id: string; title: string; message: string; type: string; created_at: string; }
 
@@ -26,6 +30,7 @@ export default function NotificationsTab({ onDelete, notifications: allNotificat
   const [category, setCategory] = React.useState('info');
   const [isSending, setIsSending] = React.useState(false);
   const [sendSuccess, setSendSuccess] = React.useState(false);
+  const [page, setPage] = React.useState(1);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,29 +103,52 @@ export default function NotificationsTab({ onDelete, notifications: allNotificat
 
       <div className="mt-12">
         <h4 className="text-lg font-black text-slate-900 dark:text-white mb-6">{ap.notif_history}</h4>
-        <div className="space-y-4">
-          {allNotifications.map(notif => (
-            <div key={notif.id} className="p-6 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded",
-                    notif.type === 'success' ? "bg-emerald-100 text-emerald-600" :
-                    notif.type === 'info' ? "bg-blue-100 text-blue-600" :
-                    notif.type === 'warning' ? "bg-amber-100 text-amber-600" : "bg-red-100 text-red-600")}>
-                    {notif.type === 'success' ? ap.notif_type_offer : notif.type}
-                  </span>
-                  <h5 className="font-bold text-slate-900 dark:text-white">{notif.title}</h5>
+        <AdminTable
+          columns={[
+            {
+              header: ap.table_type,
+              cell: (notif) => (
+                <span className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded",
+                  notif.type === 'success' ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" :
+                  notif.type === 'info' ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" :
+                  notif.type === 'warning' ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400")}>
+                  {notif.type === 'success' ? ap.notif_type_offer : notif.type}
+                </span>
+              ),
+            },
+            {
+              header: ap.notif_title_label,
+              cell: (notif) => (
+                <div className="min-w-0">
+                  <h5 className="font-bold text-slate-900 dark:text-white text-sm">{notif.title}</h5>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{notif.message}</p>
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400">{notif.message}</p>
-                <p className="text-[10px] text-slate-400 mt-2">{new Date(notif.created_at).toLocaleDateString()}</p>
-              </div>
-              <button onClick={() => onDelete(notif.id, 'global_notifications')}
-                className="p-2 text-slate-400 hover:text-red-500 transition-colors">
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
+              ),
+            },
+            { header: ap.table_date, cell: (notif) => <span className="text-xs text-slate-400 whitespace-nowrap">{new Date(notif.created_at).toLocaleDateString()}</span> },
+            {
+              header: ap.table_actions,
+              align: 'right' as const,
+              cell: (notif) => (
+                <button onClick={() => onDelete(notif.id, 'global_notifications')}
+                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              ),
+            },
+          ]}
+          data={allNotifications.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
+          getKey={(notif) => notif.id}
+          minWidth="720px"
+          empty={<div className="text-center py-12 text-slate-400"><p>{ap.notif_history_empty}</p></div>}
+        />
+        <Pagination
+          page={page}
+          totalPages={Math.ceil(allNotifications.length / PAGE_SIZE)}
+          totalItems={allNotifications.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
       </div>
     </div>
     </>

@@ -1,4 +1,5 @@
 import type { Product, Course } from '@/shared/types';
+import { SITE_URL, siteUrl } from '@/shared/lib/site-url';
 
 export function setStructuredData(data: Record<string, any>) {
   const script = document.createElement('script');
@@ -11,8 +12,8 @@ export const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: 'GCFI Telecom',
-  url: 'https://www.gcfi-rca.com',
-  logo: 'https://www.gcfi-rca.com/logo.png',
+  url: SITE_URL,
+  logo: siteUrl('/logo.png'),
   description: 'Leader en télécommunication et formation IT en République Centrafricaine',
   sameAs: [
     'https://www.facebook.com/gcfitelecom',
@@ -40,7 +41,7 @@ export const productSchema = (product: Product) => ({
   price: product.price,
   priceCurrency: 'XAF',
   availability: 'https://schema.org/InStock',
-  url: `https://www.gcfi-rca.com/boutique/${product.id}`,
+  url: siteUrl(`/boutique/${product.id}`),
 });
 
 export const courseSchema = (course: Course) => ({
@@ -53,7 +54,7 @@ export const courseSchema = (course: Course) => ({
     '@type': 'Organization',
     name: 'GCFI Telecom',
   },
-  url: `https://www.gcfi-rca.com/formation/${course.id}`,
+  url: siteUrl(`/formation/${course.id}`),
   price: course.price,
   priceCurrency: 'XAF',
   category: course.category,
@@ -63,9 +64,9 @@ export const localBusinessSchema = {
   '@context': 'https://schema.org',
   '@type': 'LocalBusiness',
   name: 'GCFI Telecom',
-  image: 'https://www.gcfi-rca.com/logo.png',
+  image: siteUrl('/logo.png'),
   description: 'Télécommunication et formation IT',
-  url: 'https://www.gcfi-rca.com',
+  url: SITE_URL,
   telephone: '+236-72-72-72-08',
   email: 'contact@gcfi-rca.com',
   address: {

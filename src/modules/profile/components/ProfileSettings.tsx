@@ -4,12 +4,16 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion } from 'motion/react';
-import { Save, User, Bell, Lock, CheckCircle2, XCircle } from 'lucide-react';
+import { Save, User, Bell, Lock, CheckCircle2, XCircle, Camera, Loader2 } from 'lucide-react';
+import NextImage from 'next/image';
 import { useLang } from '@/shared/context/LanguageContext';
 import Input from './ui/Input';
 import { supabase } from '@/shared/lib/supabase';
 import { cn } from '@/shared/lib/utils';
 import { useNotifications } from '@/shared/context/NotificationContext';
+import { useAuth } from '@/shared/context/AuthContext';
+import { uploadToCloudinary } from '@/shared/lib/cloudinary';
+import { checkRateLimit, recordUpload } from '@/shared/lib/rate-limiter';
 
 const settingsSchema = z.object({
   fullName: z.string().min(2, "Le nom complet est requis"),
@@ -26,8 +30,13 @@ interface ProfileSettingsProps {
 
 export default function ProfileSettings({ user }: ProfileSettingsProps) {
   const { t } = useLang();
+  const { refreshProfile } = useAuth();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [message, setMessage] = React.useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [avatar, setAvatar] = React.useState(user.user_metadata?.avatar_url || '');
+  const [avatarUploading, setAvatarUploading] = React.useState(false);
+  const [avatarError, setAvatarError] = React.useState<string | null>(null);
+  const avatarInputRef = React.useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -43,6 +52,34 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
     },
   });
 
+  const handleAvatarFile = async (file: File) => {
+    setAvatarError(null);
+    if (!file.type.startsWith('image/')) {
+      setAvatarError(t.image_upload.file_not_supported);
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError(`${t.image_upload.file_too_large} 5 Mo.`);
+      return;
+    }
+    const uid = localStorage.getItem('userId') || 'anonymous';
+    const { allowed, reason } = await checkRateLimit(uid);
+    if (!allowed) {
+      setAvatarError(reason || t.image_upload.too_many_uploads);
+      return;
+    }
+    setAvatarUploading(true);
+    try {
+      const result = await uploadToCloudinary(file, 'gcfi/avatars');
+      setAvatar(result.secure_url);
+      await recordUpload(uid);
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : t.image_upload.upload_failed);
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   const onSubmit = async (data: SettingsFormData) => {
     setIsSubmitting(true);
     setMessage(null);
@@ -52,7 +89,8 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
       const { error: authError } = await supabase.auth.updateUser({
         data: { 
           full_name: data.fullName,
-          display_name: data.displayName
+          display_name: data.displayName,
+          avatar_url: avatar || null
         }
       });
       if (authError) throw authError;
@@ -63,11 +101,15 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
         .update({
           full_name: data.fullName,
           bio: data.bio,
+          avatar_url: avatar || null,
           // phone is not in our schema yet, but we could add it
         })
         .eq('id', user.id);
       
       if (profileError) throw profileError;
+
+      // 3. Rafraîchit le profil (photo affichée dans le header / l'admin)
+      await refreshProfile();
       
       setMessage({ type: 'success', text: t.profile_settings.saved });
     } catch (error: unknown) {
@@ -97,6 +139,37 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
             <h3 className="text-xl font-bold text-slate-900 dark:text-white">Informations Personnelles</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">{t.profile_settings.section_account}</p>
           </div>
+        </div>
+
+        {/* Photo de profil */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="relative w-28 h-28">
+            {avatar ? (
+              <NextImage src={avatar} alt={t.profile_settings.avatar_change} fill className="object-cover rounded-full ring-4 ring-red-50 dark:ring-red-900/20" sizes="112px" />
+            ) : (
+              <div className="w-full h-full rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center ring-4 ring-red-50 dark:ring-red-900/20">
+                <User className="w-10 h-10 text-slate-400" />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={avatarUploading}
+              title={t.profile_settings.avatar_change}
+              className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-[#C1272D] text-white flex items-center justify-center shadow-lg hover:bg-[#a81f25] transition-colors disabled:opacity-60"
+            >
+              {avatarUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+            </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarFile(f); e.target.value = ''; }}
+            />
+          </div>
+          <p className="text-xs text-slate-400 mt-3">{t.profile_settings.avatar_hint}</p>
+          {avatarError && <p className="text-xs text-red-500 font-medium mt-2">{avatarError}</p>}
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -193,11 +266,11 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
         </div>
       </div>
 
-      <div className="bg-slate-900 dark:bg-slate-800 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+      <div className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#C1272D]/10 rounded-full blur-3xl -mr-32 -mt-32 transition-transform group-hover:scale-110" />
         <div className="relative z-10">
-          <h3 className="text-xl font-bold text-white mb-2">{t.profile_settings.demo_title}</h3>
-          <p className="text-slate-400 text-sm mb-8">{t.profile_settings.demo_desc}</p>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{t.profile_settings.demo_title}</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">{t.profile_settings.demo_desc}</p>
           
           <div className="flex flex-wrap gap-4">
             <button 

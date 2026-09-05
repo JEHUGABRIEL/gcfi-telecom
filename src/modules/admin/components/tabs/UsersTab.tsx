@@ -10,6 +10,8 @@ import {
   X, Ban, Clock, CheckCircle, ChevronRight, Mail, Calendar
 } from 'lucide-react';
 import Pagination from '@/shared/components/ui/Pagination';
+import AdminTable from '@/shared/components/ui/AdminTable';
+import ImageUpload from '@/shared/components/ImageUpload';
 import { useActivityLog } from '@/shared/hooks/useActivityLog';
 import { useLang } from '@/shared/context/LanguageContext';
 
@@ -46,11 +48,12 @@ function ConfirmModal({ title, message, onConfirm, onCancel, danger = false, btn
 }
 
 /* ── Modal détail utilisateur ────────────────────────────────── */
-function UserDetailModal({ user, isSuperAdmin, onClose, onBlock, onUnblock, onRoleChange }:{
-  user: any; isSuperAdmin: boolean; onClose: () => void;
+function UserDetailModal({ user, isSuperAdmin, isSelf = false, onClose, onBlock, onUnblock, onRoleChange, onUpdateProfile }:{
+  user: any; isSuperAdmin: boolean; isSelf?: boolean; onClose: () => void;
   onBlock: (id: string, type: BlockType, userName?: string) => void;
   onUnblock: (id: string, userName?: string) => void;
   onRoleChange: (id: string, role: Role, userName?: string) => void;
+  onUpdateProfile: (id: string, fields: { full_name?: string; avatar_url?: string; bio?: string }, userName?: string) => void;
 }) {
   const { t } = useLang();
   const ap = t.admin_page;
@@ -62,6 +65,11 @@ function UserDetailModal({ user, isSuperAdmin, onClose, onBlock, onUnblock, onRo
     { value: '30d',       label: ap.users_block_30d },
     { value: 'permanent', label: ap.users_block_permanent },
   ];
+
+  // Édition du profil (nom, photo, bio)
+  const [editName, setEditName] = React.useState(user.full_name || '');
+  const [editBio, setEditBio] = React.useState(user.bio || '');
+  const [editAvatar, setEditAvatar] = React.useState(user.avatar_url || '');
 
   const isBlocked = user.is_blocked || (user.blocked_until && new Date(user.blocked_until) > new Date());
   const blockStatus = user.is_blocked ? ap.users_status_blocked_permanent
@@ -78,7 +86,7 @@ function UserDetailModal({ user, isSuperAdmin, onClose, onBlock, onUnblock, onRo
 
         {/* Header */}
         <div className="bg-linear-to-r from-slate-900 to-slate-800 p-6 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-[#C1272D] flex items-center justify-center shrink-0 text-white font-black text-xl">
+          <div className="relative w-14 h-14 rounded-2xl bg-[#C1272D] flex items-center justify-center shrink-0 text-white font-black text-xl overflow-hidden">
             {user.avatar_url
               ? <Image src={user.avatar_url} fill className="object-cover rounded-2xl" alt="" sizes="56px" />
               : (user.full_name?.[0] || user.email?.[0] || '?').toUpperCase()}
@@ -111,8 +119,33 @@ function UserDetailModal({ user, isSuperAdmin, onClose, onBlock, onUnblock, onRo
             ))}
           </div>
 
+          {/* Modifier le profil (nom, photo, bio) */}
+          <div className="space-y-3 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
+            <p className="text-xs font-black uppercase tracking-widest text-slate-400">{ap.users_edit_profile}</p>
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">{ap.users_field_name}</label>
+              <input value={editName} onChange={e => setEditName(e.target.value)} placeholder={ap.users_no_name}
+                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-[#C1272D]" />
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">{ap.users_field_avatar}</label>
+              <ImageUpload value={editAvatar} onChange={setEditAvatar} folder="gcfi/avatars" />
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">{ap.users_field_bio}</label>
+              <textarea value={editBio} onChange={e => setEditBio(e.target.value)} rows={2} maxLength={200}
+                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-[#C1272D] resize-none" />
+            </div>
+            <button
+              onClick={() => onUpdateProfile(user.id, { full_name: editName, avatar_url: editAvatar, bio: editBio }, user.full_name || user.email)}
+              className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#C1272D] text-white hover:opacity-90 transition-all"
+            >
+              {ap.users_save_profile}
+            </button>
+          </div>
+
           {/* Changer le rôle */}
-          {user.role !== 'superadmin' && (isSuperAdmin || user.role === 'client') && (
+          {!isSelf && user.role !== 'superadmin' && (isSuperAdmin || user.role === 'client') && (
             <div className="space-y-2">
               <p className="text-xs font-black uppercase tracking-widest text-slate-400">{ap.users_change_role}</p>
               <div className="flex gap-2">
@@ -126,7 +159,9 @@ function UserDetailModal({ user, isSuperAdmin, onClose, onBlock, onUnblock, onRo
             </div>
           )}
 
-          {/* Blocage */}            <div className="space-y-2">
+          {/* Blocage — non disponible sur soi-même */}
+          {!isSelf && (
+            <div className="space-y-2">
             <p className="text-xs font-black uppercase tracking-widest text-slate-400">{ap.users_block_management}</p>
             {isBlocked ? (
               <button onClick={() => { onUnblock(user.id, user.full_name || user.email); onClose(); }}
@@ -149,6 +184,7 @@ function UserDetailModal({ user, isSuperAdmin, onClose, onBlock, onUnblock, onRo
               </div>
             )}
           </div>
+            )}
         </div>
       </motion.div>
     </div>
@@ -174,7 +210,7 @@ export default function UsersTab() {
   const { t } = useLang();
   const ap = t.admin_page;
   const { toast, showToast, dismiss } = useAdminToast();
-  const { user: currentUser, profile: currentProfile } = useAuth();
+  const { user: currentUser, profile: currentProfile, refreshProfile } = useAuth();
   const { logActivity } = useActivityLog();
   const isSuperAdmin = currentProfile?.role === 'superadmin';
 
@@ -236,9 +272,23 @@ export default function UsersTab() {
     onError: (err: Error) => showToast(err.message || ap.save_error, 'error'),
   });
 
+  const updateProfileMutation = useMutation({
+    mutationFn: ({ userId, fields, userName }: { userId: string; fields: { full_name?: string; avatar_url?: string; bio?: string }; userName?: string }) =>
+      adminFetch(userId, { action: 'updateProfile', ...fields }),
+    onSuccess: async (_d, vars) => {
+      invalidate();
+      logActivity({ action: 'updated', entity: 'users', entity_id: vars.userId, label: `${ap.users_toast_profile_updated}: "${vars.userName || vars.userId}"` });
+      showToast(ap.users_toast_profile_updated);
+      // Si on modifie son propre profil, rafraîchir l'état global (avatar dans la sidebar/header)
+      if (vars.userId === currentUser?.id) await refreshProfile();
+    },
+    onError: (err: Error) => showToast(err.message || ap.save_error, 'error'),
+  });
+
   const handleBlock      = (userId: string, type: BlockType, userName?: string) => blockMutation.mutate({ userId, type, userName });
   const handleUnblock    = (userId: string, userName?: string) => unblockMutation.mutate({ userId, userName });
   const handleRoleChange = (userId: string, newRole: Role, userName?: string) => roleMutation.mutate({ userId, newRole, userName });
+  const handleUpdateProfile = (userId: string, fields: { full_name?: string; avatar_url?: string; bio?: string }, userName?: string) => updateProfileMutation.mutate({ userId, fields, userName });
 
   const getBlockStatus = (u: any) => {
     if (u.is_blocked) return 'permanent';
@@ -268,10 +318,12 @@ export default function UsersTab() {
           <UserDetailModal
             user={selectedUser}
             isSuperAdmin={isSuperAdmin}
+            isSelf={selectedUser.id === currentUser?.id}
             onClose={() => setSelected(null)}
             onBlock={handleBlock}
             onUnblock={handleUnblock}
             onRoleChange={handleRoleChange}
+            onUpdateProfile={handleUpdateProfile}
           />
         )}
         {confirm && (
@@ -325,41 +377,48 @@ export default function UsersTab() {
         <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-slate-200 border-t-[#C1272D] rounded-full animate-spin" /></div>
       ) : (
         <>
-        <div className="space-y-2">
-          {paginated.map(u => {
-            const blockStatus = getBlockStatus(u);
-            const isMe = u.id === currentUser?.id;
-            return (
-              <div key={u.id}
-                onClick={() => !isMe && setSelected(u)}
-                className={cn(
-                  'flex items-center gap-4 p-4 rounded-2xl border transition-all',
-                  isMe ? 'border-[#C1272D]/30 bg-red-50/30 dark:bg-red-900/10 cursor-default'
-                  : blockStatus !== 'active' ? 'border-red-100 bg-red-50/50 dark:bg-red-900/10 cursor-pointer hover:shadow-md'
-                  : 'border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 cursor-pointer hover:shadow-md hover:border-[#C1272D]/30'
-                )}>
-                {/* Avatar */}
-                <div className="w-10 h-10 rounded-full bg-[#C1272D] flex items-center justify-center shrink-0 text-white font-black text-sm overflow-hidden">
-                  {u.avatar_url ? <Image src={u.avatar_url} fill className="object-cover" alt="" sizes="40px" /> : (u.full_name?.[0] || u.email?.[0] || '?').toUpperCase()}
-                </div>
-                {/* Infos */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">                      <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{u.full_name || ap.users_no_name}</p>
-                    {isMe && <span className="text-[10px] text-[#C1272D] font-black">{ap.users_badge_you}</span>}
-                    {blockStatus === 'permanent' && <span className="text-[10px] bg-red-100 text-red-600 font-black px-2 py-0.5 rounded-full">{ap.users_badge_blocked}</span>}
-                    {blockStatus === 'temp' && <span className="text-[10px] bg-amber-100 text-amber-600 font-black px-2 py-0.5 rounded-full">{ap.users_badge_temp}</span>}
+        <AdminTable
+          columns={[
+            {
+              header: ap.table_name,
+              cell: (u) => (
+                <div className="flex items-center gap-3">
+                  <div className="relative w-9 h-9 rounded-full bg-[#C1272D] flex items-center justify-center shrink-0 text-white font-black text-xs overflow-hidden">
+                    {u.avatar_url ? <Image src={u.avatar_url} fill className="object-cover" alt="" sizes="36px" /> : (u.full_name?.[0] || u.email?.[0] || '?').toUpperCase()}
                   </div>
-                  <p className="text-xs text-slate-400 truncate">{u.email}</p>
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{u.full_name || ap.users_no_name}</p>
+                    {u.id === currentUser?.id && <span className="text-[10px] text-[#C1272D] font-black">{ap.users_badge_you}</span>}
+                  </div>
                 </div>
-                <RoleBadge role={u.role} />
-                {!isMe && <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" />}
-              </div>
-            );
-          })}
-          {paginated.length === 0 && (
-            <div className="text-center py-16 text-slate-400"><User className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>{ap.users_empty}</p></div>
-          )}
-        </div>
+              ),
+            },
+            { header: ap.users_label_email, cell: (u) => <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{u.email}</p> },
+            { header: ap.users_label_role, cell: (u) => <RoleBadge role={u.role} /> },
+            {
+              header: ap.users_label_status,
+              cell: (u) => {
+                const s = getBlockStatus(u);
+                return s === 'permanent'
+                  ? <span className="text-[10px] bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 font-black px-2 py-0.5 rounded-full">{ap.users_badge_blocked}</span>
+                  : s === 'temp'
+                  ? <span className="text-[10px] bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 font-black px-2 py-0.5 rounded-full">{ap.users_badge_temp}</span>
+                  : <span className="text-[10px] bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 font-black px-2 py-0.5 rounded-full">{ap.users_status_active}</span>;
+              },
+            },
+            {
+              header: '',
+              align: 'right' as const,
+              cell: () => <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 ml-auto" />,
+            },
+          ]}
+          data={paginated}
+          getKey={(u) => u.id}
+          onRowClick={(u) => setSelected(u)}
+          rowClassName={(u) => u.id === currentUser?.id ? 'bg-red-50/40 dark:bg-red-900/10' : undefined}
+          minWidth="640px"
+          empty={<div className="text-center py-16 text-slate-400"><User className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>{ap.users_empty}</p></div>}
+        />
         <Pagination
           page={page}
           totalPages={totalPages}

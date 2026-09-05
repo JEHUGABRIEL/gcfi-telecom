@@ -7,6 +7,7 @@ import { Package, RefreshCw } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { useLang } from '@/shared/context/LanguageContext';
 import Pagination from '@/shared/components/ui/Pagination';
+import AdminTable from '@/shared/components/ui/AdminTable';
 
 const PAGE_SIZE = 10;
 
@@ -51,7 +52,7 @@ export default function OrdersTab() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 space-y-4">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">
           {ap.order_title}
@@ -78,29 +79,28 @@ export default function OrdersTab() {
         </div>
       ) : (
         <>
-          <div className="space-y-3">
-            {orders.map(order => (
-              <div key={order.id} className="border border-slate-100 dark:border-slate-700 rounded-xl p-4 hover:border-[#C1272D]/30 transition-all">
-                <div className="flex justify-between items-start gap-4">
-                  <div>
-                    <p className="font-bold text-slate-900 dark:text-white">#{order.id.slice(0, 8)}</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{order.customer_email}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {new Date(order.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-lg font-bold text-[#C1272D]">
-                      {order.total?.toLocaleString('fr-FR')} FCFA
-                    </p>
-                    <span className={cn('inline-block mt-1 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full', STATUS_COLORS[order.status])}>
-                      {order.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <AdminTable
+            columns={[
+              { header: 'ID', cell: (order) => <span className="font-bold text-slate-900 dark:text-white">#{order.id.slice(0, 8)}</span> },
+              { header: ap.table_client, cell: (order) => <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{order.customer_email}</p> },
+              {
+                header: ap.table_date,
+                cell: (order) => <span className="text-xs text-slate-400 whitespace-nowrap">{new Date(order.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>,
+              },
+              { header: ap.order_total, align: 'right' as const, cell: (order) => <span className="font-bold text-[#C1272D] whitespace-nowrap">{order.total?.toLocaleString('fr-FR')} FCFA</span> },
+              {
+                header: ap.users_label_status,
+                cell: (order) => (
+                  <span className={cn('inline-block px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full whitespace-nowrap', STATUS_COLORS[order.status])}>
+                    {order.status}
+                  </span>
+                ),
+              },
+            ]}
+            data={orders}
+            getKey={(order) => order.id}
+            minWidth="720px"
+          />
 
           <Pagination
             page={page}

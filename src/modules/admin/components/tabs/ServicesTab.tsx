@@ -6,6 +6,7 @@ import { logError } from '@/shared/lib/supabase-helpers';
 import { Plus, Trash2, RefreshCw, Wrench, AlertTriangle, Edit, X, GripVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Pagination from '@/shared/components/ui/Pagination';
+import AdminTable from '@/shared/components/ui/AdminTable';
 import { useActivityLog } from '@/shared/hooks/useActivityLog';
 import { useLang } from '@/shared/context/LanguageContext';
 
@@ -84,6 +85,7 @@ export default function ServicesTab() {
       const { data, error } = await supabase
         .from('services')
         .select('*')
+        .is('deleted_at', null)
         .order('order_index', { ascending: true });
       if (error) { logError('ServicesTab/fetch', error); return []; }
       return data || [];
@@ -157,7 +159,7 @@ export default function ServicesTab() {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await supabase.from('services').delete().eq('id', deleteTarget.id);
+      await supabase.from('services').update({ deleted_at: new Date().toISOString() }).eq('id', deleteTarget.id);
       logActivity({ action: 'deleted', entity: 'services', entity_id: deleteTarget.id, label: `${ap.service_toast_deleted}: ${deleteTarget.title}` });
       setDeleteTarget(null);
       invalidate();
@@ -391,64 +393,77 @@ export default function ServicesTab() {
         </div>
       ) : (
         <>
-          <div className="space-y-3">
-            {services.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((s: any) => (
-              <motion.div
-                key={s.id}
-                layout
-                className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-4"
-              >
-                {/* Drag handle */}
-                <GripVertical className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0 cursor-grab" />
-
-                {/* Icon badge */}
-                <div className={`w-10 h-10 rounded-xl bg-${s.color || 'blue'}-100 dark:bg-${s.color || 'blue'}-900/20 flex items-center justify-center shrink-0`}>
-                  <Wrench className={`w-5 h-5 text-${s.color || 'blue'}-600`} />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+          <AdminTable
+            columns={[
+              {
+                header: ap.table_name,
+                cell: (s: any) => (
+                  <div className="flex items-center gap-3">
+                    <GripVertical className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0 cursor-grab" />
+                    <div className={`w-10 h-10 rounded-xl bg-${s.color || 'blue'}-100 dark:bg-${s.color || 'blue'}-900/20 flex items-center justify-center shrink-0`}>
+                      <Wrench className={`w-5 h-5 text-${s.color || 'blue'}-600`} />
+                    </div>
                     <p className="font-bold text-slate-900 dark:text-white truncate">{s.title}</p>
-                    <span className={`shrink-0 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${
-                      s.is_active !== false
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                        : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
-                    }`}>
-                      {s.is_active !== false ? ap.service_status_active : ap.service_status_inactive}
-                    </span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">{s.description}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] text-slate-400">{ap.service_icon_label} {s.icon}</span>
-                    <span className="text-[10px] text-slate-300">•</span>
-                    <span className="text-[10px] text-slate-400">{ap.service_order_label} {s.order_index ?? 0}</span>
+                ),
+              },
+              {
+                header: ap.service_field_desc,
+                cell: (s: any) => (
+                  <div className="min-w-0">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{s.description}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] text-slate-400">{ap.service_icon_label} {s.icon}</span>
+                      <span className="text-[10px] text-slate-300">•</span>
+                      <span className="text-[10px] text-slate-400">{ap.service_order_label} {s.order_index ?? 0}</span>
+                    </div>
                   </div>
-                </div>
-
-                <div className="flex gap-1 shrink-0">
-                  <button
-                    onClick={() => toggleActive(s)}
-                    title={s.is_active !== false ? ap.service_tooltip_deactivate : ap.service_tooltip_activate}
-                    className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-colors"
-                  >
-                    <span className="text-xs font-bold">{s.is_active !== false ? '⏸' : '▶'}</span>
-                  </button>
-                  <button
-                    onClick={() => startEdit(s)}
-                    className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setDeleteTarget({ id: s.id, title: s.title })}
-                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                ),
+              },
+              {
+                header: ap.users_label_status,
+                cell: (s: any) => (
+                  <span className={`shrink-0 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${
+                    s.is_active !== false
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                  }`}>
+                    {s.is_active !== false ? ap.service_status_active : ap.service_status_inactive}
+                  </span>
+                ),
+              },
+              {
+                header: ap.table_actions,
+                align: 'right' as const,
+                cell: (s: any) => (
+                  <div className="flex gap-1 justify-end">
+                    <button
+                      onClick={() => toggleActive(s)}
+                      title={s.is_active !== false ? ap.service_tooltip_deactivate : ap.service_tooltip_activate}
+                      className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-colors"
+                    >
+                      <span className="text-xs font-bold">{s.is_active !== false ? '⏸' : '▶'}</span>
+                    </button>
+                    <button
+                      onClick={() => startEdit(s)}
+                      className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget({ id: s.id, title: s.title })}
+                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ),
+              },
+            ]}
+            data={services.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
+            getKey={(s: any) => s.id}
+            minWidth="760px"
+          />
 
           <Pagination
             page={page}

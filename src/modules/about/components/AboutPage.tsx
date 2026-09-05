@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useLang, type Translations } from '@/shared/context/LanguageContext';
+import { useContact } from '@/shared/context/ContactContext';
 
 /* ── Données statiques (icônes, couleurs — indépendants de la langue) ── */
 const VALUE_STYLES = [
@@ -54,6 +55,7 @@ const TEAM = [
 /* ── Composant ───────────────────────────────────────────────── */
 export default function AboutPage() {
   const { t } = useLang();
+  const { openContact } = useContact();
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900 pt-20">
 
@@ -118,13 +120,13 @@ export default function AboutPage() {
 
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.5 }}
-            className="bg-slate-900 dark:bg-slate-800 rounded-3xl p-10 text-white relative overflow-hidden">
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mb-6">
-              <Eye className="w-7 h-7" />
+            className="bg-white dark:bg-slate-800 rounded-3xl p-10 border border-slate-200 dark:border-slate-700 relative overflow-hidden">
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-slate-100 dark:bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+            <div className="w-14 h-14 bg-[#C1272D]/10 rounded-2xl flex items-center justify-center mb-6">
+              <Eye className="w-7 h-7 text-[#C1272D]" />
             </div>
-            <h2 className="text-2xl font-black mb-4">{t.about_page.vision_title}</h2>
-            <p className="text-white/80 leading-relaxed">{t.about_page.vision_text}</p>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-4">{t.about_page.vision_title}</h2>
+            <p className="text-slate-500 dark:text-slate-400 leading-relaxed">{t.about_page.vision_text}</p>
           </motion.div>
         </div>
       </section>
@@ -279,10 +281,10 @@ export default function AboutPage() {
             <h2 className="text-3xl font-black mb-4 relative">{t.about_page.cta_title}</h2>
             <p className="text-white/80 mb-8 relative max-w-xl mx-auto">{t.about_page.cta_text}</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center relative">
-              <a href="/#contact"
+              <button onClick={openContact}
                 className="inline-flex items-center gap-2 bg-white text-[#C1272D] px-8 py-4 rounded-2xl font-black text-sm hover:bg-slate-100 transition-colors">
                 {t.about_page.cta_btn} <ChevronRight className="w-4 h-4" />
-              </a>
+              </button>
               <Link href="/services"
                 className="inline-flex items-center gap-2 bg-white/20 text-white border border-white/30 px-8 py-4 rounded-2xl font-black text-sm hover:bg-white/30 transition-colors">
                 {t.about_page.cta_link}

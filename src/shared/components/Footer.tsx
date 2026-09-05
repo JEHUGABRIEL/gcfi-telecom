@@ -6,6 +6,7 @@ import Link from 'next/link';
 import GcfiLogo from './GcfiLogo';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useLang } from '@/shared/context/LanguageContext';
+import { useContact } from '@/shared/context/ContactContext';
 import { trackPhoneClick, trackSocialClick } from '@/shared/lib/ga-events';
 
 /* ── Icônes SVG officielles des réseaux sociaux ──────────────── */
@@ -42,6 +43,7 @@ const SOCIAL_LINKS = [
 
 export default function Footer() {
   const { t } = useLang();
+  const { openContact } = useContact();
   return (
     <footer className="bg-white dark:bg-slate-950 text-slate-900 dark:text-white pt-20 pb-10 transition-colors border-t border-slate-100 dark:border-slate-900/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -81,7 +83,7 @@ export default function Footer() {
             <ul className="space-y-4 text-slate-500 dark:text-slate-400 text-sm">
               <li><Link href="/formation" className="hover:text-[var(--accent)] transition-colors">{t.footer.service_formation}</Link></li>
               <li><Link href="/boutique" className="hover:text-[var(--accent)] transition-colors">{t.footer.service_boutique}</Link></li>
-              <li><a href="/#contact" className="hover:text-[var(--accent)] transition-colors">{t.footer.service_devis}</a></li>
+              <li><button onClick={openContact} className="hover:text-[var(--accent)] transition-colors">{t.footer.service_devis}</button></li>
               <li><Link href="/services" className="hover:text-[var(--accent)] transition-colors">{t.footer.service_reseau}</Link></li>
             </ul>
           </div>
@@ -90,7 +92,7 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-bold mb-6 text-slate-900 dark:text-white">{t.footer.links_title}</h3>
             <ul className="space-y-4 text-slate-500 dark:text-slate-400 text-sm">
-              <li><a href="/#contact" className="hover:text-[var(--accent)] transition-colors">{t.footer.link_contact}</a></li>
+              <li><button onClick={openContact} className="hover:text-[var(--accent)] transition-colors">{t.footer.link_contact}</button></li>
               <li><Link href="/blog" className="hover:text-[var(--accent)] transition-colors">{t.footer.link_blog}</Link></li>
               <li><Link href="/boutique" className="hover:text-[var(--accent)] transition-colors">{t.footer.link_shop}</Link></li>
               <li><Link href="/formation" className="hover:text-[var(--accent)] transition-colors">{t.footer.link_trainings}</Link></li>

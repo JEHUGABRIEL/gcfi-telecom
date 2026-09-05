@@ -2,12 +2,13 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { User, LogOut, LogIn, Settings, Shield, CreditCard, Package, Mail, Lock, UserPlus, Heart, Clock, Truck, CheckCircle2, ChevronRight, ShoppingBag } from 'lucide-react';
+import { User, LogOut, LogIn, Settings, Shield, CreditCard, Package, Mail, Lock, UserPlus, Heart, Clock, Truck, CheckCircle2, ChevronRight, ShoppingBag, AlertCircle, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { motion, AnimatePresence } from 'motion/react';
 import ProfileSettings from './ProfileSettings';
+import AdminProfileModule from './AdminProfileModule';
 import { cn } from '@/shared/lib/utils';
 import { Order } from '@/shared/types';
 import { useAuth } from '@/shared/context/AuthContext';
@@ -31,6 +32,7 @@ export default function ProfileModule() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [userOrders, setUserOrders] = React.useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = React.useState(false);
+  const [ordersError, setOrdersError] = React.useState(false);
   const [storeProducts, setStoreProducts] = React.useState<{ id: string; name: string; price: number; image: string; category: string }[]>([]);
   const [productsLoading, setProductsLoading] = React.useState(false);
 
@@ -41,20 +43,23 @@ export default function ProfileModule() {
     if (user && activeTab === 'wishlist') {
       fetchStoreProducts();
     }
-  }, [user, activeTab]);
+  }, [user, activeTab, wishlistVersion]);
 
   const fetchOrders = async () => {
     if (!user) return;
     setOrdersLoading(true);
+    setOrdersError(false);
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .select('*')
         .eq('customer_id', user.id)
         .order('created_at', { ascending: false });
+      if (error) throw error;
       setUserOrders(data || []);
     } catch (err) {
       logError("ProfileModule/fetchOrders", err);
+      setOrdersError(true);
     } finally {
       setOrdersLoading(false);
     }
@@ -66,7 +71,8 @@ export default function ProfileModule() {
     try {
       const { data } = await supabase
         .from('products')
-        .select('id, name, price, image, category');
+        .select('id, name, price, image, category')
+        .is('deleted_at', null);
       setStoreProducts(data || []);
     } catch (err) {
       logError('ProfileModule/fetchStoreProducts', err);
@@ -151,6 +157,13 @@ export default function ProfileModule() {
         <p className="text-sm font-bold text-slate-500 animate-pulse">{t.profile_page.sync_title}</p>
       </div>
     );
+  }
+
+  // ── Profil admin : design dédié, radicalement différent du profil client ──
+  // `profile` n'est renseigné qu'une fois la session résolue, donc ce test
+  // couvre à la fois l'état de chargement (profile === null) et le rendu.
+  if (profile && (profile.role === 'admin' || profile.role === 'superadmin')) {
+    return <AdminProfileModule />;
   }
 
   if (!user) {
@@ -355,21 +368,14 @@ export default function ProfileModule() {
                   <Shield className="text-green-500 w-6 h-6" />
                 </div>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{t.profile_page.security_desc}</p>
-                {/* ✅ Reset password uniquement pour les utilisateurs classiques */}
-                {(profile?.role === 'admin' || profile?.role === 'superadmin') ? (
-                  <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-50 dark:bg-slate-900 px-4 py-3 rounded-xl">
-                    <Lock className="w-4 h-4 text-slate-400 shrink-0" />
-                    <span>{t.profile_page.reset_pwd_admin}</span>
-                  </div>
-                ) : (
-                  <button 
-                    onClick={handlePasswordReset}
-                    className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[var(--accent)] hover:underline"
-                  >
-                    <Lock className="w-4 h-4" />
-                    {t.profile_page.reset_pwd}
-                  </button>
-                )}
+                {/* ✅ Reset password — les admins ont leur page dédiée ; ici : clients uniquement */}
+                <button 
+                  onClick={handlePasswordReset}
+                  className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[var(--accent)] hover:underline"
+                >
+                  <Lock className="w-4 h-4" />
+                  {t.profile_page.reset_pwd}
+                </button>
               </div>
             </>
           )}
@@ -387,6 +393,17 @@ export default function ProfileModule() {
               
               {ordersLoading ? (
                 <div className="p-12 text-center text-slate-400">{t.profile_page.loading_orders}</div>
+              ) : ordersError ? (
+                <div className="bg-white dark:bg-slate-800 p-12 rounded-[2rem] text-center border border-red-100 dark:border-red-900/30">
+                  <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
+                  <p className="font-bold text-red-600 dark:text-red-400 mb-6">{t.profile_page.orders_load_error}</p>
+                  <button
+                    onClick={fetchOrders}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest bg-[var(--accent)] text-white hover:opacity-90 transition-all"
+                  >
+                    <RefreshCw className="w-4 h-4" /> {t.profile_page.retry}
+                  </button>
+                </div>
               ) : userOrders.length === 0 ? (
                 <div className="bg-white dark:bg-slate-800 p-12 rounded-[2rem] text-center text-slate-500 border border-slate-100 dark:border-slate-700">
                   <ShoppingBag className="w-12 h-12 mx-auto mb-4 opacity-20" />

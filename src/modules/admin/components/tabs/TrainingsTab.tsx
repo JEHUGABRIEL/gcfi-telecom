@@ -8,6 +8,7 @@ import { Plus, Trash2, RefreshCw, GraduationCap, Edit, X, AlertTriangle } from '
 import ImageUpload from '@/shared/components/ImageUpload';
 import { motion, AnimatePresence } from 'motion/react';
 import Pagination from '@/shared/components/ui/Pagination';
+import AdminTable from '@/shared/components/ui/AdminTable';
 import { useActivityLog } from '@/shared/hooks/useActivityLog';
 import { useLang } from '@/shared/context/LanguageContext';
 
@@ -76,7 +77,7 @@ export default function TrainingsTab() {
   const { data: trainings = [], isLoading: loading } = useQuery({
     queryKey: ['admin', 'trainings'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('trainings').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('trainings').select('*').is('deleted_at', null).order('created_at', { ascending: false });
       if (error) { logError('TrainingsTab/fetch', error); return []; }
       return data || [];
     },
@@ -146,7 +147,7 @@ export default function TrainingsTab() {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await supabase.from('trainings').delete().eq('id', deleteTarget.id);
+      await supabase.from('trainings').update({ deleted_at: new Date().toISOString() }).eq('id', deleteTarget.id);
       logActivity({ action: 'deleted', entity: 'trainings', entity_id: deleteTarget.id, label: `${ap.training_deleted}: ${deleteTarget.title}` });
       setDeleteTarget(null);
       invalidate();
@@ -287,31 +288,41 @@ export default function TrainingsTab() {
         </div>
       ) : (
         <>
-          <div className="space-y-3">
-            {trainings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(t => (
-              <div key={t.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-4">
-                {t.image && <Image src={t.image} alt={t.title} width={56} height={56} className="rounded-xl object-cover shrink-0" />}
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-slate-900 dark:text-white">{t.title}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs text-[#C1272D] font-bold">{t.price?.toLocaleString()} FCFA</span>
-                    {t.category && <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full text-slate-600 dark:text-slate-300">{t.category}</span>}
-                    {t.duration && <span className="text-xs text-slate-400">{t.duration}</span>}
+          <AdminTable
+            columns={[
+              {
+                header: ap.table_title,
+                cell: (t) => (
+                  <div className="flex items-center gap-3">
+                    {t.image && <Image src={t.image} alt={t.title} width={44} height={44} className="rounded-lg object-cover shrink-0" />}
+                    <p className="font-bold text-slate-900 dark:text-white truncate">{t.title}</p>
                   </div>
-                </div>
-                <div className="flex gap-1">
-                  <button onClick={() => startEdit(t)}
-                    className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => setDeleteTarget({ id: t.id, title: t.title })}
-                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+                ),
+              },
+              { header: ap.product_category, cell: (t) => t.category ? <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full text-slate-600 dark:text-slate-300">{t.category}</span> : <span className="text-slate-300">—</span> },
+              { header: ap.product_price, align: 'right' as const, cell: (t) => <span className="font-bold text-[#C1272D] whitespace-nowrap">{t.price?.toLocaleString()} FCFA</span> },
+              { header: t.formation?.duration || ap.sidebar_trainings, cell: (t) => t.duration ? <span className="text-sm text-slate-600 dark:text-slate-300">{t.duration}</span> : <span className="text-slate-300">—</span> },
+              {
+                header: ap.table_actions,
+                align: 'right' as const,
+                cell: (t) => (
+                  <div className="flex gap-1 justify-end">
+                    <button onClick={() => startEdit(t)}
+                      className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setDeleteTarget({ id: t.id, title: t.title })}
+                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ),
+              },
+            ]}
+            data={trainings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
+            getKey={(t) => t.id}
+            minWidth="720px"
+          />
           <Pagination
             page={page}
             totalPages={Math.ceil(trainings.length / PAGE_SIZE)}

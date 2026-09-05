@@ -16,7 +16,8 @@ const csp = [
   // Polices : Google Fonts (Inter)
   "font-src 'self' https://fonts.gstatic.com data:",
   // Connexions API : Supabase (dont domaine personnalisé), Analytics, Cloudinary
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://auth.gcfi-rca.com wss://auth.gcfi-rca.com https://www.googletagmanager.com https://www.google-analytics.com https://res.cloudinary.com",
+  // NB : api.cloudinary.com = endpoint d'upload (POST XHR) ; res.cloudinary.com = CDN de lecture.
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://auth.gcfi-rca.com wss://auth.gcfi-rca.com https://www.googletagmanager.com https://www.google-analytics.com https://res.cloudinary.com https://api.cloudinary.com",
   // Cadres : Google OAuth
   "frame-src 'self' https://accounts.google.com",
   // Soumissions de formulaires

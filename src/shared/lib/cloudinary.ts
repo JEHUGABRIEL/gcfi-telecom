@@ -59,7 +59,15 @@ export async function uploadToCloudinary(
       if (xhr.status === 200) resolve(JSON.parse(xhr.responseText));
       else reject(new Error(`Cloudinary error ${xhr.status}: ${xhr.responseText}`));
     };
-    xhr.onerror = () => reject(new Error('Erreur réseau Cloudinary'));
+    xhr.onerror = () => {
+      // Un XHR qui échoue sans statut HTTP vient presque toujours d'un blocage
+      // navigateur (CSP connect-src) ou d'une coupure réseau : donner une piste
+      // actionnable au lieu d'un message « réseau » générique.
+      const cspHint = typeof window !== 'undefined' && window.location.protocol.startsWith('http')
+        ? " — vérifiez votre connexion ; si l'erreur persiste, le CSP (connect-src) doit autoriser api.cloudinary.com"
+        : '';
+      reject(new Error(`Erreur réseau Cloudinary${cspHint}`));
+    };
     xhr.send(formData);
   });
 }

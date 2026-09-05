@@ -22,6 +22,7 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => void;
   requireAuth: (callback: () => void) => void;
+  refreshProfile: () => Promise<void>;
   setShowAuthModal: (show: boolean) => void;
   showAuthModal: boolean;
   showSignOutModal: boolean;
@@ -107,7 +108,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (isAdminUser) {
         const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
-        const redirectPaths = ['/', '/profil', '/admin-login'];
+        const redirectPaths = ['/', '/admin-login'];
+        // NB : /profil n'est plus dans la liste → les admins peuvent gérer
+        // leur propre profil (photo, nom, bio) via la page /profil.
         const event = lastAuthEvent.current;
         const shouldRedirect =
           event === 'SIGNED_IN' ||
@@ -205,26 +208,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isAdmin]);
 
-  const signOut = () => {
+  const signOut = async () => {
     setShowSignOutModal(false);
     setSigningOut(true);
 
-    // ℹ️ On affiche l'écran de déconnexion 400ms avant de naviguer
-    // pour que l'utilisateur voie le message de confirmation.
-    // window.location.replace('/') est appelé après ce délai, ce qui
-    // empêche aussi la race condition où AdminModule redirigerait
-    // vers /admin-login avant nous.
-    setTimeout(() => {
-      window.location.replace('/');
-    }, 400);
-
-    // scope:'global' revokes the refresh token server-side AND clears local
-    // cookies/storage via the client's internal _removeSession() — this
-    // happens before the network request, so the local session is wiped
-    // even if the server call fails.
-    supabase.auth.signOut({ scope: 'global' }).catch(err => {
+    // On attend la FIN de la déconnexion avant de naviguer vers '/',
+    // sinon la page d'accueil peut encore voir l'ancienne session et
+    // renvoyer l'admin vers /admin (race condition : la session locale
+    // n'était pas encore effacée quand on a redirigé).
+    const timeout = new Promise(resolve => setTimeout(resolve, 3000));
+    try {
+      await Promise.race([
+        supabase.auth.signOut({ scope: 'global' }),
+        timeout,
+      ]);
+      // Sécurité supplémentaire : vide l'état local avant de quitter.
+      setUser(null); setProfile(null); setIsAdmin(false); setLoading(false);
+    } catch (err) {
       logError('signOut', err);
-    });
+    }
+    window.location.replace('/');
   };
 
   const requireAuth = (callback: () => void) => {
@@ -232,9 +235,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     else { setPendingAction(() => callback); setShowAuthModal(true); }
   };
 
+  // Recharge le profil depuis la table profiles (utilisé après la mise à jour
+  // de la photo / des infos personnelles pour rafraîchir avatar_url etc.)
+  const refreshProfile = React.useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      if (!error && data) setProfile(data as Profile);
+    } catch (err) {
+      logError('refreshProfile', err);
+    }
+  }, [user?.id]);
+
   return (
     <AuthContext.Provider value={{
-      user, profile, isAdmin, loading, signOut, requireAuth,
+      user, profile, isAdmin, loading, signOut, requireAuth, refreshProfile,
       showAuthModal, setShowAuthModal,
       showSignOutModal, setShowSignOutModal
     }}>

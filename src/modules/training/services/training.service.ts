@@ -8,6 +8,7 @@ export const TrainingService = {
       const { data, error } = await supabase
         .from('trainings')
         .select('*')
+        .is('deleted_at', null)
         .order('created_at', { ascending: true });
       if (error) throw error;
       return (data || []) as Course[];

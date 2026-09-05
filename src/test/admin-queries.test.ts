@@ -4,11 +4,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
 // Les variables mock doivent être créées AVANT vi.mock via vi.hoisted()
-const { mockFrom, mockSelect, mockOrder } = vi.hoisted(() => {
+const { mockFrom, mockSelect, mockOrder, mockIs } = vi.hoisted(() => {
   const mOrder = vi.fn();
   const mSelect = vi.fn();
   const mFrom = vi.fn();
-  return { mockFrom: mFrom, mockSelect: mSelect, mockOrder: mOrder };
+  const mIs = vi.fn();
+  return { mockFrom: mFrom, mockSelect: mSelect, mockOrder: mOrder, mockIs: mIs };
 });
 
 vi.mock('@/shared/lib/supabase', () => ({
@@ -73,7 +74,9 @@ describe('Admin queries — après déduplication DB', () => {
       const products = Array.from({ length: 27 }, (_, i) => makeProduct(i + 1));
 
       mockSelect.mockReturnValue({
-        order: mockOrder.mockReturnValue(Promise.resolve({ data: products, error: null })),
+        is: mockIs.mockReturnValue({
+          order: mockOrder.mockReturnValue(Promise.resolve({ data: products, error: null })),
+        }),
       });
 
       const { result } = renderHook(() => useAdminProducts(true), { wrapper: createWrapper() });
@@ -88,7 +91,9 @@ describe('Admin queries — après déduplication DB', () => {
       const products = Array.from({ length: 15 }, (_, i) => makeProduct(i + 1));
 
       mockSelect.mockReturnValue({
-        order: mockOrder.mockReturnValue(Promise.resolve({ data: products, error: null })),
+        is: mockIs.mockReturnValue({
+          order: mockOrder.mockReturnValue(Promise.resolve({ data: products, error: null })),
+        }),
       });
 
       const { result } = renderHook(() => useAdminProducts(true), { wrapper: createWrapper() });
@@ -109,7 +114,9 @@ describe('Admin queries — après déduplication DB', () => {
       const trainings = Array.from({ length: 10 }, (_, i) => makeTraining(i + 1));
 
       mockSelect.mockReturnValue({
-        order: mockOrder.mockReturnValue(Promise.resolve({ data: trainings, error: null })),
+        is: mockIs.mockReturnValue({
+          order: mockOrder.mockReturnValue(Promise.resolve({ data: trainings, error: null })),
+        }),
       });
 
       const { result } = renderHook(() => useAdminTrainings(true), { wrapper: createWrapper() });
@@ -121,7 +128,9 @@ describe('Admin queries — après déduplication DB', () => {
 
     it('retourne un tableau vide si pas de formations', async () => {
       mockSelect.mockReturnValue({
-        order: mockOrder.mockReturnValue(Promise.resolve({ data: [], error: null })),
+        is: mockIs.mockReturnValue({
+          order: mockOrder.mockReturnValue(Promise.resolve({ data: [], error: null })),
+        }),
       });
 
       const { result } = renderHook(() => useAdminTrainings(true), { wrapper: createWrapper() });
@@ -147,17 +156,21 @@ describe('Admin queries — après déduplication DB', () => {
 
       // Hook 1 : produits
       mockSelect.mockReturnValueOnce({
-        order: mockOrder.mockReturnValueOnce(Promise.resolve({ data: products, error: null })),
+        is: mockIs.mockReturnValueOnce({
+          order: mockOrder.mockReturnValueOnce(Promise.resolve({ data: products, error: null })),
+        }),
       });
       // Hook 2 : formations
       mockSelect.mockReturnValueOnce({
-        order: mockOrder.mockReturnValueOnce(Promise.resolve({ data: trainings, error: null })),
+        is: mockIs.mockReturnValueOnce({
+          order: mockOrder.mockReturnValueOnce(Promise.resolve({ data: trainings, error: null })),
+        }),
       });
-      // Hook 3 : utilisateurs
+      // Hook 3 : utilisateurs (pas de filtre is() — pas de deleted_at)
       mockSelect.mockReturnValueOnce({
         order: mockOrder.mockReturnValueOnce(Promise.resolve({ data: users, error: null })),
       });
-      // Hook 4 : commandes
+      // Hook 4 : commandes (pas de filtre is() — pas de deleted_at)
       mockSelect.mockReturnValueOnce({
         order: mockOrder.mockReturnValueOnce(Promise.resolve({ data: orders, error: null })),
       });

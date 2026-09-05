@@ -8,11 +8,11 @@ import {
   Wrench, Zap, Video, Globe, Lock, Radio, HardDrive, Truck,
   TrafficCone, Construction, LineChart, Megaphone, Palette, Tv,
   Scissors, Clapperboard, Film, Cpu, Database, Phone, Monitor,
-  ChevronLeft, ChevronRight, ArrowRight,
+  ArrowRight,
 } from 'lucide-react';
 import { supabase } from '@/shared/lib/supabase';
-import { cn } from '@/shared/lib/utils';
 import { useLang, type Translations } from '@/shared/context/LanguageContext';
+import { useContact } from '@/shared/context/ContactContext';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Network, Wifi, Shield, Camera, Satellite, Server, Wrench, Zap,
@@ -53,6 +53,7 @@ function getStaticServices(t: Translations) {
 
 export default function ServicesPage() {
   const { t } = useLang();
+  const { openContact } = useContact();
   const SLIDES = React.useMemo(() => getSlides(t), [t]);
   const STATIC_SERVICES = React.useMemo(() => getStaticServices(t), [t]);
 
@@ -66,7 +67,7 @@ export default function ServicesPage() {
   }, []);
 
   React.useEffect(() => {
-    supabase.from('services').select('id, title, description, icon').eq('is_active', true)
+    supabase.from('services').select('id, title, description, icon').is('deleted_at', null).eq('is_active', true)
       .order('order_index', { ascending: true })
       .then(({ data, error }) => {
         setAllServices(!error && data?.length ? data.map((s: { icon: string; title: string; description: string }) => ({ icon: ICON_MAP[s.icon] || Wrench, title: s.title, description: s.description, features: [] })) : STATIC_SERVICES);
@@ -102,27 +103,11 @@ export default function ServicesPage() {
               <p className="text-white/80 text-lg max-w-xl">{SLIDES[slide].sub}</p>
             </motion.div>
           </AnimatePresence>
-          <motion.a href="/#contact" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+          <motion.button onClick={openContact} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
             className="mt-8 inline-flex items-center gap-2 px-6 py-3 bg-[#C1272D] text-white rounded-xl font-bold text-sm hover:bg-red-600 transition-all shadow-lg">
             {t.services_page.hero_cta} <ArrowRight className="w-4 h-4" />
-          </motion.a>
+          </motion.button>
         </div>
-
-        {/* Indicators */}
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
-          {SLIDES.map((_, i) => (
-            <button key={i} onClick={() => setSlide(i)}
-              className={cn('h-1 rounded-full transition-all', i === slide ? 'w-6 bg-white' : 'w-2 bg-white/40')} />
-          ))}
-        </div>
-        <button onClick={() => setSlide(s => (s - 1 + SLIDES.length) % SLIDES.length)}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/25 transition-all">
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <button onClick={() => setSlide(s => (s + 1) % SLIDES.length)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/25 transition-all">
-          <ChevronRight className="w-5 h-5" />
-        </button>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -168,9 +153,9 @@ export default function ServicesPage() {
         <div className="mt-20 text-center bg-slate-50 dark:bg-slate-800/50 rounded-3xl p-12">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">{t.services_page.cta_title}</h2>
           <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-xl mx-auto">{t.services_page.cta_text}</p>
-          <a href="/#contact" className="inline-flex items-center gap-2 bg-[#C1272D] text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-red-700 transition-all">
+          <button onClick={openContact} className="inline-flex items-center gap-2 bg-[#C1272D] text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-red-700 transition-all">
             {t.services_page.cta_btn}
-          </a>
+          </button>
         </div>
       </div>
     </div>

@@ -1,8 +1,7 @@
 import { MetadataRoute } from 'next';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-
-const BASE_URL = 'https://www.gcfi-rca.com';
+import { SITE_URL as BASE_URL } from '@/shared/lib/site-url';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const cookieStore = await cookies();
@@ -13,9 +12,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   );
 
   const [{ data: products }, { data: trainings }, { data: posts }] = await Promise.all([
-    supabase.from('products').select('id, updated_at'),
-    supabase.from('trainings').select('id, updated_at'),
-    supabase.from('blog_posts').select('id, updated_at').eq('published', true),
+    supabase.from('products').select('id, updated_at').is('deleted_at', null),
+    supabase.from('trainings').select('id, updated_at').is('deleted_at', null),
+    supabase.from('blog_posts').select('id, updated_at').eq('published', true).is('deleted_at', null),
   ]);
 
   const staticRoutes: MetadataRoute.Sitemap = [

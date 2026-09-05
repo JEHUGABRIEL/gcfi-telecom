@@ -5,13 +5,14 @@ import {
   courseSchema,
   localBusinessSchema,
 } from '@/shared/lib/structured-data';
+import { SITE_URL } from '@/shared/lib/site-url';
 
 describe('organizationSchema', () => {
   it('a la structure correcte', () => {
     expect(organizationSchema['@context']).toBe('https://schema.org');
     expect(organizationSchema['@type']).toBe('Organization');
     expect(organizationSchema.name).toBe('GCFI Telecom');
-    expect(organizationSchema.url).toBe('https://www.gcfi-rca.com');
+    expect(organizationSchema.url).toBe(SITE_URL);
     expect(organizationSchema.contactPoint).toBeDefined();
     expect(organizationSchema.contactPoint.contactType).toBe('Customer Support');
     expect(organizationSchema.address.addressCountry).toBe('CF');
@@ -44,7 +45,7 @@ describe('productSchema', () => {
 
   it('génère une URL produit correcte', () => {
     const schema = productSchema(product);
-    expect(schema.url).toContain('/boutique/prod-1');
+    expect(schema.url).toBe(`${SITE_URL}/boutique/prod-1`);
   });
 });
 
@@ -77,7 +78,7 @@ describe('courseSchema', () => {
 
   it('génère une URL formation correcte', () => {
     const schema = courseSchema(course);
-    expect(schema.url).toContain('/formation/course-1');
+    expect(schema.url).toBe(`${SITE_URL}/formation/course-1`);
   });
 });
 

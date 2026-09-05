@@ -4,6 +4,7 @@ import { Send, CheckCircle, X, FileText, Phone, Mail, Building2, MessageSquare, 
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { useLang } from '@/shared/context/LanguageContext';
+import { useNotifications } from '@/shared/context/NotificationContext';
 import { trackFormSubmit, trackFormError } from '@/shared/lib/ga-events';
 import type { QuoteServiceType } from '@/shared/types';
 
@@ -33,6 +34,7 @@ interface QuoteFormProps {
 export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteFormProps) {
   const { t } = useLang();
   const q = t.quote_form;
+  const { addNotification } = useNotifications();
   const SERVICE_TYPES = q.service_types as unknown as QuoteServiceType[];
   const BUDGETS = q.budgets as unknown as string[];
   const [step, setStep] = React.useState<'form' | 'success'>('form');
@@ -89,6 +91,7 @@ export default function QuoteForm({ isOpen, onClose, defaultService }: QuoteForm
       }]);
       if (err) throw err;
       trackFormSubmit('quote', form.service_type || undefined);
+      addNotification({ title: t.admin_page.notif_quote_sent, message: t.admin_page.notif_quote_sent_msg, type: 'info' });
       setStep('success');
     } catch (err) {
       logError('QuoteForm/submit', err);

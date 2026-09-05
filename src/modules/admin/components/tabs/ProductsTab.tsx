@@ -7,7 +7,9 @@ import { logError } from '@/shared/lib/supabase-helpers';
 import { Plus, Trash2, RefreshCw, ShoppingBag, AlertTriangle, Edit, X } from 'lucide-react';
 import ImageUpload from '@/shared/components/ImageUpload';
 import { motion, AnimatePresence } from 'motion/react';
+import { cn } from '@/shared/lib/utils';
 import Pagination from '@/shared/components/ui/Pagination';
+import AdminTable from '@/shared/components/ui/AdminTable';
 import { useActivityLog } from '@/shared/hooks/useActivityLog';
 import { useLang } from '@/shared/context/LanguageContext';
 
@@ -45,7 +47,7 @@ function ConfirmModal({ message, onConfirm, onCancel }: {
   );
 }
 
-const EMPTY_FORM = { name: '', description: '', price: '', category: '', image: '', stock: '0', discount: '0' };
+const EMPTY_FORM = { name: '', description: '', price: '', category: '', image: '', stock: '0', discount: '0', gallery: [] as string[] };
 
 export default function ProductsTab() {
   const { t } = useLang();
@@ -92,6 +94,7 @@ export default function ProductsTab() {
       image: p.image ?? '',
       stock: p.stock?.toString() ?? '0',
       discount: p.discount?.toString() ?? '0',
+      gallery: p.gallery ?? [],
     });
     setSaveError(null);
     setShowForm(true);
@@ -115,6 +118,7 @@ export default function ProductsTab() {
         stock: Number(form.stock),
         discount: discountVal,
         is_promo: discountVal > 0,
+        gallery: form.gallery,
       };
       const { error } = editingProduct
         ? await supabase.from('products').update(payload).eq('id', editingProduct.id)
@@ -134,7 +138,7 @@ export default function ProductsTab() {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await supabase.from('products').delete().eq('id', deleteTarget.id);
+      await supabase.from('products').update({ deleted_at: new Date().toISOString() }).eq('id', deleteTarget.id);
       logActivity({ action: 'deleted', entity: 'products', entity_id: deleteTarget.id, label: `${ap.product_deleted}: ${deleteTarget.name}` });
       setDeleteTarget(null);
       invalidate();
@@ -236,6 +240,30 @@ export default function ProductsTab() {
                     <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block">{ap.product_image}</label>
                     <ImageUpload value={form.image} onChange={url => setForm(f => ({ ...f, image: url }))} folder="gcfi/products" />
                   </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block">{ap.content_gallery}</label>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3 items-start">
+                      {(form.gallery || []).map((src: string, i: number) => (
+                        <div key={`${src}-${i}`} className="relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 group">
+                          <Image src={src} alt={`${ap.content_gallery} ${i + 1}`} fill className="object-cover" sizes="160px" />
+                          <button
+                            type="button"
+                            onClick={() => setForm(f => ({ ...f, gallery: (f.gallery || []).filter((_: string, idx: number) => idx !== i) }))}
+                            className="absolute top-1 right-1 p-1 bg-slate-900/60 backdrop-blur-sm rounded-md text-white hover:bg-red-600 transition-colors"
+                            aria-label={ap.content_gallery}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                      <ImageUpload
+                        value=""
+                        folder="gcfi/products"
+                        placeholder={ap.content_add_photo}
+                        onChange={(url: string) => setForm(f => ({ ...f, gallery: [...(f.gallery || []), url] }))}
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button onClick={save} disabled={saving}
@@ -278,31 +306,41 @@ export default function ProductsTab() {
         </div>
       ) : (
         <>
-          <div className="space-y-3">
-            {products.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(p => (
-              <div key={p.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-4">
-                {p.image && <Image src={p.image} alt={p.name} width={56} height={56} className="rounded-xl object-cover shrink-0" />}
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-slate-900 dark:text-white">{p.name}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs text-[#C1272D] font-bold">{p.price?.toLocaleString()} FCFA</span>
-                    {p.category && <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full text-slate-600 dark:text-slate-300">{p.category}</span>}
-                    <span className="text-xs text-slate-400">{ap.product_stock} : {p.stock ?? 0}</span>
+          <AdminTable
+            columns={[
+              {
+                header: ap.table_item,
+                cell: (p) => (
+                  <div className="flex items-center gap-3">
+                    {p.image && <Image src={p.image} alt={p.name} width={44} height={44} className="rounded-lg object-cover shrink-0" />}
+                    <p className="font-bold text-slate-900 dark:text-white truncate">{p.name}</p>
                   </div>
-                </div>
-                <div className="flex gap-1">
-                  <button onClick={() => startEdit(p)}
-                    className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => setDeleteTarget({ id: p.id, name: p.name })}
-                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+                ),
+              },
+              { header: ap.product_category, cell: (p) => p.category ? <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full text-slate-600 dark:text-slate-300">{p.category}</span> : <span className="text-slate-300">—</span> },
+              { header: ap.product_price, align: 'right' as const, cell: (p) => <span className="font-bold text-[#C1272D] whitespace-nowrap">{p.price?.toLocaleString()} FCFA</span> },
+              { header: ap.product_stock, align: 'center' as const, cell: (p) => <span className={cn('text-sm font-bold', (p.stock ?? 0) > 0 ? 'text-slate-700 dark:text-slate-200' : 'text-red-500')}>{p.stock ?? 0}</span> },
+              {
+                header: ap.table_actions,
+                align: 'right' as const,
+                cell: (p) => (
+                  <div className="flex gap-1 justify-end">
+                    <button onClick={() => startEdit(p)}
+                      className="p-2 text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setDeleteTarget({ id: p.id, name: p.name })}
+                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ),
+              },
+            ]}
+            data={products.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
+            getKey={(p) => p.id}
+            minWidth="720px"
+          />
           <Pagination
             page={page}
             totalPages={Math.ceil(products.length / PAGE_SIZE)}

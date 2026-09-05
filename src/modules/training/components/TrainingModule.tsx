@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
-import { GraduationCap, Clock, ChevronRight, ChevronLeft, X, CheckCircle, Info, Search, Filter, ArrowUpDown, ArrowRight } from 'lucide-react';
+import { GraduationCap, Clock, ChevronRight, X, CheckCircle, Info, Search, Filter, ArrowUpDown, ArrowRight } from 'lucide-react';
 import Fuse from 'fuse.js';
 import { Course } from '@/shared/types';
 import { cn } from '@/shared/lib/utils';
@@ -145,25 +145,11 @@ export default function TrainingModule() {
             <a href="#courses" className="flex items-center gap-2 px-6 py-3 bg-[#C1272D] text-white rounded-xl font-bold text-sm hover:bg-red-600 transition-all shadow-lg">
               {t.formation_page.hero_cta} <ArrowRight className="w-4 h-4" />
             </a>
-            <a href="/#contact" className="flex items-center gap-2 px-6 py-3 bg-white/15 backdrop-blur-sm border border-white/20 text-white rounded-xl font-bold text-sm hover:bg-white/25 transition-all">
+            <button onClick={onContactOpen} className="flex items-center gap-2 px-6 py-3 bg-white/15 backdrop-blur-sm border border-white/20 text-white rounded-xl font-bold text-sm hover:bg-white/25 transition-all">
               {t.formation_page.hero_cta2}
-            </a>
+            </button>
           </motion.div>
         </div>
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
-          {SLIDES.map((_, i) => (
-            <button key={i} onClick={() => setHeroSlide(i)}
-              className={cn('h-1 rounded-full transition-all', i === heroSlide ? 'w-6 bg-white' : 'w-2 bg-white/40')} />
-          ))}
-        </div>
-        <button onClick={() => setHeroSlide(s => (s - 1 + SLIDES.length) % SLIDES.length)}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/25 transition-all">
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <button onClick={() => setHeroSlide(s => (s + 1) % SLIDES.length)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/25 transition-all">
-          <ChevronRight className="w-5 h-5" />
-        </button>
       </div>
 
     <section id="courses" className="py-16 bg-white dark:bg-slate-900 transition-colors">
@@ -178,7 +164,7 @@ export default function TrainingModule() {
                 className="absolute top-6 right-6 z-10 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white border border-white/20">
                 <X className="w-6 h-6" />
               </button>
-              <div className="w-full md:w-5/12 h-64 md:h-full relative">
+              <div className="w-full md:w-5/12 h-64 md:h-auto relative shrink-0">
                 <Image src={selectedCourse.image} alt={selectedCourse.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 400px" />
               </div>
               <div className="p-8 md:w-7/12 overflow-y-auto max-h-[80vh]">
