@@ -111,7 +111,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // Chaque passage dans le middleware coûte un aller-retour `getUser()` vers
+  // Supabase. On exclut donc tout ce qui n'a pas de session à rafraîchir :
+  // endpoints SEO (sitemap, robots, fichier de validation Search Console) et
+  // fichiers statiques. Sans cela, chaque requête de Googlebot attend une
+  // vérification de jeton — un TTFB qui pèse sur le budget de crawl.
   matcher: [
-    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico)).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|sitemap\\.xml|robots\\.txt|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|html|xml|txt|webmanifest)).*)',
   ],
 };
