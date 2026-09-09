@@ -4,6 +4,9 @@ import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import { Providers } from './providers';
 import { SITE_URL } from '@/shared/lib/site-url';
+import JsonLd from '@/shared/components/JsonLd';
+import { organizationSchema, localBusinessSchema } from '@/shared/lib/structured-data';
+import { DEFAULT_OG_IMAGE } from '@/shared/lib/seo-metadata';
 import CookieConsentBanner from '@/shared/components/CookieConsentBanner';
 import AnalyticsTracker from '@/shared/components/AnalyticsTracker';
 // @ts-ignore: allow importing global CSS without type declarations
@@ -31,6 +34,20 @@ export const metadata: Metadata = {
     siteName: 'GCFI Telecom',
     locale: 'fr_FR',
     type: 'website',
+    url: SITE_URL,
+    images: [{ url: DEFAULT_OG_IMAGE, alt: 'GCFI Telecom' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: [DEFAULT_OG_IMAGE],
+  },
+  alternates: { canonical: SITE_URL },
+  // Autorise explicitement les grandes vignettes et les extraits longs :
+  // par défaut Google se limite à un extrait court sur beaucoup de sites.
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 },
   },
 };
 
@@ -42,6 +59,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {supabaseUrl && <link rel="preconnect" href={supabaseUrl} />}
         <link rel="preconnect" href="https://res.cloudinary.com" />
+        {/* Identité de l'entreprise, présente sur toutes les pages */}
+        <JsonLd data={[organizationSchema, localBusinessSchema]} />
         {/* Thème (clair/sombre) */}
         <script
           dangerouslySetInnerHTML={{

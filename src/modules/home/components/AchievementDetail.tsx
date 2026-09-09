@@ -36,7 +36,7 @@ function isSubtitle(line: string): boolean {
   return l.length <= 60 && !/[.!?:]$/.test(l) && /\S{3}/.test(l); // courte phrase sans ponctuation finale
 }
 
-export default function AchievementDetail() {
+export default function AchievementDetail({ initialAchievement }: { initialAchievement?: Achievement }) {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
@@ -47,14 +47,16 @@ export default function AchievementDetail() {
   const [lightbox, setLightbox] = React.useState<string | null>(null);
 
   const list = remote.length ? remote : fallback;
-  const achievement = list.find(a => a.id === id);
+  // Rendu dès la réponse serveur grâce à `initialAchievement` : sans lui, le
+  // HTML envoyé aux crawlers ne contient que l'écran de chargement.
+  const achievement = list.find(a => a.id === id) ?? initialAchievement;
   const others = list.filter(a => a.id !== id).slice(0, 3);
 
   React.useEffect(() => {
     if (!isLoading && !achievement) router.replace('/');
   }, [isLoading, achievement, router]);
 
-  if (isLoading || !achievement) {
+  if (!achievement) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-900">
         <div className="w-10 h-10 border-4 border-slate-100 border-t-[#C1272D] rounded-full animate-spin" />
