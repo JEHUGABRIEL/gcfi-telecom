@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShieldCheck, Mail, BadgeCheck, KeyRound, Lock, Camera, Loader2, Save,
-  CheckCircle2, XCircle, X, RefreshCw, Shield,
+  CheckCircle2, XCircle, X, RefreshCw, Shield, MailCheck,
 } from 'lucide-react';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useLang } from '@/shared/context/LanguageContext';
@@ -51,6 +51,11 @@ export default function AdminProfileModule() {
   const [mfaCode, setMfaCode] = React.useState('');
   const [mfaBusy, setMfaBusy] = React.useState(false);
   const [mfaError, setMfaError] = React.useState<string | null>(null);
+
+  // ── Réinitialisation du mot de passe ──
+  const [pwdBusy, setPwdBusy] = React.useState(false);
+  const [pwdSentTo, setPwdSentTo] = React.useState<string | null>(null);
+  const [pwdError, setPwdError] = React.useState<string | null>(null);
 
   const ap = t.admin_page;
   const mv = t.mfa_verification;
@@ -151,6 +156,34 @@ export default function AdminProfileModule() {
       setMfaError(err instanceof Error ? err.message : ap.mfa_error_generic);
     } finally {
       setMfaBusy(false);
+    }
+  };
+
+  // ── Mot de passe : demander un lien de réinitialisation ──
+  // L'adresse n'est pas envoyée par le client : la route la lit dans la
+  // session, pour qu'un admin ne puisse déclencher un envoi que vers sa
+  // propre boîte.
+  const requestPasswordReset = async () => {
+    setPwdBusy(true);
+    setPwdError(null);
+    setPwdSentTo(null);
+    try {
+      const res = await fetch('/api/auth/admin-password-reset', { method: 'POST' });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPwdError(payload?.error ?? ap.admin_profile_pwd_error);
+        return;
+      }
+      setPwdSentTo(payload.email ?? user?.email ?? '');
+      addNotification({
+        title: ap.admin_profile_pwd,
+        message: ap.admin_profile_pwd_sent.replace('{email}', payload.email ?? ''),
+        type: 'info',
+      });
+    } catch {
+      setPwdError(ap.admin_profile_pwd_error);
+    } finally {
+      setPwdBusy(false);
     }
   };
 
@@ -507,6 +540,38 @@ export default function AdminProfileModule() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* ── Mot de passe ── */}
+          <div className={cn('mt-4 flex flex-col sm:flex-row items-start justify-between gap-4 p-4', subCard)}>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-slate-400" /> {ap.admin_profile_pwd}
+              </p>
+              <p className={cn('text-xs mt-1', muted)}>{ap.admin_profile_pwd_sub}</p>
+              <p className={cn('text-[11px] mt-2', muted)}>{ap.admin_profile_pwd_hint}</p>
+            </div>
+            <button
+              onClick={requestPasswordReset}
+              disabled={pwdBusy}
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+            >
+              {pwdBusy
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> {ap.admin_profile_pwd_sending}</>
+                : <><Mail className="w-4 h-4" /> {ap.admin_profile_pwd_cta}</>}
+            </button>
+          </div>
+
+          {pwdSentTo && (
+            <p className="mt-3 flex items-start gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              <MailCheck className="w-4 h-4 shrink-0 mt-px" />
+              {ap.admin_profile_pwd_sent.replace('{email}', pwdSentTo)}
+            </p>
+          )}
+          {pwdError && (
+            <p className="mt-3 flex items-start gap-2 text-xs font-semibold text-red-600 dark:text-red-400">
+              <XCircle className="w-4 h-4 shrink-0 mt-px" /> {pwdError}
+            </p>
+          )}
         </motion.section>
 
         {/* ── Actions rapides ── */}
