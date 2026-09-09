@@ -10,7 +10,7 @@ import { sanitizeHtml } from '@/shared/lib/sanitize';
 import { useLang } from '@/shared/context/LanguageContext';
 import { useContact } from '@/shared/context/ContactContext';
 
-export default function BlogArticleDetail() {
+export default function BlogArticleDetail({ initialPost }: { initialPost?: BlogPost }) {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
@@ -18,14 +18,16 @@ export default function BlogArticleDetail() {
   const { openContact } = useContact();
   const { data: posts = [], isLoading } = useBlogPosts();
 
-  const post = posts.find(p => p.id === id);
+  // `initialPost` vient du serveur : il permet de rendre l'article dès la
+  // réponse HTML, sans quoi les crawlers ne voient que le spinner.
+  const post = posts.find(p => p.id === id) ?? initialPost;
   const others = posts.filter(p => p.id !== id).slice(0, 3);
 
   React.useEffect(() => {
     if (!isLoading && !post) router.replace('/blog');
   }, [isLoading, post, router]);
 
-  if (isLoading || !post) {
+  if (!post) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-900">
         <div className="w-10 h-10 border-4 border-slate-100 border-t-[#C1272D] rounded-full animate-spin" />

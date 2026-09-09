@@ -11,10 +11,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
   );
 
-  const [{ data: products }, { data: trainings }, { data: posts }] = await Promise.all([
+  const [{ data: products }, { data: trainings }, { data: posts }, { data: achievements }] = await Promise.all([
     supabase.from('products').select('id, updated_at').is('deleted_at', null),
     supabase.from('trainings').select('id, updated_at').is('deleted_at', null),
     supabase.from('blog_posts').select('id, updated_at').eq('published', true).is('deleted_at', null),
+    supabase.from('achievements').select('id, updated_at').is('deleted_at', null),
   ]);
 
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -23,6 +24,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/formation`, lastModified: new Date(), changeFrequency: 'weekly',  priority: 0.9 },
     { url: `${BASE_URL}/services`,  lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/blog`,      lastModified: new Date(), changeFrequency: 'daily',   priority: 0.7 },
+    { url: `${BASE_URL}/conditions`,      lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${BASE_URL}/confidentialite`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
   ];
 
   const productRoutes: MetadataRoute.Sitemap = (products ?? []).map(p => ({
@@ -46,5 +49,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...productRoutes, ...trainingRoutes, ...blogRoutes];
+  // Les pages de réalisation étaient absentes du sitemap : Google n'avait
+  // aucun chemin de découverte vers elles.
+  const achievementRoutes: MetadataRoute.Sitemap = (achievements ?? []).map(a => ({
+    url: `${BASE_URL}/realisations/${a.id}`,
+    lastModified: a.updated_at ? new Date(a.updated_at) : new Date(),
+    changeFrequency: 'yearly',
+    priority: 0.5,
+  }));
+
+  return [...staticRoutes, ...productRoutes, ...trainingRoutes, ...blogRoutes, ...achievementRoutes];
 }

@@ -10,17 +10,33 @@ import { useLang } from '@/shared/context/LanguageContext';
 import { trackEnroll, trackViewItem } from '@/shared/lib/ga-events';
 import type { Course } from '@/shared/types';
 
-export default function CourseDetail() {
+export default function CourseDetail({ initialCourse }: { initialCourse?: Course }) {
   const params = useParams(); const id = params.id as string;
   const router = useRouter();
   const { t, lang } = useLang();
   const { data: courses = [], isLoading } = useCourses(lang);
 
-  const course = courses.find((c: Course) => c.id === id);
+  // Rendu dès la réponse serveur grâce à `initialCourse` : sans lui, le HTML
+  // envoyé aux crawlers ne contient que l'écran de chargement.
+  const course = courses.find((c: Course) => c.id === id) ?? initialCourse;
 
   React.useEffect(() => {
     if (!isLoading && !course) router.replace('/formation');
   }, [course, isLoading, router]);
+
+  // Page vue — tracker la consultation de la formation.
+  // Doit rester au-dessus de tout `return` anticipé : un hook placé après
+  // change le nombre de hooks entre deux rendus et fait planter React.
+  React.useEffect(() => {
+    if (course) {
+      trackViewItem({
+        id: course.id,
+        name: course.title,
+        price: course.price,
+        category: course.category,
+      });
+    }
+  }, [course?.id]);
 
   const handleContact = () => {
     if (course) {
@@ -42,25 +58,13 @@ export default function CourseDetail() {
       .catch(() => navigator.clipboard.writeText(window.location.href));
   };
 
-  if (isLoading) {
+  if (isLoading && !course) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-slate-100 border-t-[#C1272D] rounded-full animate-spin" />
       </div>
     );
   }
-
-  // Page vue — tracker la consultation de la formation
-  React.useEffect(() => {
-    if (course) {
-      trackViewItem({
-        id: course.id,
-        name: course.title,
-        price: course.price,
-        category: course.category,
-      });
-    }
-  }, [course?.id]);
 
   if (!course) return null;
 

@@ -3,6 +3,8 @@ import {
   organizationSchema,
   productSchema,
   courseSchema,
+  articleSchema,
+  breadcrumbSchema,
   localBusinessSchema,
 } from '@/shared/lib/structured-data';
 import { SITE_URL } from '@/shared/lib/site-url';
@@ -38,9 +40,11 @@ describe('productSchema', () => {
     const schema = productSchema(product);
     expect(schema['@type']).toBe('Product');
     expect(schema.name).toBe('Routeur Mikrotik');
-    expect(schema.price).toBe(85000);
-    expect(schema.priceCurrency).toBe('XAF');
-    expect(schema.availability).toBe('https://schema.org/InStock');
+    // Le prix vit dans `offers` : schema.org ne l'admet pas sur Product.
+    expect(schema.offers['@type']).toBe('Offer');
+    expect(schema.offers.price).toBe(85000);
+    expect(schema.offers.priceCurrency).toBe('XAF');
+    expect(schema.offers.availability).toBe('https://schema.org/InStock');
   });
 
   it('génère une URL produit correcte', () => {
@@ -65,8 +69,9 @@ describe('courseSchema', () => {
     expect(schema['@type']).toBe('Course');
     expect(schema.name).toBe('Cybersécurité Avancée');
     expect(schema.description).toBe('Formation complète');
-    expect(schema.price).toBe(150000);
-    expect(schema.priceCurrency).toBe('XAF');
+    expect(schema.offers['@type']).toBe('Offer');
+    expect(schema.offers.price).toBe(150000);
+    expect(schema.offers.priceCurrency).toBe('XAF');
     expect(schema.category).toBe('Sécurité');
   });
 
@@ -95,5 +100,48 @@ describe('localBusinessSchema', () => {
     expect(localBusinessSchema.openingHoursSpecification.dayOfWeek).toContain('Friday');
     expect(localBusinessSchema.openingHoursSpecification.opens).toBe('08:00');
     expect(localBusinessSchema.openingHoursSpecification.closes).toBe('18:00');
+  });
+});
+
+describe('breadcrumbSchema', () => {
+  it('numérote les étapes à partir de 1 et résout les URLs', () => {
+    const schema = breadcrumbSchema([
+      { name: 'Accueil', path: '/' },
+      { name: 'Boutique', path: '/boutique' },
+    ]);
+    expect(schema['@type']).toBe('BreadcrumbList');
+    expect(schema.itemListElement[0].position).toBe(1);
+    expect(schema.itemListElement[1].position).toBe(2);
+    expect(schema.itemListElement[1].item).toBe(`${SITE_URL}/boutique`);
+  });
+});
+
+describe('articleSchema', () => {
+  const post = {
+    id: 'post-1',
+    title: 'Sécuriser son réseau',
+    excerpt: 'Les bases',
+    content: '<p>Contenu</p>',
+    image: 'https://example.com/post.jpg',
+    category: 'Sécurité',
+    tags: ['réseau', 'sécurité'],
+    author: 'Jean',
+    published: true,
+    created_at: '2026-01-15T10:00:00Z',
+  };
+
+  it('génère un BlogPosting complet', () => {
+    const schema = articleSchema(post);
+    expect(schema['@type']).toBe('BlogPosting');
+    expect(schema.headline).toBe('Sécuriser son réseau');
+    expect(schema.author.name).toBe('Jean');
+    expect(schema.datePublished).toBe('2026-01-15T10:00:00Z');
+    expect(schema.mainEntityOfPage).toBe(`${SITE_URL}/blog/post-1`);
+    expect(schema.keywords).toBe('réseau, sécurité');
+  });
+
+  it('retombe sur le logo quand l\'article n\'a pas d\'image', () => {
+    const schema = articleSchema({ ...post, image: null });
+    expect(schema.image).toBe(`${SITE_URL}/logo.png`);
   });
 });
