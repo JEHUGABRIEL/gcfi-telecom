@@ -275,7 +275,7 @@ export default function HomeView() {
     <div className="bg-white dark:bg-slate-900 overflow-x-hidden">
 
       {/* ══ 1. HERO ══════════════════════════════════════════════ */}
-      <section className="relative min-h-[92vh] flex items-center pt-17 overflow-hidden">
+      <section className="relative min-h-[74vh] flex items-center pt-17 overflow-hidden">
 
         {/* ── Slideshow background ── */}
         <div className="absolute inset-0">
@@ -307,8 +307,8 @@ export default function HomeView() {
         {/* 🎉 Confettis sur les slides d'anniversaire */}
         <BirthdayConfetti heroSlide={heroSlide} />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative w-full z-10">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 relative w-full z-10">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
 
             {/* Left */}
             <div>
@@ -317,12 +317,12 @@ export default function HomeView() {
                   initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: 0.5, ease: 'easeOut' }}>
 
-                  <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/15 backdrop-blur-sm text-white border border-white/20 rounded-full text-xs font-black uppercase tracking-widest mb-6">
+                  <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/15 backdrop-blur-sm text-white border border-white/20 rounded-full text-xs font-black uppercase tracking-widest mb-5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#C1272D] animate-pulse" />
                     {HERO_IMAGES[heroSlide].tag}
                   </span>
 
-                  <h1 className="text-5xl md:text-6xl xl:text-7xl font-black text-white leading-[1.05] tracking-tight mb-6">
+                  <h1 className="text-4xl md:text-5xl xl:text-6xl font-black text-white leading-[1.08] tracking-tight mb-5">
                     {HERO_IMAGES[heroSlide].title.includes('Centrafrique') ? (
                       <>
                         Connecter la{' '}
@@ -339,7 +339,7 @@ export default function HomeView() {
                     )}
                   </h1>
 
-                  <p className="text-lg text-white/80 leading-relaxed mb-10 max-w-lg">
+                  <p className="text-base md:text-lg text-white/80 leading-relaxed mb-8 max-w-lg">
                     {HERO_IMAGES[heroSlide].sub}
                   </p>
                 </motion.div>
@@ -350,11 +350,11 @@ export default function HomeView() {
                 className="flex flex-wrap gap-4"
               >
                 <button onClick={() => router.push('/services')}
-                  className="flex items-center gap-2.5 px-8 py-4 bg-[#C1272D] text-white rounded-2xl font-bold text-sm hover:bg-red-600 transition-all shadow-lg shadow-red-500/30 hover:shadow-xl hover:-translate-y-0.5">
+                  className="flex items-center gap-2.5 px-7 py-3.5 bg-[#C1272D] text-white rounded-2xl font-bold text-sm hover:bg-red-600 transition-all shadow-lg shadow-red-500/30 hover:shadow-xl hover:-translate-y-0.5">
                   {t.hero.cta_services} <ArrowRight className="w-4 h-4" />
                 </button>
                 <button onClick={() => router.push('/formation')}
-                  className="flex items-center gap-2.5 px-8 py-4 bg-white/15 backdrop-blur-sm text-white border border-white/30 rounded-2xl font-bold text-sm hover:bg-white/25 transition-all hover:-translate-y-0.5">
+                  className="flex items-center gap-2.5 px-7 py-3.5 bg-white/15 backdrop-blur-sm text-white border border-white/30 rounded-2xl font-bold text-sm hover:bg-white/25 transition-all hover:-translate-y-0.5">
                   <GraduationCap className="w-4 h-4" /> {t.hero.cta_formations}
                 </button>
               </motion.div>
@@ -370,15 +370,15 @@ export default function HomeView() {
                   exit={{ opacity: 0, x: -30, scale: 0.95 }}
                   transition={{ duration: 0.5, ease: 'easeOut' }}
                   onClick={() => router.push('/services')}
-                  className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-10 cursor-pointer w-full max-w-sm hover:bg-white/15 transition-all group"
+                  className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-8 cursor-pointer w-full max-w-sm hover:bg-white/15 transition-all group"
                 >
-                  <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[#C1272D] transition-colors">
+                  <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-[#C1272D] transition-colors">
                     {React.createElement(HERO_IMAGES[heroSlide].card.icon, {
-                      className: 'w-8 h-8 text-white'
+                      className: 'w-7 h-7 text-white'
                     })}
                   </div>
                   <p className="text-white font-black text-2xl mb-3">{HERO_IMAGES[heroSlide].card.label}</p>
-                  <p className="text-white/70 text-sm leading-relaxed mb-6">{HERO_IMAGES[heroSlide].card.desc}</p>
+                  <p className="text-white/70 text-sm leading-relaxed mb-5">{HERO_IMAGES[heroSlide].card.desc}</p>
                   <span className="flex items-center gap-2 text-xs font-black text-white/60 uppercase tracking-widest group-hover:text-white transition-colors">
                     {t.hero.card_more} <ArrowRight className="w-3.5 h-3.5" />
                   </span>
