@@ -19,14 +19,24 @@ CREATE INDEX IF NOT EXISTS idx_emails_queue_pending
   WHERE status = 'pending';
 
 -- ------------------------------------------------------------
--- Le job est créé INACTIF, volontairement.
+-- Cette migration n'ordonnance AUCUN job. Elle installe seulement de quoi le
+-- faire en une commande.
 --
--- La file contient un arriéré accumulé depuis des mois. L'activer sans
--- précaution expédierait d'un seul jet des emails de bienvenue et des
--- confirmations de commande périmés à de vrais clients — un dégât bien pire
--- que le silence actuel, et irréversible une fois les emails partis.
+-- Deux raisons :
 --
--- Marche à suivre, dans cet ordre :
+-- 1. La file contient un arriéré accumulé depuis des mois. Ordonnancer sans
+--    précaution expédierait d'un seul jet des emails de bienvenue et des
+--    confirmations de commande périmés à de vrais clients — un dégât bien
+--    pire que le silence actuel, et irréversible une fois les emails partis.
+--
+-- 2. Sur Supabase, le rôle `postgres` peut appeler les fonctions de pg_cron
+--    mais n'a aucun droit sur la table `cron.job`. Créer un job puis le
+--    désactiver par `update cron.job set active = false` échoue en
+--    « permission denied for table job ». On s'en tient donc à
+--    cron.schedule / cron.unschedule, qui suffisent : un job absent équivaut
+--    à un job inactif, sans dépendre d'un accès à la table.
+--
+-- Marche à suivre :
 --
 --   1. Inspecter l'arriéré
 --        select status, count(*), min(created_at), max(created_at)
@@ -38,14 +48,19 @@ CREATE INDEX IF NOT EXISTS idx_emails_queue_pending
 --        set status = 'failed'
 --        where status = 'pending' and created_at < now() - interval '24 hours';
 --
---   3. Activer le job
---        update cron.job set active = true where jobname = 'drain-emails-queue';
+--   3. Démarrer la vidange
+--        select public.enable_email_drain();
 --
--- Pour l'arrêter plus tard :
---   update cron.job set active = false where jobname = 'drain-emails-queue';
+--   Pour l'arrêter :
+--        select public.disable_email_drain();
 -- ------------------------------------------------------------
 
-DO $$
+CREATE OR REPLACE FUNCTION public.enable_email_drain()
+RETURNS bigint
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $fn$
 DECLARE
   v_url        text := 'https://tivlllahuykbfnawwhba.supabase.co/functions/v1/send-emails';
   v_net_schema text;
@@ -61,17 +76,16 @@ BEGIN
   LIMIT 1;
 
   IF v_net_schema IS NULL THEN
-    RAISE EXCEPTION 'pg_net introuvable : http_post absent de tout schéma';
+    RAISE EXCEPTION 'pg_net introuvable : http_post absent de tout schéma.';
   END IF;
 
-  -- Rejouable : on retire une éventuelle version précédente du job.
-  PERFORM cron.unschedule('drain-emails-queue')
-  WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'drain-emails-queue');
-
-  -- L'edge function est déployée avec verify_jwt = false : elle n'attend
-  -- aucun jeton, et n'accepte aucune donnée d'entrée — elle ne fait que vider
-  -- la file. Rien de sensible ne transite ici.
-  PERFORM cron.schedule(
+  -- cron.schedule remplace le job de même nom s'il existe : rejouable sans
+  -- effet de bord.
+  --
+  -- L'edge function est déployée avec verify_jwt = false : elle n'attend aucun
+  -- jeton et n'accepte aucune donnée d'entrée — elle ne fait que vider la
+  -- file. Rien de sensible ne transite ici.
+  RETURN cron.schedule(
     'drain-emails-queue',
     '*/5 * * * *',
     format(
@@ -85,7 +99,26 @@ BEGIN
       v_url
     )
   );
-
-  UPDATE cron.job SET active = false WHERE jobname = 'drain-emails-queue';
 END;
-$$;
+$fn$;
+
+CREATE OR REPLACE FUNCTION public.disable_email_drain()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $fn$
+BEGIN
+  PERFORM cron.unschedule('drain-emails-queue');
+EXCEPTION
+  -- cron.unschedule lève si le job n'existe pas. Arrêter ce qui est déjà
+  -- arrêté n'est pas une erreur.
+  WHEN OTHERS THEN NULL;
+END;
+$fn$;
+
+-- Piloter la vidange d'emails n'a rien à faire entre les mains d'un visiteur.
+REVOKE ALL ON FUNCTION public.enable_email_drain()  FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.disable_email_drain() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.enable_email_drain()  FROM anon, authenticated;
+REVOKE ALL ON FUNCTION public.disable_email_drain() FROM anon, authenticated;

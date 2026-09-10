@@ -130,12 +130,22 @@ deçà de ce qu'exige de l'email transactionnel. pg_cron vit dans la base,
 descend à la minute et ne dépend pas de l'hébergeur. Le job tourne toutes les
 5 minutes.
 
-### Le job est créé INACTIF — à activer à la main
+### Aucun job n'est ordonnancé par la migration
 
-La file contient un arriéré accumulé depuis des mois. L'activer sans
+Elle installe seulement `public.enable_email_drain()` et
+`public.disable_email_drain()`. Deux raisons.
+
+La file contient un arriéré accumulé depuis des mois. Ordonnancer sans
 précaution expédierait d'un seul jet des emails de bienvenue et des
 confirmations de commande périmés à de vrais clients : un dégât bien pire que
 le silence actuel, et irréversible une fois les emails partis.
+
+Et sur Supabase, le rôle `postgres` peut **appeler** les fonctions de pg_cron
+mais n'a **aucun droit sur la table `cron.job`**. Créer un job puis le
+désactiver par `update cron.job set active = false` échoue en
+`permission denied for table job` (SQLSTATE 42501). On s'en tient donc à
+`cron.schedule` / `cron.unschedule` : un job absent équivaut à un job inactif,
+sans dépendre d'un accès à la table.
 
 **1. Inspecter l'arriéré**
 
@@ -153,13 +163,21 @@ set status = 'failed'
 where status = 'pending' and created_at < now() - interval '24 hours';
 ```
 
-**3. Activer le job**
+**3. Démarrer la vidange**
 
 ```sql
-update cron.job set active = true where jobname = 'drain-emails-queue';
+select public.enable_email_drain();
 ```
 
-Pour l'arrêter plus tard, repasser `active = false`.
+Pour l'arrêter : `select public.disable_email_drain();`
+Les deux sont rejouables — `cron.schedule` remplace un job de même nom, et
+arrêter ce qui est déjà arrêté n'est pas une erreur.
+
+### Si les extensions manquent
+
+`CREATE EXTENSION` figure dans la migration, mais si elle échoue faute de
+droits, active **pg_cron** et **pg_net** depuis Database → Extensions du
+dashboard, puis rejoue la migration.
 
 ### Garde-fou d'ancienneté
 
