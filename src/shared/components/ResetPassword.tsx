@@ -20,6 +20,9 @@ export default function ResetPassword() {
   const [showPwd, setShowPwd]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
   const [loading, setLoading]   = useState(false);
+  // Destination après changement réussi : un admin repart vers sa console,
+  // pas vers la vitrine publique.
+  const [destination, setDestination] = useState('/');
 
   useEffect(() => {
     // On arrive d'un lien de réinitialisation si le fragment le dit, ou si
@@ -62,6 +65,16 @@ export default function ResetPassword() {
     return () => { subscription.unsubscribe(); clearTimeout(timer); };
   }, []);
 
+  // La redirection vit dans un effet : l'ancien `setTimeout` était posé dans
+  // le gestionnaire de soumission et son `return () => clearTimeout(...)`
+  // n'était jamais appelé — React n'attend pas de fonction de nettoyage d'un
+  // handler. Le minuteur survivait donc au démontage du composant.
+  useEffect(() => {
+    if (step !== 'success') return;
+    const timer = setTimeout(() => router.push(destination), 3000);
+    return () => clearTimeout(timer);
+  }, [step, destination, router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -77,10 +90,26 @@ export default function ResetPassword() {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
+
+      // Le rôle décide de la destination. La lecture ne doit pas pouvoir
+      // faire échouer un changement de mot de passe déjà effectué : en cas
+      // de problème on retombe simplement sur l'accueil.
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .maybeSingle();
+          const role = (profile as { role?: string } | null)?.role;
+          if (role === 'admin' || role === 'superadmin') setDestination('/admin');
+        }
+      } catch {
+        // Destination inchangée : accueil.
+      }
+
       setStep('success');
-      // Rediriger vers l'accueil après 3 secondes
-      const t = setTimeout(() => router.push('/'), 3000);
-      return () => clearTimeout(t);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t.common.error);
     } finally {
