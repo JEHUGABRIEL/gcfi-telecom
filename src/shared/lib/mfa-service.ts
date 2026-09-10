@@ -46,26 +46,20 @@ export async function setupTOTP(userId: string, email: string): Promise<{
 // ----------------------------------------------------------------
 // Vérifie un code TOTP à 6 chiffres
 // ----------------------------------------------------------------
+// Passe par l'API serveur (clé service, jamais exposée au navigateur) —
+// le secret TOTP ne doit jamais transiter côté client, et cette route
+// applique en plus un verrouillage anti-brute-force.
 export async function verifyTOTPCode(userId: string, token: string): Promise<boolean> {
-  const { data } = await supabase
-    .from('user_mfa_settings')
-    .select('secret')
-    .eq('user_id', userId)
-    .single();
-
-  if (!data?.secret) return false;
-
-  const totp = new OTPAuth.TOTP({
-    issuer: APP_NAME,
-    algorithm: 'SHA1',
-    digits: 6,
-    period: 30,
-    secret: OTPAuth.Secret.fromBase32(data.secret),
-  });
-
-  // delta: ±1 période (30s) pour tolérer les décalages d'horloge
-  const delta = totp.validate({ token, window: 1 });
-  return delta !== null;
+  try {
+    const res = await fetch('/api/auth/verify-mfa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, token }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 // ----------------------------------------------------------------
