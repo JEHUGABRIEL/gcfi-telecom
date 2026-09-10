@@ -7,7 +7,7 @@ import { logError } from '@/shared/lib/supabase-helpers';
 import { useAuth } from '@/shared/context/AuthContext';
 import {
   Shield, ShieldCheck, User, RefreshCw, Search, AlertTriangle,
-  X, Ban, Clock, CheckCircle, ChevronRight, Mail, Calendar
+  X, Ban, Clock, CheckCircle, Mail, Calendar, ArrowLeft, Eye
 } from 'lucide-react';
 import Pagination from '@/shared/components/ui/Pagination';
 import AdminTable from '@/shared/components/ui/AdminTable';
@@ -46,9 +46,15 @@ function ConfirmModal({ title, message, onConfirm, onCancel, danger = false, btn
   );
 }
 
-/* ── Modal détail utilisateur ────────────────────────────────── */
-function UserDetailModal({ user, isSuperAdmin, isSelf = false, onClose, onBlock, onUnblock, onRoleChange }:{
-  user: any; isSuperAdmin: boolean; isSelf?: boolean; onClose: () => void;
+/* ── Vue détail utilisateur ──────────────────────────────────── */
+/**
+ * Volontairement une vue et non une modale : la fiche porte plusieurs actions
+ * conséquentes (rôle, blocage) et mérite la place d'une page. Elle remplace la
+ * liste dans la coquille admin, avec l'URL synchronisée pour que le bouton
+ * retour du navigateur fonctionne comme sur n'importe quelle page.
+ */
+function UserDetailView({ user, isSuperAdmin, isSelf = false, onBack, onBlock, onUnblock, onRoleChange }:{
+  user: any; isSuperAdmin: boolean; isSelf?: boolean; onBack: () => void;
   onBlock: (id: string, type: BlockType, userName?: string) => void;
   onUnblock: (id: string, userName?: string) => void;
   onRoleChange: (id: string, role: Role, userName?: string) => void;
@@ -71,100 +77,95 @@ function UserDetailModal({ user, isSuperAdmin, isSelf = false, onClose, onBlock,
     : ap.users_status_active;
 
   const canChangeRole = !isSelf && user.role !== 'superadmin' && (isSuperAdmin || user.role === 'client');
-  const hasActions = canChangeRole || !isSelf;
+
+  const Field = ({ icon: Icon, label, value, danger }: { icon: any; label: string; value: React.ReactNode; danger?: boolean }) => (
+    <div className="py-3.5 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
+      <Icon className="w-4 h-4 text-slate-400 shrink-0" />
+      <span className="text-xs text-slate-500 dark:text-slate-400">{label}</span>
+      <span className={cn('ml-auto text-sm font-semibold text-right break-all',
+        danger ? 'text-red-500' : 'text-slate-900 dark:text-white')}>{value}</span>
+    </div>
+  );
 
   return (
-    <div className="fixed inset-0 z-300 flex items-center justify-center p-4">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        onClick={onClose} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <motion.div initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }}
-        className="relative bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl z-10 overflow-hidden">
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
 
-        {/* En-tête : identité et état, d'un coup d'œil */}
-        <div className="bg-slate-900 px-5 py-4 flex items-center gap-3.5">
-          <div className="relative w-11 h-11 rounded-xl bg-[#C1272D] flex items-center justify-center shrink-0 text-white font-black overflow-hidden">
+      <button onClick={onBack}
+        className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#C1272D] transition-colors">
+        <ArrowLeft className="w-4 h-4" /> {ap.users_back_to_list}
+      </button>
+
+      {/* Identité */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="bg-slate-900 px-6 py-5 flex items-center gap-4">
+          <div className="relative w-16 h-16 rounded-2xl bg-[#C1272D] flex items-center justify-center shrink-0 text-white font-black text-2xl overflow-hidden">
             {user.avatar_url
-              ? <Image src={user.avatar_url} fill className="object-cover rounded-xl" alt="" sizes="44px" />
+              ? <Image src={user.avatar_url} fill className="object-cover rounded-2xl" alt="" sizes="64px" />
               : (user.full_name?.[0] || user.email?.[0] || '?').toUpperCase()}
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold text-white truncate">{user.full_name || ap.users_no_name}</h3>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h2 className="text-xl font-black text-white truncate">{user.full_name || ap.users_no_name}</h2>
               <RoleBadge role={user.role} />
+              {isSelf && <span className="text-[10px] font-black uppercase tracking-widest text-[#ff6b6b]">{ap.users_badge_you}</span>}
             </div>
-            <p className="text-slate-400 text-xs truncate mt-0.5">{user.email}</p>
-          </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors shrink-0">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Faits : deux lignes serrées plutôt que quatre tuiles */}
-        <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 grid grid-cols-2 gap-x-6 gap-y-2.5">
-          <div className="flex items-center gap-2 min-w-0">
-            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span className="text-[11px] text-slate-400 shrink-0">{ap.users_label_registered}</span>
-            <span className="text-xs font-semibold text-slate-900 dark:text-white ml-auto truncate">
-              {new Date(user.created_at).toLocaleDateString('fr-FR')}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 min-w-0">
-            <CheckCircle className={cn('w-3.5 h-3.5 shrink-0', isBlocked ? 'text-red-500' : 'text-emerald-500')} />
-            <span className="text-[11px] text-slate-400 shrink-0">{ap.users_label_status}</span>
-            <span className={cn('text-xs font-semibold ml-auto truncate', isBlocked ? 'text-red-500' : 'text-slate-900 dark:text-white')}>
-              {blockStatus}
-            </span>
+            <p className="text-slate-400 text-sm truncate mt-1">{user.email}</p>
           </div>
         </div>
 
-        {hasActions && (
-          <div className="p-5 grid gap-4 sm:grid-cols-2">
-            {/* Rôle */}
-            {canChangeRole && (
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{ap.users_change_role}</p>
-                <div className="flex gap-2">
-                  {(['client', 'admin'] as Role[]).filter(r => r !== user.role).map(r => (
-                    <button key={r} onClick={() => { onRoleChange(user.id, r, user.full_name || user.email); onClose(); }}
-                      className="flex-1 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-[#C1272D] hover:text-[#C1272D] transition-all capitalize">
-                      → {r}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+        <div className="px-6 py-1">
+          <Field icon={Mail}     label={ap.users_label_email}      value={user.email} />
+          <Field icon={Calendar} label={ap.users_label_registered} value={new Date(user.created_at).toLocaleDateString('fr-FR')} />
+          <Field icon={isBlocked ? Ban : CheckCircle} label={ap.users_label_status} value={blockStatus} danger={isBlocked} />
+        </div>
+      </div>
 
-            {/* Blocage — jamais sur soi-même */}
-            {!isSelf && (
-              <div className={cn(!canChangeRole && 'sm:col-span-2')}>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{ap.users_block_management}</p>
-                {isBlocked ? (
-                  <button onClick={() => { onUnblock(user.id, user.full_name || user.email); onClose(); }}
-                    className="w-full py-2.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-all flex items-center justify-center gap-2">
-                    <CheckCircle className="w-4 h-4" /> {ap.users_unblock_btn}
+      {/* Actions */}
+      {(canChangeRole || !isSelf) && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {canChangeRole && (
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">{ap.users_change_role}</p>
+              <div className="flex gap-2">
+                {(['client', 'admin'] as Role[]).filter(r => r !== user.role).map(r => (
+                  <button key={r} onClick={() => { onRoleChange(user.id, r, user.full_name || user.email); onBack(); }}
+                    className="flex-1 py-3 rounded-xl text-sm font-bold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-[#C1272D] hover:text-[#C1272D] transition-all capitalize">
+                    → {r}
                   </button>
-                ) : (
-                  <div className="flex gap-2">
-                    <select value={blockType} onChange={e => setBlockType(e.target.value as BlockType)}
-                      className="flex-1 min-w-0 px-3 py-2.5 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#C1272D]">
-                      {blockOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                    <button onClick={() => { onBlock(user.id, blockType, user.full_name || user.email); onClose(); }}
-                      title={blockType === 'permanent' ? ap.users_block_permanent_btn : ap.users_block_temp_btn}
-                      className={cn('px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shrink-0 transition-all',
-                        blockType === 'permanent'
-                          ? 'bg-red-500 text-white hover:bg-red-600'
-                          : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200')}>
-                      {blockType === 'permanent' ? <Ban className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
-                    </button>
-                  </div>
-                )}
+                ))}
               </div>
-            )}
-          </div>
-        )}
-      </motion.div>
-    </div>
+            </div>
+          )}
+
+          {!isSelf && (
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">{ap.users_block_management}</p>
+              {isBlocked ? (
+                <button onClick={() => { onUnblock(user.id, user.full_name || user.email); onBack(); }}
+                  className="w-full py-3 rounded-xl text-sm font-bold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-all flex items-center justify-center gap-2">
+                  <CheckCircle className="w-4 h-4" /> {ap.users_unblock_btn}
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <select value={blockType} onChange={e => setBlockType(e.target.value as BlockType)}
+                    className="flex-1 min-w-0 px-3 py-3 text-sm border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#C1272D]">
+                    {blockOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                  <button onClick={() => { onBlock(user.id, blockType, user.full_name || user.email); onBack(); }}
+                    className={cn('px-5 py-3 rounded-xl text-sm font-bold flex items-center gap-2 shrink-0 transition-all',
+                      blockType === 'permanent'
+                        ? 'bg-red-500 text-white hover:bg-red-600'
+                        : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200')}>
+                    {blockType === 'permanent' ? <Ban className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                    {ap.users_block_apply}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </motion.div>
   );
 }
 
@@ -270,24 +271,61 @@ export default function UsersTab() {
   // Reset to page 1 when search changes
   React.useEffect(() => { setPage(1); }, [search]);
 
+  // L'utilisateur ouvert vit dans l'URL : le bouton retour du navigateur
+  // referme la fiche au lieu de quitter l'admin, et un lien vers une fiche
+  // précise reste partageable entre administrateurs.
+  const openUser = React.useCallback((u: any) => {
+    setSelected(u);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', 'users');
+    url.searchParams.set('user', u.id);
+    window.history.pushState({ user: u.id }, '', url);
+  }, []);
+
+  const closeUser = React.useCallback(() => {
+    setSelected(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('user');
+    window.history.pushState({}, '', url);
+  }, []);
+
+  React.useEffect(() => {
+    const onPop = () => {
+      const id = new URL(window.location.href).searchParams.get('user');
+      setSelected(id ? (users.find(u => u.id === id) ?? null) : null);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [users]);
+
+  // Ouverture directe depuis une URL portant déjà ?user=…
+  const restored = React.useRef(false);
+  React.useEffect(() => {
+    if (restored.current || users.length === 0) return;
+    const id = new URLSearchParams(window.location.search).get('user');
+    if (id) setSelected(users.find(u => u.id === id) ?? null);
+    restored.current = true;
+  }, [users]);
+
   const stats = { total: users.length, clients: users.filter(u => u.role === 'client').length, admins: users.filter(u => u.role === 'admin').length, blocked: users.filter(u => getBlockStatus(u) !== 'active').length };
 
   return (
     <>
     <AdminToast toast={toast} onDismiss={dismiss} />
+
+    {selectedUser ? (
+      <UserDetailView
+        user={selectedUser}
+        isSuperAdmin={isSuperAdmin}
+        isSelf={selectedUser.id === currentUser?.id}
+        onBack={closeUser}
+        onBlock={handleBlock}
+        onUnblock={handleUnblock}
+        onRoleChange={handleRoleChange}
+      />
+    ) : (
     <div className="space-y-6">
       <AnimatePresence>
-        {selectedUser && (
-          <UserDetailModal
-            user={selectedUser}
-            isSuperAdmin={isSuperAdmin}
-            isSelf={selectedUser.id === currentUser?.id}
-            onClose={() => setSelected(null)}
-            onBlock={handleBlock}
-            onUnblock={handleUnblock}
-            onRoleChange={handleRoleChange}
-          />
-        )}
         {confirm && (
           <ConfirmModal
             title={confirm.title}
@@ -369,14 +407,48 @@ export default function UsersTab() {
               },
             },
             {
-              header: '',
+              header: ap.table_actions,
               align: 'right' as const,
-              cell: () => <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 ml-auto" />,
+              cell: (u) => {
+                const blocked = getBlockStatus(u) !== 'active';
+                return (
+                  // stopPropagation : la ligne entière ouvre la fiche, ces
+                  // boutons agissent sans y entrer.
+                  <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => openUser(u)}
+                      title={ap.users_action_view}
+                      className="p-2 rounded-lg text-slate-400 hover:text-[#C1272D] hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    {u.id !== currentUser?.id && (
+                      blocked ? (
+                        <button
+                          onClick={() => handleUnblock(u.id, u.full_name || u.email)}
+                          title={ap.users_unblock_btn}
+                          className="p-2 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleBlock(u.id, '24h', u.full_name || u.email)}
+                          title={ap.users_block_24h}
+                          className="p-2 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                        >
+                          <Clock className="w-4 h-4" />
+                        </button>
+                      )
+                    )}
+                  </div>
+                );
+              },
             },
           ]}
           data={paginated}
           getKey={(u) => u.id}
-          onRowClick={(u) => setSelected(u)}
+          onRowClick={openUser}
           rowClassName={(u) => u.id === currentUser?.id ? 'bg-red-50/40 dark:bg-red-900/10' : undefined}
           minWidth="640px"
           empty={<div className="text-center py-16 text-slate-400"><User className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>{ap.users_empty}</p></div>}
@@ -391,6 +463,7 @@ export default function UsersTab() {
         </>
       )}
     </div>
+    )}
     </>
   );
 }
