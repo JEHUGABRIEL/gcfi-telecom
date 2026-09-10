@@ -142,6 +142,6 @@ describe('articleSchema', () => {
 
   it('retombe sur le logo quand l\'article n\'a pas d\'image', () => {
     const schema = articleSchema({ ...post, image: null });
-    expect(schema.image).toBe(`${SITE_URL}/logo.png`);
+    expect(schema.image).toBe(`${SITE_URL}/og-image.png`);
   });
 });
