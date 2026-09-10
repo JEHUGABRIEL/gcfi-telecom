@@ -86,11 +86,14 @@ export async function disableMFAForUser(userId: string): Promise<void> {
 // Récupère les paramètres MFA de l'utilisateur
 // ----------------------------------------------------------------
 export async function getUserMFASettings(userId: string) {
+  // maybeSingle et non single : un compte sans MFA configuré n'a tout
+  // simplement pas de ligne ici. `single()` traitait ce cas nominal comme une
+  // erreur et PostgREST répondait 406 à chaque chargement du profil.
   const { data } = await supabase
     .from('user_mfa_settings')
     .select('enabled')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
   return data;
 }
 
@@ -100,17 +103,4 @@ export async function getUserMFASettings(userId: string) {
 export async function isMFAEnabled(userId: string): Promise<boolean> {
   const settings = await getUserMFASettings(userId);
   return settings?.enabled === true;
-}
-
-// Gardés pour compatibilité avec l'ancien code (non utilisés avec TOTP)
-export async function generateMFACode(_userId: string): Promise<string> {
-  throw new Error('generateMFACode est remplacé par setupTOTP. Utilisez verifyTOTPCode.');
-}
-
-export async function sendMFAViaWhatsApp(_phone: string, _code: string): Promise<void> {
-  throw new Error('WhatsApp MFA remplacé par TOTP (Google Authenticator). Gratuit et plus sécurisé.');
-}
-
-export async function cleanExpiredMFACodes(): Promise<void> {
-  // TOTP n'utilise pas de codes en base de données — rien à nettoyer
 }

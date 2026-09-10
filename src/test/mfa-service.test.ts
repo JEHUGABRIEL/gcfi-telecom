@@ -4,7 +4,7 @@ import * as OTPAuth from 'otpauth';
 // ── Mock Supabase ─────────────────────────────────────────────
 const mockSingle   = vi.fn();
 const mockSelect   = vi.fn(() => ({ eq: mockEq }));
-const mockEq       = vi.fn(() => ({ single: mockSingle }));
+const mockEq       = vi.fn(() => ({ single: mockSingle, maybeSingle: mockSingle }));
 const mockUpsert   = vi.fn().mockResolvedValue({ error: null });
 const mockUpdate   = vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: null }) }));
 
