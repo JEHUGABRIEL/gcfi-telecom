@@ -1,8 +1,15 @@
 import type { Metadata } from 'next';
 import { siteUrl } from '@/shared/lib/site-url';
 
-/** Image de partage par défaut, utilisée quand l'entité n'en a pas. */
-export const DEFAULT_OG_IMAGE = siteUrl('/logo.png');
+/**
+ * Image de partage par défaut, utilisée quand l'entité n'en a pas.
+ *
+ * Un PNG et non le favicon SVG : WhatsApp, Facebook et LinkedIn ignorent
+ * purement et simplement le SVG dans les balises Open Graph, et affichent
+ * alors un aperçu sans visuel. Ce fichier reprend la marque du favicon au
+ * format 1200×630 attendu par ces plateformes.
+ */
+export const DEFAULT_OG_IMAGE = siteUrl('/og-image.png');
 
 /**
  * Ramène un texte libre (souvent du HTML issu de l'admin) à une méta
