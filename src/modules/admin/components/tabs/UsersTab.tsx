@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import Pagination from '@/shared/components/ui/Pagination';
 import AdminTable from '@/shared/components/ui/AdminTable';
-import ImageUpload from '@/shared/components/ImageUpload';
 import { useActivityLog } from '@/shared/hooks/useActivityLog';
 import { useLang } from '@/shared/context/LanguageContext';
 
@@ -48,12 +47,11 @@ function ConfirmModal({ title, message, onConfirm, onCancel, danger = false, btn
 }
 
 /* ── Modal détail utilisateur ────────────────────────────────── */
-function UserDetailModal({ user, isSuperAdmin, isSelf = false, onClose, onBlock, onUnblock, onRoleChange, onUpdateProfile }:{
+function UserDetailModal({ user, isSuperAdmin, isSelf = false, onClose, onBlock, onUnblock, onRoleChange }:{
   user: any; isSuperAdmin: boolean; isSelf?: boolean; onClose: () => void;
   onBlock: (id: string, type: BlockType, userName?: string) => void;
   onUnblock: (id: string, userName?: string) => void;
   onRoleChange: (id: string, role: Role, userName?: string) => void;
-  onUpdateProfile: (id: string, fields: { full_name?: string; avatar_url?: string; bio?: string }, userName?: string) => void;
 }) {
   const { t } = useLang();
   const ap = t.admin_page;
@@ -66,126 +64,105 @@ function UserDetailModal({ user, isSuperAdmin, isSelf = false, onClose, onBlock,
     { value: 'permanent', label: ap.users_block_permanent },
   ];
 
-  // Édition du profil (nom, photo, bio)
-  const [editName, setEditName] = React.useState(user.full_name || '');
-  const [editBio, setEditBio] = React.useState(user.bio || '');
-  const [editAvatar, setEditAvatar] = React.useState(user.avatar_url || '');
-
   const isBlocked = user.is_blocked || (user.blocked_until && new Date(user.blocked_until) > new Date());
   const blockStatus = user.is_blocked ? ap.users_status_blocked_permanent
     : user.blocked_until && new Date(user.blocked_until) > new Date()
     ? `${ap.users_status_blocked_until} ${new Date(user.blocked_until).toLocaleDateString('fr-FR')}`
     : ap.users_status_active;
 
+  const canChangeRole = !isSelf && user.role !== 'superadmin' && (isSuperAdmin || user.role === 'client');
+  const hasActions = canChangeRole || !isSelf;
+
   return (
     <div className="fixed inset-0 z-300 flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={onClose} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-        className="relative bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full shadow-2xl z-10 overflow-hidden">
+      <motion.div initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }}
+        className="relative bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl z-10 overflow-hidden">
 
-        {/* Header */}
-        <div className="bg-linear-to-r from-slate-900 to-slate-800 p-6 flex items-center gap-4">
-          <div className="relative w-14 h-14 rounded-2xl bg-[#C1272D] flex items-center justify-center shrink-0 text-white font-black text-xl overflow-hidden">
+        {/* En-tête : identité et état, d'un coup d'œil */}
+        <div className="bg-slate-900 px-5 py-4 flex items-center gap-3.5">
+          <div className="relative w-11 h-11 rounded-xl bg-[#C1272D] flex items-center justify-center shrink-0 text-white font-black overflow-hidden">
             {user.avatar_url
-              ? <Image src={user.avatar_url} fill className="object-cover rounded-2xl" alt="" sizes="56px" />
+              ? <Image src={user.avatar_url} fill className="object-cover rounded-xl" alt="" sizes="44px" />
               : (user.full_name?.[0] || user.email?.[0] || '?').toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-black text-white truncate">{user.full_name || ap.users_no_name}</h3>
-            <p className="text-slate-400 text-sm truncate">{user.email}</p>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-white truncate">{user.full_name || ap.users_no_name}</h3>
+              <RoleBadge role={user.role} />
+            </div>
+            <p className="text-slate-400 text-xs truncate mt-0.5">{user.email}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-colors">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors shrink-0">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-6 space-y-5">
-          {/* Infos */}
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { icon: Shield, label: ap.users_label_role, value: user.role },
-              { icon: CheckCircle, label: ap.users_label_status, value: blockStatus, danger: isBlocked },
-              { icon: Calendar, label: ap.users_label_registered, value: new Date(user.created_at).toLocaleDateString('fr-FR') },
-              { icon: Mail, label: ap.users_label_email, value: user.email?.split('@')[0] + '…' },
-            ].map(({ icon: Icon, label, value, danger }) => (
-              <div key={label} className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Icon className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</span>
-                </div>
-                <p className={cn('text-sm font-bold truncate', danger ? 'text-red-500' : 'text-slate-900 dark:text-white')}>{value}</p>
-              </div>
-            ))}
+        {/* Faits : deux lignes serrées plutôt que quatre tuiles */}
+        <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 grid grid-cols-2 gap-x-6 gap-y-2.5">
+          <div className="flex items-center gap-2 min-w-0">
+            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span className="text-[11px] text-slate-400 shrink-0">{ap.users_label_registered}</span>
+            <span className="text-xs font-semibold text-slate-900 dark:text-white ml-auto truncate">
+              {new Date(user.created_at).toLocaleDateString('fr-FR')}
+            </span>
           </div>
-
-          {/* Modifier le profil (nom, photo, bio) */}
-          <div className="space-y-3 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
-            <p className="text-xs font-black uppercase tracking-widest text-slate-400">{ap.users_edit_profile}</p>
-            <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">{ap.users_field_name}</label>
-              <input value={editName} onChange={e => setEditName(e.target.value)} placeholder={ap.users_no_name}
-                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-[#C1272D]" />
-            </div>
-            <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">{ap.users_field_avatar}</label>
-              <ImageUpload value={editAvatar} onChange={setEditAvatar} folder="gcfi/avatars" />
-            </div>
-            <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">{ap.users_field_bio}</label>
-              <textarea value={editBio} onChange={e => setEditBio(e.target.value)} rows={2} maxLength={200}
-                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-[#C1272D] resize-none" />
-            </div>
-            <button
-              onClick={() => onUpdateProfile(user.id, { full_name: editName, avatar_url: editAvatar, bio: editBio }, user.full_name || user.email)}
-              className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#C1272D] text-white hover:opacity-90 transition-all"
-            >
-              {ap.users_save_profile}
-            </button>
+          <div className="flex items-center gap-2 min-w-0">
+            <CheckCircle className={cn('w-3.5 h-3.5 shrink-0', isBlocked ? 'text-red-500' : 'text-emerald-500')} />
+            <span className="text-[11px] text-slate-400 shrink-0">{ap.users_label_status}</span>
+            <span className={cn('text-xs font-semibold ml-auto truncate', isBlocked ? 'text-red-500' : 'text-slate-900 dark:text-white')}>
+              {blockStatus}
+            </span>
           </div>
-
-          {/* Changer le rôle */}
-          {!isSelf && user.role !== 'superadmin' && (isSuperAdmin || user.role === 'client') && (
-            <div className="space-y-2">
-              <p className="text-xs font-black uppercase tracking-widest text-slate-400">{ap.users_change_role}</p>
-              <div className="flex gap-2">
-                {(['client', 'admin'] as Role[]).filter(r => r !== user.role).map(r => (
-                  <button key={r} onClick={() => { onRoleChange(user.id, r, user.full_name || user.email); onClose(); }}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-bold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-[#C1272D] hover:text-[#C1272D] transition-all capitalize">
-                    → {r}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Blocage — non disponible sur soi-même */}
-          {!isSelf && (
-            <div className="space-y-2">
-            <p className="text-xs font-black uppercase tracking-widest text-slate-400">{ap.users_block_management}</p>
-            {isBlocked ? (
-              <button onClick={() => { onUnblock(user.id, user.full_name || user.email); onClose(); }}
-                className="w-full py-3 rounded-xl text-sm font-bold bg-green-50 text-green-600 hover:bg-green-100 border border-green-200 transition-all flex items-center justify-center gap-2">
-                <CheckCircle className="w-4 h-4" /> {ap.users_unblock_btn}
-              </button>
-            ) : (
-              <div className="space-y-2">
-                <select value={blockType} onChange={e => setBlockType(e.target.value as BlockType)}
-                  className="w-full px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#C1272D]">
-                  {blockOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-                <button onClick={() => { onBlock(user.id, blockType, user.full_name || user.email); onClose(); }}
-                  className={cn('w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all',
-                    blockType === 'permanent'
-                      ? 'bg-red-500 text-white hover:bg-red-600'
-                      : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200')}>
-                  {blockType === 'permanent' ? <><Ban className="w-4 h-4" /> {ap.users_block_permanent_btn}</> : <><Clock className="w-4 h-4" /> {ap.users_block_temp_btn} {blockOptions.find(o => o.value === blockType)?.label}</>}
-                </button>
-              </div>
-            )}
-          </div>
-            )}
         </div>
+
+        {hasActions && (
+          <div className="p-5 grid gap-4 sm:grid-cols-2">
+            {/* Rôle */}
+            {canChangeRole && (
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{ap.users_change_role}</p>
+                <div className="flex gap-2">
+                  {(['client', 'admin'] as Role[]).filter(r => r !== user.role).map(r => (
+                    <button key={r} onClick={() => { onRoleChange(user.id, r, user.full_name || user.email); onClose(); }}
+                      className="flex-1 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-[#C1272D] hover:text-[#C1272D] transition-all capitalize">
+                      → {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Blocage — jamais sur soi-même */}
+            {!isSelf && (
+              <div className={cn(!canChangeRole && 'sm:col-span-2')}>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{ap.users_block_management}</p>
+                {isBlocked ? (
+                  <button onClick={() => { onUnblock(user.id, user.full_name || user.email); onClose(); }}
+                    className="w-full py-2.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-all flex items-center justify-center gap-2">
+                    <CheckCircle className="w-4 h-4" /> {ap.users_unblock_btn}
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <select value={blockType} onChange={e => setBlockType(e.target.value as BlockType)}
+                      className="flex-1 min-w-0 px-3 py-2.5 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#C1272D]">
+                      {blockOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                    <button onClick={() => { onBlock(user.id, blockType, user.full_name || user.email); onClose(); }}
+                      title={blockType === 'permanent' ? ap.users_block_permanent_btn : ap.users_block_temp_btn}
+                      className={cn('px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shrink-0 transition-all',
+                        blockType === 'permanent'
+                          ? 'bg-red-500 text-white hover:bg-red-600'
+                          : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200')}>
+                      {blockType === 'permanent' ? <Ban className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </motion.div>
     </div>
   );
@@ -210,7 +187,7 @@ export default function UsersTab() {
   const { t } = useLang();
   const ap = t.admin_page;
   const { toast, showToast, dismiss } = useAdminToast();
-  const { user: currentUser, profile: currentProfile, refreshProfile } = useAuth();
+  const { user: currentUser, profile: currentProfile } = useAuth();
   const { logActivity } = useActivityLog();
   const isSuperAdmin = currentProfile?.role === 'superadmin';
 
@@ -272,23 +249,9 @@ export default function UsersTab() {
     onError: (err: Error) => showToast(err.message || ap.save_error, 'error'),
   });
 
-  const updateProfileMutation = useMutation({
-    mutationFn: ({ userId, fields, userName }: { userId: string; fields: { full_name?: string; avatar_url?: string; bio?: string }; userName?: string }) =>
-      adminFetch(userId, { action: 'updateProfile', ...fields }),
-    onSuccess: async (_d, vars) => {
-      invalidate();
-      logActivity({ action: 'updated', entity: 'users', entity_id: vars.userId, label: `${ap.users_toast_profile_updated}: "${vars.userName || vars.userId}"` });
-      showToast(ap.users_toast_profile_updated);
-      // Si on modifie son propre profil, rafraîchir l'état global (avatar dans la sidebar/header)
-      if (vars.userId === currentUser?.id) await refreshProfile();
-    },
-    onError: (err: Error) => showToast(err.message || ap.save_error, 'error'),
-  });
-
   const handleBlock      = (userId: string, type: BlockType, userName?: string) => blockMutation.mutate({ userId, type, userName });
   const handleUnblock    = (userId: string, userName?: string) => unblockMutation.mutate({ userId, userName });
   const handleRoleChange = (userId: string, newRole: Role, userName?: string) => roleMutation.mutate({ userId, newRole, userName });
-  const handleUpdateProfile = (userId: string, fields: { full_name?: string; avatar_url?: string; bio?: string }, userName?: string) => updateProfileMutation.mutate({ userId, fields, userName });
 
   const getBlockStatus = (u: any) => {
     if (u.is_blocked) return 'permanent';
@@ -323,7 +286,6 @@ export default function UsersTab() {
             onBlock={handleBlock}
             onUnblock={handleUnblock}
             onRoleChange={handleRoleChange}
-            onUpdateProfile={handleUpdateProfile}
           />
         )}
         {confirm && (

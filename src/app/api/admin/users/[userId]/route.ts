@@ -80,32 +80,27 @@ export async function PATCH(
 
   const { action } = body;
 
-  // ── Mise à jour du profil (nom, photo, bio) — autorisée aussi sur soi-même ──
+  // ── Mise à jour du profil : uniquement sur son propre compte ──
+  //
+  // Un administrateur n'a pas à modifier le nom, la photo ou la bio d'un
+  // client : ces informations appartiennent à la personne, qui les gère
+  // depuis son propre profil. L'interface correspondante a été retirée de
+  // la console ; ce garde ferme aussi la porte côté API, sans quoi la
+  // capacité resterait atteignable par un appel direct.
   if (action === 'updateProfile') {
+    if (!isSelf) {
+      return NextResponse.json(
+        { error: "Le profil d'un autre utilisateur n'est pas modifiable" },
+        { status: 403 }
+      );
+    }
+
     const update: Record<string, unknown> = {};
     if (typeof body.full_name === 'string') update.full_name = body.full_name.trim().slice(0, 100);
     if (typeof body.avatar_url === 'string') update.avatar_url = body.avatar_url;
     if (typeof body.bio === 'string') update.bio = body.bio.slice(0, 200);
     if (Object.keys(update).length === 0) {
       return NextResponse.json({ error: 'Champs invalides' }, { status: 400 });
-    }
-
-    // Sur un autre utilisateur : gardes superadmin / permissions
-    if (!isSelf) {
-      const { data: targetProfile } = await adminClient
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .single();
-      if (!targetProfile) {
-        return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
-      }
-      if (targetProfile.role === 'superadmin') {
-        return NextResponse.json({ error: 'Impossible de modifier un superadmin' }, { status: 403 });
-      }
-      if (!isSuperAdmin && targetProfile.role !== 'client') {
-        return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
-      }
     }
 
     const { error } = await adminClient.from('profiles').update(update).eq('id', userId);
