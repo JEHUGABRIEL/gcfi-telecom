@@ -114,34 +114,74 @@ dispense pas du réglage : c'est un filet, pas la correction.
 
 ---
 
-## 4. File d'attente applicative — non drainée
+## 4. File d'attente applicative
 
 `emails_queue` reçoit les emails applicatifs avec `status = 'pending'`.
 L'edge function `send-emails` les envoie via Brevo et bascule leur statut.
 
-**Rien ne l'appelle.** Ni cron, ni appel depuis l'application. Les emails de
-bienvenue et de confirmation de commande s'accumulent donc en base sans jamais
-partir. À vérifier :
+Elle est déployée et fonctionnelle, mais **rien ne l'appelait** : la file
+s'accumulait sans jamais être vidée. La migration
+`20260910000200_drain_emails_queue.sql` installe le déclencheur manquant.
+
+### Pourquoi pg_cron plutôt qu'un cron Vercel
+
+Le plan Vercel Hobby limite les crons à **une exécution par jour**, très en
+deçà de ce qu'exige de l'email transactionnel. pg_cron vit dans la base,
+descend à la minute et ne dépend pas de l'hébergeur. Le job tourne toutes les
+5 minutes.
+
+### Le job est créé INACTIF — à activer à la main
+
+La file contient un arriéré accumulé depuis des mois. L'activer sans
+précaution expédierait d'un seul jet des emails de bienvenue et des
+confirmations de commande périmés à de vrais clients : un dégât bien pire que
+le silence actuel, et irréversible une fois les emails partis.
+
+**1. Inspecter l'arriéré**
 
 ```sql
-select status, count(*) from public.emails_queue group by status;
+select status, count(*), min(created_at), max(created_at)
+from public.emails_queue group by status;
 ```
 
-Deux façons de la déclencher, au choix :
+**2. Neutraliser ce qui est périmé** — `'failed'` est déjà écrit par l'edge
+function, donc compatible avec la colonne quel que soit son type :
 
-**pg_cron dans Supabase** — reste dans la base, sans dépendre de l'hébergeur.
-Activer les extensions `pg_cron` et `pg_net`, stocker la clé service dans Vault,
-puis planifier un appel HTTP vers la fonction toutes les 5 minutes.
+```sql
+update public.emails_queue
+set status = 'failed'
+where status = 'pending' and created_at < now() - interval '24 hours';
+```
 
-**Cron Vercel** — une route `/api/cron/send-emails` protégée par `CRON_SECRET`
-qui invoque l'edge function, déclarée dans `vercel.json`. Attention : le plan
-Hobby limite les crons à **une exécution par jour**, ce qui est trop peu pour
-des emails transactionnels. Viable seulement en plan Pro.
+**3. Activer le job**
 
-Vérifier aussi que la fonction est déployée et que sa clé est en place :
+```sql
+update cron.job set active = true where jobname = 'drain-emails-queue';
+```
+
+Pour l'arrêter plus tard, repasser `active = false`.
+
+### Garde-fou d'ancienneté
+
+`send-emails` écarte désormais tout email en attente depuis plus de
+`MAX_AGE_HOURS` (24 h) : il est marqué en échec au lieu d'être expédié. Un
+email transactionnel périmé dessert plus qu'il ne sert, et ce garde-fou évite
+qu'une interruption prolongée de la vidange ne déclenche une salve d'envois
+obsolètes à la reprise.
+
+La fonction traite 10 emails par passage, soit jusqu'à 120 par heure — bien
+au-delà du volume réel, et sous le quota Brevo.
+
+**La fonction doit être redéployée** pour que ce garde-fou prenne effet. La
+version en ligne a d'ailleurs été déployée depuis `~/Téléchargements/`, pas
+depuis ce dépôt :
 
 ```
-npx supabase functions list
 npx supabase functions deploy send-emails
-npx supabase secrets set BREVO_API_KEY=xkeysib-...
 ```
+
+### Limite connue
+
+Un envoi en échec est marqué `failed` et n'est jamais réessayé. Une panne
+Brevo passagère perd donc les emails de la fenêtre concernée. Ajouter un
+compteur de tentatives serait la suite logique si le besoin se confirme.
