@@ -19,6 +19,13 @@ const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 const BREVO_SENDER_EMAIL = "noreply@gcfi-rca.com";
 const BREVO_SENDER_NAME  = "GCFI Telecom";
 
+// Au-delà de ce délai, un email en attente n'est plus expédié mais marqué en
+// échec. Un email transactionnel périmé — « bienvenue » trois mois après
+// l'inscription, confirmation d'une commande déjà livrée — dessert plus qu'il
+// ne sert. Ce garde-fou vaut aussi si la vidange s'interrompt puis reprend :
+// sans lui, la reprise déclencherait une salve d'envois obsolètes.
+const MAX_AGE_HOURS = 24;
+
 async function sendViaBrevo(to: string, subject: string, html: string): Promise<boolean> {
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
@@ -50,15 +57,26 @@ serve(async (req: Request) => {
   }
 
   try {
+    const cutoff = new Date(Date.now() - MAX_AGE_HOURS * 3600 * 1000).toISOString();
+
+    // Périmés : écartés avant toute tentative d'envoi.
+    const { count: expired } = await supabase
+      .from("emails_queue")
+      .update({ status: "failed" }, { count: "exact" })
+      .eq("status", "pending")
+      .lt("created_at", cutoff);
+
     const { data: pendingEmails, error: fetchError } = await supabase
       .from("emails_queue")
       .select("*")
       .eq("status", "pending")
+      .gte("created_at", cutoff)
+      .order("created_at", { ascending: true })
       .limit(10);
 
     if (fetchError) throw fetchError;
     if (!pendingEmails || pendingEmails.length === 0) {
-      return new Response(JSON.stringify({ sent: 0 }), {
+      return new Response(JSON.stringify({ sent: 0, expired: expired ?? 0 }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
@@ -80,7 +98,7 @@ serve(async (req: Request) => {
       if (ok) sent++;
     }
 
-    return new Response(JSON.stringify({ sent, total: pendingEmails.length }), {
+    return new Response(JSON.stringify({ sent, total: pendingEmails.length, expired: expired ?? 0 }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
