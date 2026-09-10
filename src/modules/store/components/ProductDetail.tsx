@@ -11,7 +11,7 @@ import { useLang } from '@/shared/context/LanguageContext';
 import { trackAddToCart, trackViewItem } from '@/shared/lib/ga-events';
 import type { Product } from '@/shared/types';
 
-export default function ProductDetail() {
+export default function ProductDetail({ initialProduct }: { initialProduct?: Product }) {
   const params = useParams(); const id = params.id as string;
   const router = useRouter();
   const { t } = useLang();
@@ -20,7 +20,9 @@ export default function ProductDetail() {
   const [added, setAdded] = React.useState(false);
   const [wishlisted, setWishlisted] = React.useState(false);
 
-  const product = products.find((p: Product) => p.id === id);
+  // Rendu dès la réponse serveur grâce à `initialProduct` : sans lui, le HTML
+  // envoyé aux crawlers ne contient que l'écran de chargement.
+  const product = products.find((p: Product) => p.id === id) ?? initialProduct;
 
   React.useEffect(() => {
     if (!isLoading && !product) router.replace('/boutique');
@@ -51,7 +53,7 @@ export default function ProductDetail() {
       .catch(() => navigator.clipboard.writeText(window.location.href));
   };
 
-  if (isLoading) {
+  if (isLoading && !product) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-slate-100 border-t-[#C1272D] rounded-full animate-spin" />
