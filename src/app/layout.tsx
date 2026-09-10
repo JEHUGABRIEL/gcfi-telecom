@@ -9,6 +9,7 @@ import { organizationSchema, localBusinessSchema } from '@/shared/lib/structured
 import { DEFAULT_OG_IMAGE } from '@/shared/lib/seo-metadata';
 import CookieConsentBanner from '@/shared/components/CookieConsentBanner';
 import AnalyticsTracker from '@/shared/components/AnalyticsTracker';
+import RecoveryRedirect from '@/shared/components/RecoveryRedirect';
 // @ts-ignore: allow importing global CSS without type declarations
 import '../index.css';
 
@@ -93,6 +94,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         )}
         <Providers>
           {children}
+          <RecoveryRedirect />
           <AnalyticsTracker />
           <CookieConsentBanner />
         </Providers>

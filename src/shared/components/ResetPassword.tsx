@@ -6,6 +6,7 @@ import { motion } from 'motion/react';
 import { Lock, Eye, EyeOff, CheckCircle, Shield } from 'lucide-react';
 import { supabase } from '@/shared/lib/supabase';
 import { useLang } from '@/shared/context/LanguageContext';
+import { RECOVERY_FLAG } from '@/shared/components/RecoveryRedirect';
 
 type Step = 'loading' | 'form' | 'success' | 'invalid';
 
@@ -21,16 +22,37 @@ export default function ResetPassword() {
   const [loading, setLoading]   = useState(false);
 
   useEffect(() => {
+    // On arrive d'un lien de réinitialisation si le fragment le dit, ou si
+    // RecoveryRedirect l'a signalé avant de nous rediriger ici.
+    let flagged = window.location.hash.includes('type=recovery');
+    try {
+      if (sessionStorage.getItem(RECOVERY_FLAG) === '1') {
+        flagged = true;
+        sessionStorage.removeItem(RECOVERY_FLAG);
+      }
+    } catch {
+      // Stockage indisponible — on s'en tient au fragment.
+    }
+
     // Supabase émet PASSWORD_RECOVERY quand l'utilisateur arrive
     // depuis le lien de réinitialisation
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setStep('form');
-      } else if (event === 'SIGNED_IN' && step === 'loading') {
+      } else if (event === 'SIGNED_IN' && !flagged) {
         // Déjà connecté mais pas depuis un lien de reset
-        setStep('invalid');
+        setStep(prev => (prev === 'loading' ? 'invalid' : prev));
       }
     });
+
+    // L'événement peut avoir été émis avant notre montage : le client Supabase
+    // consomme le fragment dès qu'il est sollicité, y compris sur une autre
+    // page. On rattrape ce cas en interrogeant directement la session.
+    if (flagged) {
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) setStep(prev => (prev === 'loading' ? 'form' : prev));
+      });
+    }
 
     // Timeout de sécurité : si aucun événement au bout de 4s → lien invalide
     const timer = setTimeout(() => {
