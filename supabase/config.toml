@@ -26,3 +26,22 @@ enabled = true
 [auth]
 enabled = true
 site_url = "http://localhost:3000"
+
+# Supabase n'honore `redirectTo` que si l'URL est listée ici. Sans cela il
+# retombe silencieusement sur `site_url` : le lien de réinitialisation
+# atterrissait sur la home, avec les jetons dans le fragment et aucun
+# formulaire pour les exploiter.
+# Ce fichier ne pilote que l'environnement local — la même liste doit être
+# saisie dans le dashboard (Authentication → URL Configuration).
+additional_redirect_urls = [
+  "http://localhost:3000/reset-password",
+  "http://localhost:3001/reset-password",
+  "https://www.gcfi-rca.com/reset-password",
+]
+
+[auth.email]
+enable_confirmations = true
+
+# SMTP local : `supabase start` route tout vers Inbucket (port 54324), donc
+# aucun email ne part vraiment en développement. La configuration SMTP de
+# production se fait dans le dashboard, pas ici — voir supabase/EMAIL_SETUP.md.
