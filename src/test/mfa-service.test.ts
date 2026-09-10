@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as OTPAuth from 'otpauth';
 
 // ── Mock Supabase ─────────────────────────────────────────────
@@ -25,28 +25,32 @@ describe('mfa-service (TOTP)', () => {
   beforeEach(() => vi.clearAllMocks());
 
   describe('verifyTOTPCode', () => {
-    it('retourne true pour un code TOTP valide', async () => {
-      // Générer un secret réel et un code valide
-      const secret = new OTPAuth.Secret();
-      const totp = new OTPAuth.TOTP({ secret, algorithm: 'SHA1', digits: 6, period: 30 });
-      const validCode = totp.generate();
+    // La vérification est désormais déléguée à /api/auth/verify-mfa (clé
+    // service, jamais exposée au client) — le secret ne transite plus
+    // jamais côté navigateur. On mock donc fetch plutôt que Supabase.
+    const originalFetch = global.fetch;
+    afterEach(() => { global.fetch = originalFetch; });
 
-      mockSingle.mockResolvedValueOnce({ data: { secret: secret.base32 } });
+    it('retourne true quand le serveur valide le code', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({ ok: true }) as unknown as typeof fetch;
 
-      const result = await verifyTOTPCode('user-123', validCode);
+      const result = await verifyTOTPCode('user-123', '123456');
       expect(result).toBe(true);
+      expect(global.fetch).toHaveBeenCalledWith('/api/auth/verify-mfa', expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ userId: 'user-123', token: '123456' }),
+      }));
     });
 
-    it('retourne false pour un code incorrect', async () => {
-      const secret = new OTPAuth.Secret();
-      mockSingle.mockResolvedValueOnce({ data: { secret: secret.base32 } });
+    it('retourne false quand le serveur rejette le code', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({ ok: false }) as unknown as typeof fetch;
 
       const result = await verifyTOTPCode('user-123', '000000');
       expect(result).toBe(false);
     });
 
-    it('retourne false si aucun secret trouvé', async () => {
-      mockSingle.mockResolvedValueOnce({ data: null });
+    it('retourne false si la requête échoue', async () => {
+      global.fetch = vi.fn().mockRejectedValueOnce(new Error('network error')) as unknown as typeof fetch;
 
       const result = await verifyTOTPCode('user-123', '123456');
       expect(result).toBe(false);
