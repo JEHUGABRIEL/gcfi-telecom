@@ -41,11 +41,44 @@ Dashboard → **Project Settings → Authentication → SMTP Settings** → *Ena
 | Sender email | `noreply@gcfi-rca.com` |
 | Sender name | `GCFI Telecom` |
 
-> **L'expéditeur doit être authentifié chez Brevo.** Dans Brevo → *Senders,
-> Domains & Dedicated IPs*, le domaine `gcfi-rca.com` doit être vérifié avec ses
-> enregistrements **SPF**, **DKIM** et **DMARC**. Sans cela Gmail et Outlook
-> rejettent ou classent en spam, quelle que soit la qualité du template. C'est
-> l'étape la plus souvent négligée et celle qui décide du sort de tes emails.
+### Authentification du domaine — état au 10/09/2026
+
+Vérifié par interrogation DNS. Le domaine est authentifié à une exception près :
+
+| Enregistrement | État |
+|---|---|
+| `brevo-code` sur `gcfi-rca.com` | présent |
+| DKIM `brevo1._domainkey` → `b1.gcfi-rca-com.dkim.brevo.com` | publié |
+| DKIM `brevo2._domainkey` → `b2.gcfi-rca-com.dkim.brevo.com` | publié |
+| `_dmarc` → `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com` | présent |
+| **SPF** | **absent** |
+
+DNS géré chez **Hostinger** (NS `aster` / `helios.dns-parking.com`).
+Enregistrement à ajouter — un seul `v=spf1` par domaine, ne pas en créer un
+second s'il en existe déjà un :
+
+| Type | Nom | Valeur |
+|---|---|---|
+| TXT | `@` | `v=spf1 include:spf.brevo.com ~all` |
+
+DMARC passe déjà par alignement DKIM seul, mais Google et Yahoo attendent les
+deux depuis 2024.
+
+### L'expéditeur doit appartenir au domaine
+
+Le seul expéditeur déclaré dans Brevo est `jehubin@gmail.com`. **Un domaine
+qu'on ne possède pas ne peut pas être authentifié** : envoyer « au nom » d'une
+adresse Gmail via un service tiers déclenche le rejet ou le classement en spam
+chez Google, Yahoo et Microsoft. Aucun réglage SMTP ne compense cela.
+
+Créer l'expéditeur `noreply@gcfi-rca.com` (Brevo → Expéditeurs → Ajouter). Le
+domaine étant déjà authentifié, la vérification passe sans manipulation DNS
+supplémentaire.
+
+C'est aussi ce qu'attend l'edge function : `send-emails/index.ts` envoie déjà
+avec `BREVO_SENDER_EMAIL = "noreply@gcfi-rca.com"`, une adresse absente des
+expéditeurs Brevo — ces envois seraient donc refusés, indépendamment du
+problème de file non drainée décrit plus bas.
 
 Une fois activé, augmente aussi les quotas : **Authentication → Rate Limits**,
 le nombre d'emails par heure est bridé bas par défaut.
