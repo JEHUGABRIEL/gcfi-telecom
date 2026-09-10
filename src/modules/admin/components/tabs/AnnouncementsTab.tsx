@@ -206,7 +206,6 @@ export default function AnnouncementsTab() {
               {ap.ann_title}
               {items.length > 0 && <span className="ml-2 text-sm font-normal text-slate-400">({items.length})</span>}
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">{ap.ann_subtitle}</p>
           </div>
           <div className="flex gap-2">
             <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className="w-4 h-4" /></button>

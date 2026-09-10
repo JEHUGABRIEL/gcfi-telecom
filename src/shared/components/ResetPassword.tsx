@@ -209,7 +209,9 @@ export default function ResetPassword() {
                 <CheckCircle className="w-7 h-7 text-green-500" />
               </motion.div>
               <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">{c.reset_pwd_success_title}</h2>
-              <p className="text-sm text-slate-500">{c.reset_pwd_success_text}</p>
+              <p className="text-sm text-slate-500">
+                {destination === '/admin' ? c.reset_pwd_success_text_admin : c.reset_pwd_success_text}
+              </p>
               <div className="mt-4 h-1 bg-slate-100 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }} animate={{ width: '100%' }}

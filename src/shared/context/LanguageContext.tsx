@@ -1314,6 +1314,7 @@ export const TRANSLATIONS = {
       reset_pwd_loading: 'Mise \u00e0 jour...',
       reset_pwd_success_title: 'Mot de passe mis \u00e0 jour !',
       reset_pwd_success_text: 'Vous allez \u00eatre redirig\u00e9 vers l\'accueil\u2026',
+      reset_pwd_success_text_admin: 'Vous allez \u00eatre redirig\u00e9 vers votre tableau de bord\u2026',
       reset_pwd_strength_labels: ['Tr\u00e8s faible', 'Faible', 'Correct', 'Fort', 'Tr\u00e8s fort'],
       // SignOut Modal
       signout_title: 'Se déconnecter ?',
@@ -2640,6 +2641,7 @@ export const TRANSLATIONS = {
       reset_pwd_loading: 'Updating...',
       reset_pwd_success_title: 'Password updated!',
       reset_pwd_success_text: 'You will be redirected to the homepage…',
+      reset_pwd_success_text_admin: 'You will be redirected to your dashboard…',
       reset_pwd_strength_labels: ['Very weak', 'Weak', 'Fair', 'Strong', 'Very strong'],
       // ConfirmModal
       confirm_modal_default_title: 'Confirm deletion',

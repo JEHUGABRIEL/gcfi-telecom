@@ -367,9 +367,6 @@ export default function ServicesTab() {
               <span className="ml-2 text-sm font-normal text-slate-400">({services.length})</span>
             )}
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            {ap.service_list_subtitle}
-          </p>
         </div>
         <div className="flex gap-2">
           <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors">
