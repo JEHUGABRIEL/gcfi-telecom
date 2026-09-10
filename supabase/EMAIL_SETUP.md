@@ -30,7 +30,17 @@ Brevo → **SMTP & API** → onglet **SMTP**. La page affiche :
 
 ### Renseigner dans Supabase
 
-Dashboard → **Project Settings → Authentication → SMTP Settings** → *Enable Custom SMTP* :
+Les réglages d'authentification ont changé de place plusieurs fois selon les
+versions du dashboard. Liens directs pour ce projet :
+
+| Réglage | URL |
+|---|---|
+| SMTP | https://supabase.com/dashboard/project/tivlllahuykbfnawwhba/auth/smtp |
+| Gabarits d'email | https://supabase.com/dashboard/project/tivlllahuykbfnawwhba/auth/templates |
+| URLs de redirection | https://supabase.com/dashboard/project/tivlllahuykbfnawwhba/auth/url-configuration |
+| Limites de débit | https://supabase.com/dashboard/project/tivlllahuykbfnawwhba/auth/rate-limits |
+
+Sur la page SMTP, cocher *Enable Custom SMTP* puis :
 
 | Champ | Valeur |
 |---|---|
