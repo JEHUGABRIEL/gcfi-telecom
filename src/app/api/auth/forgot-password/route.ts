@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { SITE_URL } from '@/shared/lib/site-url';
+
+// Origines de confiance pour le lien de réinitialisation. On ne fait jamais
+// confiance au header Host brut de la requête (falsifiable côté client) —
+// sinon un attaquant pourrait faire pointer le lien envoyé par email vers
+// un domaine qu'il contrôle (empoisonnement du lien de reset).
+const ALLOWED_ORIGINS = [SITE_URL, 'http://localhost:3000', 'http://127.0.0.1:3000'];
+
+function safeOrigin(request: NextRequest): string {
+  const requestOrigin = new URL(request.url).origin;
+  return ALLOWED_ORIGINS.includes(requestOrigin) ? requestOrigin : SITE_URL;
+}
 
 // Réponse identique qu'il y ait un compte ou non — évite l'énumération d'emails.
 const SUCCESS = { success: true };
@@ -40,8 +52,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Pour les comptes normaux, envoyer le lien de réinitialisation.
-  // L'origine est dérivée de la requête entrante (fonctionne en dev et en prod).
-  const origin = new URL(request.url).origin;
+  const origin = safeOrigin(request);
   const anonClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
