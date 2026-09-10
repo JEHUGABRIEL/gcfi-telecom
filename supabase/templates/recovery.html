@@ -1,58 +1,80 @@
 <!--
   Template Supabase — « Reset Password ».
   À coller dans Supabase → Authentication → Emails → Reset Password.
+  Sujet suggéré : Réinitialisation de votre mot de passe GCFI Telecom
 
-  Variables disponibles : {{ .ConfirmationURL }}, {{ .Email }}, {{ .SiteURL }},
-  {{ .Token }}. Ne pas les renommer.
+  Variables : {{ .ConfirmationURL }}, {{ .Email }}, {{ .SiteURL }}. Ne pas les
+  renommer.
 
-  Contraintes des clients mail : mise en page en <table>, styles en ligne, pas
-  de flexbox ni de grid, pas de CSS externe — Outlook et Gmail les ignorent ou
-  les cassent. Le rendu est volontairement figé en clair : Gmail force sa
-  propre inversion en thème sombre et un design dark-first ressort illisible.
+  Contraintes des clients mail : mise en page en <table>, styles en ligne,
+  largeurs en pixels. Pas de flexbox, pas de grid, pas de CSS externe, pas de
+  SVG — Outlook et Gmail les ignorent ou les cassent. Le rendu est
+  volontairement figé en clair : Gmail applique sa propre inversion en thème
+  sombre et un design dark-first en ressort illisible.
+
+  L'identité repose sur la typographie et la couleur plutôt que sur une image :
+  le domaine n'héberge aucun logo bitmap, et une image distante est de toute
+  façon bloquée par défaut dans la plupart des boîtes.
 -->
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f5f9;margin:0;padding:24px 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef1f5;margin:0;padding:32px 12px;">
   <tr>
     <td align="center">
 
-      <!-- Préheader : texte d'aperçu dans la boîte de réception, invisible à l'ouverture -->
+      <!-- Aperçu affiché dans la liste des messages, invisible à l'ouverture -->
       <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
-        Lien de réinitialisation de votre mot de passe GCFI Telecom — valable 1 heure.
+        Votre lien de réinitialisation GCFI Telecom — valable 1 heure.
       </div>
 
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:100%;background:#ffffff;border-radius:16px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:100%;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
 
-        <!-- En-tête -->
+        <!-- ── Bandeau de marque ─────────────────────────────────── -->
         <tr>
-          <td style="background:#C1272D;background-image:linear-gradient(135deg,#C1272D 0%,#1E4D8C 100%);padding:36px 40px;text-align:center;">
-            <p style="margin:0;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#ffffff;opacity:.75;">
-              GCFI Telecom
+          <td style="background:#0f172a;padding:22px 40px;border-radius:14px 14px 0 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="font-size:19px;font-weight:bold;letter-spacing:3px;color:#ffffff;">
+                  GCFI<span style="color:#e8494f;">.</span>TELECOM
+                </td>
+                <td align="right" style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8b9bb4;">
+                  Bangui · RCA
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Filet d'accent -->
+        <tr><td style="height:4px;background:#C1272D;font-size:0;line-height:0;">&nbsp;</td></tr>
+
+        <!-- ── Corps ─────────────────────────────────────────────── -->
+        <tr>
+          <td style="background:#ffffff;padding:44px 40px 8px;">
+
+            <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#C1272D;">
+              Sécurité du compte
             </p>
-            <h1 style="margin:8px 0 0;font-size:24px;line-height:1.25;color:#ffffff;">
-              Réinitialisation du mot de passe
+            <h1 style="margin:0 0 22px;font-size:27px;line-height:1.25;color:#0f172a;font-weight:bold;">
+              Réinitialisez votre mot de passe
             </h1>
-          </td>
-        </tr>
 
-        <!-- Corps -->
-        <tr>
-          <td style="padding:36px 40px 8px;">
-            <p style="margin:0 0 16px;font-size:15px;color:#0f172a;">Bonjour,</p>
-            <p style="margin:0 0 16px;font-size:14px;line-height:1.65;color:#475569;">
-              Une réinitialisation du mot de passe a été demandée pour le compte
-              <strong style="color:#0f172a;">{{ .Email }}</strong>.
-              Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe.
+            <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#475569;">
+              Une demande de réinitialisation a été reçue pour le compte
+              <span style="color:#0f172a;font-weight:bold;">{{ .Email }}</span>.
+            </p>
+            <p style="margin:0 0 30px;font-size:15px;line-height:1.65;color:#475569;">
+              Choisissez un nouveau mot de passe en suivant le bouton ci-dessous.
             </p>
           </td>
         </tr>
 
-        <!-- Bouton -->
+        <!-- ── Bouton ────────────────────────────────────────────── -->
         <tr>
-          <td align="center" style="padding:16px 40px 8px;">
+          <td style="background:#ffffff;padding:0 40px 34px;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td style="border-radius:12px;background:#C1272D;">
+                <td style="border-radius:10px;background:#C1272D;">
                   <a href="{{ .ConfirmationURL }}"
-                     style="display:inline-block;padding:15px 36px;font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:12px;">
+                     style="display:inline-block;padding:16px 40px;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:10px;letter-spacing:.3px;">
                     Choisir un nouveau mot de passe
                   </a>
                 </td>
@@ -61,28 +83,19 @@
           </td>
         </tr>
 
-        <!-- Repli : certains clients bloquent les boutons -->
+        <!-- ── Validité ──────────────────────────────────────────── -->
         <tr>
-          <td style="padding:20px 40px 8px;">
-            <p style="margin:0 0 6px;font-size:12px;color:#64748b;">
-              Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :
-            </p>
-            <p style="margin:0;font-size:12px;line-height:1.5;word-break:break-all;">
-              <a href="{{ .ConfirmationURL }}" style="color:#1E4D8C;">{{ .ConfirmationURL }}</a>
-            </p>
-          </td>
-        </tr>
-
-        <!-- Avertissement -->
-        <tr>
-          <td style="padding:24px 40px 0;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fef2f2;border-left:3px solid #C1272D;border-radius:8px;">
+          <td style="background:#ffffff;padding:0 40px 30px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fdf3f3;border-radius:10px;">
               <tr>
-                <td style="padding:14px 16px;">
-                  <p style="margin:0;font-size:13px;line-height:1.6;color:#7f1d1d;">
-                    Ce lien expire dans <strong>1 heure</strong> et ne peut servir qu'une fois.
-                    Si vous n'êtes pas à l'origine de cette demande, ignorez ce message :
-                    votre mot de passe actuel reste valable.
+                <td style="padding:16px 18px;border-left:3px solid #C1272D;">
+                  <p style="margin:0 0 4px;font-size:13px;font-weight:bold;color:#7f1d1d;">
+                    Ce lien expire dans 1 heure
+                  </p>
+                  <p style="margin:0;font-size:13px;line-height:1.6;color:#9a4a4a;">
+                    Il ne peut servir qu'une seule fois. Si vous n'êtes pas à
+                    l'origine de cette demande, ignorez ce message : votre mot de
+                    passe actuel reste inchangé.
                   </p>
                 </td>
               </tr>
@@ -90,17 +103,43 @@
           </td>
         </tr>
 
-        <!-- Pied -->
+        <!-- ── Repli si le bouton est bloqué ─────────────────────── -->
         <tr>
-          <td style="padding:28px 40px 32px;">
-            <hr style="border:none;border-top:1px solid #e2e8f0;margin:0 0 18px;">
-            <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;">
-              GCFI Telecom — Télécommunication, formation IT et équipements réseau
+          <td style="background:#ffffff;padding:0 40px 38px;border-radius:0 0 14px 14px;">
+            <hr style="border:none;border-top:1px solid #e8edf3;margin:0 0 18px;">
+            <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;">
+              Le bouton ne fonctionne pas ? Copiez cette adresse dans votre navigateur :
+            </p>
+            <p style="margin:0;font-size:12px;line-height:1.6;word-break:break-all;">
+              <a href="{{ .ConfirmationURL }}" style="color:#1E4D8C;text-decoration:underline;">{{ .ConfirmationURL }}</a>
+            </p>
+          </td>
+        </tr>
+
+        <!-- ── Pied ──────────────────────────────────────────────── -->
+        <tr>
+          <td style="padding:26px 40px 8px;text-align:center;">
+            <p style="margin:0 0 8px;font-size:12px;font-weight:bold;color:#64748b;">
+              GCFI Telecom
+            </p>
+            <p style="margin:0 0 12px;font-size:12px;line-height:1.7;color:#94a3b8;">
+              Télécommunication · Formation IT · Équipements réseau<br>
+              Bangui, République Centrafricaine
             </p>
             <p style="margin:0;font-size:12px;color:#94a3b8;">
-              Bangui, République Centrafricaine ·
-              <a href="mailto:contact@gcfi-rca.com" style="color:#1E4D8C;text-decoration:none;">contact@gcfi-rca.com</a> ·
               <a href="{{ .SiteURL }}" style="color:#1E4D8C;text-decoration:none;">gcfi-rca.com</a>
+              &nbsp;·&nbsp;
+              <a href="mailto:contact@gcfi-rca.com" style="color:#1E4D8C;text-decoration:none;">contact@gcfi-rca.com</a>
+              &nbsp;·&nbsp;
+              <span style="color:#b6c2d1;">+236 72 72 72 08</span>
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:14px 40px 0;text-align:center;">
+            <p style="margin:0;font-size:11px;line-height:1.6;color:#b6c2d1;">
+              Message automatique lié à la sécurité de votre compte. Merci de ne pas y répondre.
             </p>
           </td>
         </tr>
