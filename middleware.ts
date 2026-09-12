@@ -59,6 +59,31 @@ export async function middleware(request: NextRequest) {
   );
 
   const { pathname } = request.nextUrl;
+  // Les deux projets Vercel utilisent le même dépôt :
+  // - public : site vitrine uniquement ;
+  // - admin : backoffice uniquement ;
+  // - all : mode local de compatibilité.
+  // En production, l'absence de variable revient volontairement au mode public.
+  const appMode = process.env.APP_MODE ?? (process.env.NODE_ENV === 'production' ? 'public' : 'all');
+  const isAdminArea = pathname === '/admin' || pathname.startsWith('/admin/') || pathname === '/api/admin' || pathname.startsWith('/api/admin/');
+  const isAdminLogin = pathname === '/admin-login';
+  const isAdminAuthApi = pathname === '/api/auth/verify-mfa' || pathname === '/api/auth/admin-password-reset';
+  const isAdminSupportPage = pathname === '/reset-password' || pathname === '/auth/callback';
+  const isApi = pathname.startsWith('/api/');
+
+  // Le projet public ne doit plus exposer le point d'entrée du backoffice.
+  // Les API renvoient 404 plutôt qu'une redirection HTML.
+  if (appMode === 'public' && (isAdminArea || isAdminLogin || isAdminAuthApi)) {
+    if (isApi) return new NextResponse(null, { status: 404 });
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  // Le projet admin ne sert que les écrans et endpoints nécessaires au
+  // backoffice. La vérification du rôle et du MFA reste obligatoire ci-dessous.
+  if (appMode === 'admin' && !isAdminArea && !isAdminLogin && !isAdminAuthApi && !isAdminSupportPage) {
+    if (isApi) return new NextResponse(null, { status: 404 });
+    return NextResponse.redirect(new URL('/admin-login', request.url));
+  }
 
   // getUser() validates the JWT with the Supabase server.
   // Wrapped in try/catch: if Supabase is unreachable or the token
@@ -78,7 +103,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // /admin routes (except /admin-login) require authentication + admin role.
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin-login')) {
+  if (isAdminArea) {
     if (!user) return NextResponse.redirect(new URL('/admin-login', request.url));
 
     const { data: profile } = await supabase

@@ -16,6 +16,7 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [requiresMFA, setRequiresMFA] = useState(false);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  const publicSiteUrl = process.env.NEXT_PUBLIC_PUBLIC_SITE_URL ?? '/';
 
   // Si une session admin valide existe déjà (retour après inactivité),
   // on redirige directement sans demander de reconnexion.
@@ -109,7 +110,7 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 relative">
       {/* Bouton retour à l'accueil */}
-      <a href="/"
+      <a href={publicSiteUrl}
         className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 rounded-full shadow-sm border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-all z-10">
         <ArrowLeft className="w-4 h-4" />
         {t.common.back}
