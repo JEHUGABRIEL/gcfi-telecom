@@ -194,7 +194,7 @@ export default function PromoTab() {
   const promoCount = items.filter(i => i.is_promo).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AnimatePresence>
         {resetTarget && (
           <ConfirmModal

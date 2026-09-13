@@ -137,7 +137,7 @@ export default function BlogTab() {
   return (
     <>
     <AdminToast toast={toast} onDismiss={dismiss} />
-    <div className="space-y-4">
+    <div className="space-y-2">
       <AnimatePresence>
         {deleteTarget && <ConfirmModal
             title={ap.confirm_delete_title}

@@ -167,7 +167,7 @@ export default function TrainingsTab() {
   return (
     <>
     <AdminToast toast={toast} onDismiss={dismiss} />
-    <div className="space-y-4">
+    <div className="space-y-2">
       <AnimatePresence>
         {deleteTarget && (
           <ConfirmModal

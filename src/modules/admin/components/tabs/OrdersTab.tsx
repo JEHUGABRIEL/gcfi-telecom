@@ -52,7 +52,7 @@ export default function OrdersTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <div className="flex items-center justify-end">
         <button
           onClick={() => queryClient.invalidateQueries({ queryKey: ['admin', 'orders', page] })}

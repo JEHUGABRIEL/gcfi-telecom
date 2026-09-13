@@ -98,7 +98,7 @@ export default function OverviewTab({ onNavigate }: OverviewTabProps) {
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
       {/* Actions */}
       <div className="flex items-center justify-end gap-3">
         <button

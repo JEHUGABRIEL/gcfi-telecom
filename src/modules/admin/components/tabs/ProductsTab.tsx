@@ -158,7 +158,7 @@ export default function ProductsTab() {
   return (
     <>
     <AdminToast toast={toast} onDismiss={dismiss} />
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* Modal suppression */}
       <AnimatePresence>
         {deleteTarget && (

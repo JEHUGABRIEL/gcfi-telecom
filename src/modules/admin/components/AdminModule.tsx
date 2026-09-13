@@ -534,7 +534,7 @@ const AdminModule = () => {
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Admin Header — titre personnalisé selon l'onglet */}
-        <div className="mb-10">
+        <div className="mb-4">
           <p className="text-[10px] font-black uppercase tracking-widest text-[#C1272D] mb-1">{t.admin_page.dashboard}</p>
           {(() => {
             const meta = ap.page_meta[activeTab];

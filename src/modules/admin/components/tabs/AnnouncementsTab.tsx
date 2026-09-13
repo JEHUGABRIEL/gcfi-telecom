@@ -115,7 +115,7 @@ export default function AnnouncementsTab() {
   return (
     <>
       <AdminToast toast={toast} onDismiss={dismiss} />
-      <div className="space-y-4">
+      <div className="space-y-2">
 
         <AnimatePresence>
           {deleteTarget && <ConfirmModal message={`${ap.confirm_delete_message}`} onConfirm={confirmDelete} onCancel={() => setDeleteTarget(null)} />}
