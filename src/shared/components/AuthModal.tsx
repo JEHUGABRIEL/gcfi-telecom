@@ -6,12 +6,13 @@ import { X, LogIn, UserPlus, Shield, Mail, Lock, User, ArrowLeft, CheckCircle, E
 import { supabase } from '@/shared/lib/supabase';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useLang } from '@/shared/context/LanguageContext';
+import { verifyPublicLoginRole } from '@/shared/lib/auth-role';
 
 type AuthMode = 'login' | 'signup' | 'forgot';
 
 export default function AuthModal() {
   const { t } = useLang();
-  const { showAuthModal, setShowAuthModal } = useAuth();
+  const { showAuthModal, setShowAuthModal, setPublicLoginInProgress } = useAuth();
   const [mode, setMode]           = useState<AuthMode>('login');
   const [email, setEmail]         = useState('');
   const [password, setPassword]   = useState('');
@@ -70,13 +71,16 @@ export default function AuthModal() {
           setSuccess(t.auth.success_signup);
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        setPublicLoginInProgress(true);
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        await verifyPublicLoginRole(data.user.id);
         close();
       }
     } catch (err: unknown) {
       setError(translateError(err instanceof Error ? err.message : String(err)));
     } finally {
+      setPublicLoginInProgress(false);
       setLoading(false);
     }
   };

@@ -140,3 +140,18 @@ a, button, input, select, textarea,
   border: none; border-top: 1px solid var(--border-strong);
   margin: 1rem 0;
 }
+
+/* Keep the training promotion media contained within its own frame. */
+.training-promo-carousel,
+.training-promo-carousel * {
+  box-sizing: border-box;
+}
+
+.training-promo-carousel > div {
+  max-width: 100%;
+}
+
+.training-promo-carousel img {
+  display: block;
+  max-width: none;
+}

@@ -9,6 +9,7 @@ import { Course } from '@/shared/types';
 import { cn } from '@/shared/lib/utils';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useTrainings } from '@/shared/lib/queries';
+import { useRouter } from 'next/navigation';
 import { useContact } from '@/shared/context/ContactContext';
 import { useLang } from '@/shared/context/LanguageContext';
 import { trackEnroll } from '@/shared/lib/ga-events';
@@ -38,12 +39,12 @@ const sortOptions = [
 
 export default function TrainingModule() {
   const { t, lang } = useLang();
+  const router = useRouter();
   const { openContact: onContactOpen } = useContact();
   const { user, profile, requireAuth } = useAuth();
 
   const { data: courses = [], isLoading: coursesLoading } = useTrainings(lang) as { data: Course[], isLoading: boolean };
   const [selectedTag, setSelectedTag]   = React.useState<string | null>(null);
-  const [selectedCourse, setSelectedCourse] = React.useState<Course | null>(null);
   const [searchQuery, setSearchQuery]   = React.useState('');
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
   const [sortBy, setSortBy]             = React.useState('default');
@@ -153,57 +154,6 @@ export default function TrainingModule() {
       </div>
 
     <section id="courses" className="py-16 bg-white dark:bg-slate-900 transition-colors">
-      <AnimatePresence>
-        {selectedCourse && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setSelectedCourse(null)} className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" />
-            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col md:flex-row">
-              <button onClick={() => setSelectedCourse(null)}
-                className="absolute top-6 right-6 z-10 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white border border-white/20">
-                <X className="w-6 h-6" />
-              </button>
-              <div className="w-full md:w-5/12 h-64 md:h-auto relative shrink-0">
-                <Image src={selectedCourse.image} alt={selectedCourse.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 400px" />
-              </div>
-              <div className="p-8 md:w-7/12 overflow-y-auto max-h-[80vh]">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-[#C1272D] text-[10px] font-black uppercase tracking-widest rounded-full">{selectedCourse.category}</span>
-                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-bold">
-                    <Clock className="w-4 h-4" />{selectedCourse.duration}
-                  </div>
-                </div>
-                <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mb-4">{selectedCourse.title}</h2>
-                <div className="text-xl font-black text-[#C1272D] mb-6">{selectedCourse.price.toLocaleString()} FCFA</div>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium mb-6">{selectedCourse.description}</p>
-                <div className="space-y-3 mb-8">
-                  <h4 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white flex items-center gap-2">                      <CheckCircle className="w-4 h-4 text-green-500" /> {t.formation_page.program_title}
-                    </h4>
-                    <ul className="grid sm:grid-cols-2 gap-2">
-                      {t.formation_page.program_items.map((item: string, i: number) => (
-                      <li key={i} className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                        <div className="w-1.5 h-1.5 bg-[#C1272D] rounded-full" />{item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <button onClick={() => { handleEnroll(selectedCourse); setSelectedCourse(null); }}
-                    className="flex-1 bg-[#C1272D] text-white py-4 rounded-2xl font-bold shadow-xl shadow-blue-500/20 hover:bg-[#1E4D8C] transition-all flex items-center justify-center gap-3 active:scale-95">
-                    {t.formation_page.enroll_whatsapp}
-                  </button>
-                  <button onClick={() => setSelectedCourse(null)}
-                    className="flex-1 py-4 px-6 rounded-2xl font-bold transition-all flex items-center justify-center gap-3 border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-[#C1272D] hover:text-[#C1272D]">
-                    {t.formation_page.close_btn}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Header */}
@@ -330,7 +280,7 @@ export default function TrainingModule() {
                     </div>
                     <p className="text-slate-600 dark:text-slate-400 text-sm mb-6 line-clamp-2 italic flex-1">{course.description}</p>
                     <div className="flex items-center justify-between pt-6 border-t border-slate-200 dark:border-slate-700 mt-auto">
-                      <button onClick={() => setSelectedCourse(course)}
+                      <button onClick={() => router.push(`/formation/${course.id}`)}
                         className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-[#C1272D] transition-colors flex items-center gap-1">
                         <Info className="w-3 h-3" /> {t.formation_page.details_btn}
                       </button>

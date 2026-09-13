@@ -13,6 +13,7 @@ import { cn } from '@/shared/lib/utils';
 import { Order } from '@/shared/types';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useLang } from '@/shared/context/LanguageContext';
+import { verifyPublicLoginRole } from '@/shared/lib/auth-role';
 
 type ProfileTab = 'dashboard' | 'settings' | 'orders' | 'investments' | 'wishlist';
 
@@ -20,7 +21,7 @@ type ProfileTab = 'dashboard' | 'settings' | 'orders' | 'investments' | 'wishlis
 export default function ProfileModule() {
   const { t } = useLang();
   const router = useRouter();
-  const { user, profile, signOut, setShowSignOutModal, loading: authLoading } = useAuth();
+  const { user, profile, signOut, setShowSignOutModal, setPublicLoginInProgress, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = React.useState<ProfileTab>('dashboard');
   const [wishlistVersion, setWishlistVersion] = React.useState(0);
   const [authMode, setAuthMode] = React.useState<'login' | 'signup'>('login');
@@ -118,14 +119,17 @@ export default function ProfileModule() {
         if (error) throw error;
         setAuthSuccess(t.profile_page.auth_success_signup);
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        setPublicLoginInProgress(true);
+        const { data, error } = await supabase.auth.signInWithPassword({
           email, password
         });
         if (error) throw error;
+        await verifyPublicLoginRole(data.user.id);
       }
     } catch (error: unknown) {
       setAuthError(error instanceof Error ? error.message : t.common.error);
     } finally {
+      setPublicLoginInProgress(false);
       setIsSubmitting(false);
     }
   };

@@ -25,6 +25,7 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
   setShowAuthModal: (show: boolean) => void;
   showAuthModal: boolean;
+  setPublicLoginInProgress: (inProgress: boolean) => void;
   showSignOutModal: boolean;
   setShowSignOutModal: (show: boolean) => void;
 }
@@ -48,6 +49,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Stores the last auth event type so the profile-fetch effect can decide
   // whether to redirect after resolving the admin role.
   const lastAuthEvent = React.useRef<string | null>(null);
+  // Public forms set this before signInWithPassword. The user id is captured
+  // synchronously from SIGNED_IN so the redirect decision survives until the
+  // profile request completes, even after the form's finally resets the flag.
+  const publicLoginInProgress = React.useRef(false);
+  const publicLoginUserId = React.useRef<string | null>(null);
 
   // Safety timeout: if loading stays true for 15s something went wrong.
   useEffect(() => {
@@ -72,6 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!mounted.current) return;
       const currentUser = session?.user ?? null;
       lastAuthEvent.current = event;
+
+      if (event === 'SIGNED_IN' && currentUser && publicLoginInProgress.current) {
+        publicLoginUserId.current = currentUser.id;
+      }
+      if (!currentUser) publicLoginUserId.current = null;
 
       if (currentUser && !currentUser.email_confirmed_at) {
         // Fire-and-forget: don't await inside the synchronous callback.
@@ -107,6 +118,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!active || !mounted.current) return;
 
       if (isAdminUser) {
+        const publicLoginAttempt = publicLoginUserId.current === user!.id;
+        if (publicLoginAttempt) {
+          // The public form will reject and sign out this session; consume the
+          // marker so a later admin-form login can redirect normally.
+          publicLoginUserId.current = null;
+          return;
+        }
+
         const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
         const redirectPaths = ['/', '/admin-login'];
         // NB : /profil n'est plus dans la liste → les admins peuvent gérer
@@ -230,6 +249,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.replace('/');
   };
 
+  const setPublicLoginInProgress = (inProgress: boolean) => {
+    publicLoginInProgress.current = inProgress;
+  };
+
   const requireAuth = (callback: () => void) => {
     if (user) callback();
     else { setPendingAction(() => callback); setShowAuthModal(true); }
@@ -254,7 +277,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, profile, isAdmin, loading, signOut, requireAuth, refreshProfile,
-      showAuthModal, setShowAuthModal,
+      showAuthModal, setShowAuthModal, setPublicLoginInProgress,
       showSignOutModal, setShowSignOutModal
     }}>
       {children}

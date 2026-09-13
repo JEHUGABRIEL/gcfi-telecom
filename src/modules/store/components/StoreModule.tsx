@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import Fuse from 'fuse.js';
 import {
@@ -96,6 +97,7 @@ function ProductCard({ product, wishlist, onToggleWishlist, onAddToCart, onSelec
 
 export default function StoreModule() {
   const { user, profile, requireAuth } = useAuth();
+  const router = useRouter();
   const { t, lang } = useLang();
   const { addNotification } = useNotifications();
   const { data: allProducts = [], isLoading: productsLoading } = useProducts(lang);
@@ -173,7 +175,6 @@ export default function StoreModule() {
   const [selectedCategory, setSelectedCategory] = React.useState('Tous');
   const [sortBy, setSortBy] = React.useState('popularity');
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
-  const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
   const [itemToDelete, setItemToDelete] = React.useState<string | null>(null);
   const [cart, setCart] = React.useState<CartItem[]>([]);
 
@@ -530,7 +531,7 @@ export default function StoreModule() {
             {filteredProducts.slice(0, visibleCount).map((product) => (
               <ProductCard key={product.id} product={product}
                 wishlist={wishlist} onToggleWishlist={toggleWishlist}
-                onAddToCart={addToCart} onSelect={setSelectedProduct} />
+                onAddToCart={addToCart} onSelect={product => router.push(`/boutique/${product.id}`)} />
             ))}
           </div>
         ) : (
@@ -557,7 +558,7 @@ export default function StoreModule() {
                   {items.map((product) => (
                     <ProductCard key={product.id} product={product}
                       wishlist={wishlist} onToggleWishlist={toggleWishlist}
-                      onAddToCart={addToCart} onSelect={setSelectedProduct} />
+                      onAddToCart={addToCart} onSelect={product => router.push(`/boutique/${product.id}`)} />
                   ))}
                 </div>
               </div>
@@ -569,53 +570,6 @@ export default function StoreModule() {
           <div className="w-8 h-8 border-4 border-slate-100 dark:border-slate-800 border-t-[var(--accent)] rounded-full animate-spin" />
         </div>}
       </div>
-
-      {/* Product Detail Modal */}
-      <AnimatePresence>
-        {selectedProduct && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setSelectedProduct(null)} className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" />
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-              className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh] overflow-y-auto">
-              <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 z-10 p-2 bg-white/20 backdrop-blur-md rounded-full text-white md:text-slate-900 dark:md:text-white">
-                <X className="w-5 h-5" />
-              </button>
-              <div className="md:w-5/12 h-64 md:h-auto relative shrink-0">
-                <Image src={selectedProduct.image} alt={selectedProduct.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 400px"
-                  unoptimized={needsUnoptimized(selectedProduct.image)} />
-              </div>
-              <div className="p-8 md:p-10 md:w-7/12 flex flex-col justify-center">
-                <p className="text-xs font-black uppercase tracking-widest text-[var(--accent)] mb-3">{selectedProduct.category}</p>
-                <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mb-3 leading-tight">{selectedProduct.name}</h2>
-                <div className="flex items-center gap-2 mb-5">
-                  {[...Array(5)].map((_, i) => <Star key={i} className={cn("w-4 h-4", i < Math.floor(selectedProduct.rating || 0) ? "text-yellow-400 fill-current" : "text-slate-300")} />)}
-                  <span className="text-xs text-slate-500 dark:text-slate-400">({selectedProduct.reviewsCount || 0} {t.boutique.reviews_label})</span>
-                </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm leading-7 mb-8">{selectedProduct.description}</p>
-                <div className="flex items-baseline gap-3 mb-8">
-                  {(selectedProduct.discount ?? 0) > 0 ? (
-                    <>
-                      <p className="text-3xl font-black text-[var(--accent)]">
-                        {Math.round(selectedProduct.price * (1 - (selectedProduct.discount ?? 0) / 100)).toLocaleString()}
-                        <span className="text-sm font-bold ml-1">FCFA</span>
-                      </p>
-                      <p className="text-lg text-slate-400 line-through">{selectedProduct.price.toLocaleString()}</p>
-                      <span className="bg-[var(--accent)] text-white text-xs font-black px-2 py-1 rounded-full">-{selectedProduct.discount}%</span>
-                    </>
-                  ) : (
-                    <p className="text-3xl font-black text-[var(--accent)]">{selectedProduct.price.toLocaleString()} <span className="text-sm font-bold">FCFA</span></p>
-                  )}
-                </div>
-                <button onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }}
-                  className="w-full bg-[var(--accent)] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-[var(--accent)]/20 hover:bg-[var(--accent-hover)] flex items-center justify-center gap-2">
-                  <ShoppingCart className="w-4 h-4" /> {t.boutique.add_cart_btn}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Cart Modal */}
       <AnimatePresence>

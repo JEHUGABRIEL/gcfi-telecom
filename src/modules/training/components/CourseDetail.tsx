@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
-import { ArrowLeft, Clock, Tag, GraduationCap, CheckCircle2, Phone, Share2, Users, Award } from 'lucide-react';
+import { ArrowLeft, Clock, Tag, GraduationCap, CheckCircle2, Phone, Share2, Users, Award, ArrowRight } from 'lucide-react';
 import { useCourses } from '@/shared/lib/queries';
 import { useLang } from '@/shared/context/LanguageContext';
 import { trackEnroll, trackViewItem } from '@/shared/lib/ga-events';
@@ -67,6 +67,18 @@ export default function CourseDetail({ initialCourse }: { initialCourse?: Course
   }
 
   if (!course) return null;
+
+  const similarCourses = courses
+    .filter((candidate: Course) => candidate.id !== course.id)
+    .map((candidate: Course) => ({
+      course: candidate,
+      score:
+        (candidate.category === course.category ? 2 : 0) +
+        (candidate.tags?.some(tag => course.tags?.includes(tag)) ? 1 : 0),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map(item => item.course);
 
   const inclus = t.course_detail.included_items as unknown as string[];
 
@@ -218,8 +230,40 @@ export default function CourseDetail({ initialCourse }: { initialCourse?: Course
                 </div>
               </div>
             </motion.div>
-          </div>
-        </div>
+          </div>        </div>
+
+        {similarCourses.length > 0 && (
+          <section className="mt-16">
+            <div className="flex items-end justify-between gap-4 mb-6">
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest text-[#C1272D] mb-2">{t.course_detail.discover_also_tag}</p>
+                <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">{t.course_detail.discover_also_title}</h2>
+              </div>
+              <button onClick={() => router.push('/formation')} className="hidden sm:flex items-center gap-2 text-sm font-bold text-[#C1272D]">
+                {t.course_detail.discover_also_link} <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid md:grid-cols-3 gap-5">
+              {similarCourses.map((candidate: Course) => (
+                <button
+                  key={candidate.id}
+                  type="button"
+                  onClick={() => router.push(`/formation/${candidate.id}`)}
+                  className="group text-left bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800 hover:shadow-xl transition-all"
+                >
+                  <div className="relative h-36 overflow-hidden">
+                    <Image src={candidate.image} alt={candidate.title} fill className="object-cover group-hover:scale-105 transition-transform" sizes="(max-width: 768px) 100vw, 33vw" />
+                  </div>
+                  <div className="p-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#C1272D] mb-1">{candidate.category}</p>
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-2">{candidate.title}</h3>
+                    <p className="mt-2 text-sm font-black text-[#C1272D]">{candidate.price.toLocaleString()} FCFA</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

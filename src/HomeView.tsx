@@ -196,6 +196,73 @@ const HERO_BASE = [
   { src: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&q=80&w=1600', alt: 'Anniversaire GCFI - Fête',        card: { icon: PartyPopper, label: 'Offre Anniversaire', desc: 'Profitez de -20% sur nos services' } },
 ];
 
+const TRAINING_PROMO_IMAGES = [
+  {
+    src: '/promo_practicing_training/training-practical-01.png',
+    alt: 'Formation pratique GCFI Telecom',
+    copy: {
+      fr: {
+        badge: 'Formation pratique',
+        title: 'Apprenez en pratiquant avec les experts GCFI',
+        text: 'Des ateliers concrets pour maîtriser les réseaux, les équipements et les outils télécoms.',
+      },
+      en: {
+        badge: 'Practical training',
+        title: 'Learn by doing with GCFI experts',
+        text: 'Hands-on workshops to master networks, equipment, and telecom tools.',
+      },
+    },
+  },
+  {
+    src: '/promo_practicing_training/training-practical-02.png',
+    alt: 'Étudiants en formation pratique GCFI',
+    copy: {
+      fr: {
+        badge: 'Nouvelle rentrée',
+        title: 'Rejoignez la prochaine rentrée des formations GCFI',
+        text: 'Formez-vous dans un environnement professionnel, encadré par des formateurs de terrain.',
+      },
+      en: {
+        badge: 'New intake',
+        title: 'Join the next GCFI training intake',
+        text: 'Train in a professional environment guided by experienced field instructors.',
+      },
+    },
+  },
+  {
+    src: '/promo_practicing_training/training-practical-03.png',
+    alt: 'Formation technique GCFI Telecom',
+    copy: {
+      fr: {
+        badge: 'Compétences terrain',
+        title: 'Transformez la théorie en compétences opérationnelles',
+        text: 'Progressez grâce à des exercices pratiques conçus pour les réalités du métier.',
+      },
+      en: {
+        badge: 'Field skills',
+        title: 'Turn theory into practical skills',
+        text: 'Build confidence through practical exercises designed for real-world work.',
+      },
+    },
+  },
+  {
+    src: '/promo_practicing_training/training-practical-04.png',
+    alt: 'Nouvelle rentrée des formations GCFI',
+    copy: {
+      fr: {
+        badge: 'GCFI Telecom',
+        title: 'Bientôt, nous reprenons avec les formations pratiques',
+        text: 'Préparez votre avenir dans les télécoms, les réseaux et la cybersécurité.',
+      },
+      en: {
+        badge: 'GCFI Telecom',
+        title: 'Practical training programs are coming back soon',
+        text: 'Prepare your future in telecoms, networking, and cybersecurity.',
+      },
+    },
+  },
+];
+
 /* ══════════════════════════════════════════════════════════════ */
 export default function HomeView() {
   const router = useRouter();
@@ -211,6 +278,7 @@ export default function HomeView() {
 
   const [heroSlide,           setHeroSlide]           = React.useState(0);
   const [carouselIndex, setCarouselIndex] = React.useState(0);
+  const [trainingPromoIndex, setTrainingPromoIndex] = React.useState(0);
   const [mvIndex, setMvIndex] = React.useState(0); // 0 = mission, 1 = vision
   const achievementsSlider = useCardSlider(achievements.length);
   const testimonialsSlider = useCardSlider(testimonials.length);
@@ -248,6 +316,12 @@ export default function HomeView() {
     return () => clearInterval(t);
   }, []);
 
+  // Auto-avance de la publicité des formations pratiques toutes les 5s
+  React.useEffect(() => {
+    const t = setInterval(() => setTrainingPromoIndex(s => (s + 1) % TRAINING_PROMO_IMAGES.length), 5000);
+    return () => clearInterval(t);
+  }, []);
+
   // Alternance indéfinie de la carte flottante Mission / Vision
   React.useEffect(() => {
     const t = setInterval(() => setMvIndex(i => (i + 1) % 2), 3500);
@@ -256,9 +330,9 @@ export default function HomeView() {
 
   // Préchargement de l'image suivante du carrousel pour éliminer le temps de chargement
   const BIRTHDAY_IMAGES = React.useMemo(() => [
-    '/9e_anniv/ChatGPT Image 21 juil. 2026, 13_12_04.png',
-    '/9e_anniv/ChatGPT Image 21 juil. 2026, 13_10_44.png',
-    '/9e_anniv/ChatGPT Image 21 juil. 2026, 13_11_45.png',
+    '/9e_anniv/gcfi-anniversary-02.png',
+    '/9e_anniv/gcfi-anniversary-03.png',
+    '/9e_anniv/gcfi-anniversary-01.png',
   ], []);
 
   React.useEffect(() => {
@@ -269,6 +343,7 @@ export default function HomeView() {
 
   const featuredTrainings = trainings.slice(0, 3);
   const featuredProducts  = products.slice(0, 4);
+  const trainingPromoCopy = TRAINING_PROMO_IMAGES[trainingPromoIndex].copy[lang];
 
 
   return (
@@ -389,7 +464,87 @@ export default function HomeView() {
         </div>
       </section>
 
-      {/* ══ 2. QUI SOMMES-NOUS ══════════════════════════════════ */}
+      {/* ══ 2. PROMOTION FORMATIONS PRATIQUES ═══════════════════ */}
+      <section className="px-4 py-10 bg-slate-50 dark:bg-slate-800/30">
+        <div className="max-w-7xl mx-auto">
+          <div className="training-promo-carousel relative isolate h-[28rem] md:h-[36rem] overflow-hidden rounded-3xl bg-slate-950 shadow-2xl border border-slate-200 dark:border-slate-700">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={trainingPromoIndex}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute inset-0"
+              >
+                <Image
+                  src={TRAINING_PROMO_IMAGES[trainingPromoIndex].src}
+                  alt={TRAINING_PROMO_IMAGES[trainingPromoIndex].alt}
+                  fill
+                  className="object-cover object-center"
+                  sizes="(max-width: 1280px) 100vw, 1280px"
+                  unoptimized
+                  priority={trainingPromoIndex === 0}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
+              </motion.div>
+            </AnimatePresence>
+
+            <div className="absolute inset-x-0 bottom-0 z-10 p-6 md:p-10">
+              <p className="mb-2 text-xs font-black uppercase tracking-[0.25em] text-white/70">
+                {trainingPromoCopy.badge}
+              </p>
+              <h2 className="max-w-2xl text-2xl md:text-4xl font-black leading-tight text-white drop-shadow-lg">
+                {trainingPromoCopy.title}
+              </h2>
+              <p className="mt-3 max-w-xl text-sm md:text-base leading-relaxed text-white/80">
+                {trainingPromoCopy.text}
+              </p>
+              <button
+                onClick={openContact}
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#C1272D] px-5 py-3 text-sm font-bold text-white transition-all hover:bg-red-700 hover:-translate-y-0.5"
+              >
+                {t.home_page.training_promo_cta}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setTrainingPromoIndex(i => (i - 1 + TRAINING_PROMO_IMAGES.length) % TRAINING_PROMO_IMAGES.length)}
+              aria-label={t.home_page.training_promo_previous}
+              className="absolute left-4 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-slate-950/40 text-white backdrop-blur-sm transition-colors hover:bg-[#C1272D]"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setTrainingPromoIndex(i => (i + 1) % TRAINING_PROMO_IMAGES.length)}
+              aria-label={t.home_page.training_promo_next}
+              className="absolute right-4 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-slate-950/40 text-white backdrop-blur-sm transition-colors hover:bg-[#C1272D]"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+
+            <div className="absolute bottom-5 right-6 z-20 flex gap-2 md:right-10">
+              {TRAINING_PROMO_IMAGES.map((image, index) => (
+                <button
+                  key={image.src}
+                  type="button"
+                  onClick={() => setTrainingPromoIndex(index)}
+                  aria-label={`${t.home_page.training_promo_slide} ${index + 1}`}
+                  className={cn(
+                    'h-2 rounded-full transition-all',
+                    index === trainingPromoIndex ? 'w-8 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ 3. QUI SOMMES-NOUS ══════════════════════════════════ */}
       <section className="py-16 px-4 bg-white dark:bg-slate-900">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-20 items-center">
@@ -582,7 +737,7 @@ export default function HomeView() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredProducts.map((product, i) => (
                 <FadeIn key={product.id} delay={i * 0.08}>
-                  <div onClick={() => router.push('/boutique')}
+                  <div onClick={() => router.push(`/boutique/${product.id}`)}
                     className="group bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:shadow-2xl transition-all shadow-sm cursor-pointer h-full flex flex-col">
                     <div className="relative h-44 overflow-hidden">
                       <Image src={product.image} alt={product.name} fill
@@ -613,6 +768,13 @@ export default function HomeView() {
                           </p>
                         )}
                       </div>
+                      <button
+                        type="button"
+                        onClick={e => { e.stopPropagation(); router.push(`/boutique/${product.id}`); }}
+                        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#C1272D] px-4 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-red-700"
+                      >
+                        <ShoppingBag className="w-4 h-4" /> {t.home_page.products_order_cta}
+                      </button>
                     </div>
                   </div>
                 </FadeIn>
@@ -638,7 +800,7 @@ export default function HomeView() {
             {TOP_SERVICE_ICONS.map((Icon, i) => (
               <FadeIn key={i} delay={i * 0.07}>
                 <div onClick={() => router.push('/services')}
-                  className="bg-white dark:bg-slate-800 rounded-3xl p-7 border border-slate-100 dark:border-slate-700 hover:shadow-xl hover:border-[#C1272D]/20 transition-all cursor-pointer group">
+                  className="bg-white dark:bg-slate-800 rounded-3xl p-7 border border-slate-100 dark:border-slate-700 hover:shadow-xl hover:border-[#C1272D]/20 transition-all cursor-pointer group flex flex-col">
                   <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-[#C1272D] transition-colors">
                     <Icon className="w-6 h-6 text-[#C1272D] group-hover:text-white transition-colors" />
                   </div>
@@ -647,6 +809,13 @@ export default function HomeView() {
                   <span className="flex items-center gap-1 text-xs font-bold text-[#C1272D] opacity-0 group-hover:opacity-100 transition-all">
                     {t.home_page.section4_learn_more} <ArrowRight className="w-3 h-3" />
                   </span>
+                  <a
+                    href="tel:+23672727208"
+                    onClick={e => e.stopPropagation()}
+                    className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-[#C1272D] px-4 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-red-700"
+                  >
+                    <Phone className="w-4 h-4" /> {t.home_page.expertise_call_cta}
+                  </a>
                 </div>
               </FadeIn>
             ))}
@@ -673,25 +842,32 @@ export default function HomeView() {
               </Link>
             </FadeIn>
             <div className="grid md:grid-cols-3 gap-6">
-              {featuredTrainings.map((t: Course, i) => (
-                <FadeIn key={t.id} delay={i * 0.08}>
-                  <div onClick={() => router.push('/formation')}
-                    className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:shadow-xl transition-all cursor-pointer group">
+              {featuredTrainings.map((course: Course, i) => (
+                <FadeIn key={course.id} delay={i * 0.08}>
+                  <div onClick={() => router.push('/formation#courses')}
+                    className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:shadow-xl transition-all cursor-pointer group h-full flex flex-col">
                     <div className="relative h-44 overflow-hidden">
-                      <Image src={t.image || 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=600'}
-                        alt={t.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="33vw" />
+                      <Image src={course.image || 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=600'}
+                        alt={course.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="33vw" />
                       <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
                       <span className="absolute bottom-3 left-3 bg-[#C1272D] text-white text-[10px] font-black px-2.5 py-1 rounded-full">
-                        {t.category || 'Télécom'}
+                        {course.category || 'Télécom'}
                       </span>
                     </div>
                     <div className="p-5">
-                      <h3 className="font-bold text-slate-900 dark:text-white mb-2 line-clamp-2">{t.title}</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">{t.description}</p>
+                      <h3 className="font-bold text-slate-900 dark:text-white mb-2 line-clamp-2">{course.title}</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">{course.description}</p>
                       <div className="flex items-center justify-between">
-                        <span className="text-lg font-black text-[#C1272D]">{t.price?.toLocaleString()} <span className="text-xs">FCFA</span></span>
-                        <span className="text-xs text-slate-400">{t.duration || '2 mois'}</span>
+                        <span className="text-lg font-black text-[#C1272D]">{course.price?.toLocaleString()} <span className="text-xs">FCFA</span></span>
+                        <span className="text-xs text-slate-400">{course.duration || '2 mois'}</span>
                       </div>
+                      <button
+                        type="button"
+                        onClick={e => { e.stopPropagation(); router.push('/formation#courses'); }}
+                        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#C1272D] px-4 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-red-700"
+                      >
+                        <GraduationCap className="w-4 h-4" /> {t.home_page.training_enroll_cta}
+                      </button>
                     </div>
                   </div>
                 </FadeIn>

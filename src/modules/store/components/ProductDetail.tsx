@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
-import { ArrowLeft, Star, ShoppingCart, Heart, Share2, Shield, Truck, RefreshCw, Package, Tag } from 'lucide-react';
+import { ArrowLeft, Star, ShoppingCart, Heart, Share2, Shield, Truck, RefreshCw, Package, Tag, ArrowRight } from 'lucide-react';
 import { useProducts } from '@/shared/lib/queries';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useLang } from '@/shared/context/LanguageContext';
@@ -53,15 +53,8 @@ export default function ProductDetail({ initialProduct }: { initialProduct?: Pro
       .catch(() => navigator.clipboard.writeText(window.location.href));
   };
 
-  if (isLoading && !product) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-slate-100 border-t-[#C1272D] rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // Page vue — tracker la consultation
+  // Page vue — tracker la consultation.
+  // Ce hook doit rester avant tout retour conditionnel pour garder un ordre stable.
   React.useEffect(() => {
     if (product) {
       trackViewItem({
@@ -73,7 +66,25 @@ export default function ProductDetail({ initialProduct }: { initialProduct?: Pro
     }
   }, [product?.id]);
 
+  if (isLoading && !product) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-slate-100 border-t-[#C1272D] rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (!product) return null;
+
+  const similarProducts = products
+    .filter((candidate: Product) => candidate.id !== product.id)
+    .sort((a: Product, b: Product) => {
+      const score = (candidate: Product) =>
+        (candidate.category === product.category ? 2 : 0) +
+        ((candidate.popularity ?? 0) > 0 ? 1 : 0);
+      return score(b) - score(a);
+    })
+    .slice(0, 4);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-20">
@@ -239,6 +250,39 @@ export default function ProductDetail({ initialProduct }: { initialProduct?: Pro
               {product.category}
             </span>
           </motion.div>
+        )}
+
+        {similarProducts.length > 0 && (
+          <section className="mt-16">
+            <div className="flex items-end justify-between gap-4 mb-6">
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest text-[#C1272D] mb-2">{t.product_detail.discover_also_tag}</p>
+                <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">{t.product_detail.discover_also_title}</h2>
+              </div>
+              <button onClick={() => router.push('/boutique')} className="hidden sm:flex items-center gap-2 text-sm font-bold text-[#C1272D]">
+                {t.product_detail.discover_also_link} <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {similarProducts.map((candidate: Product) => (
+                <button
+                  key={candidate.id}
+                  type="button"
+                  onClick={() => router.push(`/boutique/${candidate.id}`)}
+                  className="group text-left bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800 hover:shadow-xl transition-all"
+                >
+                  <div className="relative h-36 overflow-hidden">
+                    <Image src={candidate.image} alt={candidate.name} fill className="object-cover group-hover:scale-105 transition-transform" sizes="(max-width: 640px) 50vw, 25vw" />
+                  </div>
+                  <div className="p-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#C1272D] mb-1">{candidate.category}</p>
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-2">{candidate.name}</h3>
+                    <p className="mt-2 text-sm font-black text-[#C1272D]">{candidate.price.toLocaleString()} FCFA</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
         )}
       </div>
     </div>
