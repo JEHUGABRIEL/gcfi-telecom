@@ -9,7 +9,10 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "deploy:admin": "vercel deploy --prod --project gcfi-admin --scope team_rYYkCIBsa1nD8cSRQb2dyHWn --yes",
+    "deploy:public": "vercel deploy --prod --project gcfi-telecom --scope team_rYYkCIBsa1nD8cSRQb2dyHWn --yes",
+    "deploy": "npm run deploy:admin && npm run deploy:public"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
