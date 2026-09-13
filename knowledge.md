@@ -32,6 +32,28 @@ npm start            # serve the production build
 
 There is no lint script configured. Use `npm run type-check`, the relevant Vitest tests, and `npm run build` for validation.
 
+## Deployment
+
+Two Vercel projects are built from this single repository, both in the `jehubins-projects` team (`team_rYYkCIBsa1nD8cSRQb2dyHWn`):
+
+| Project | Production domain | `APP_MODE` |
+| --- | --- | --- |
+| `gcfi-telecom` | `www.gcfi-rca.com` | unset → production default `public` (public site only) |
+| `gcfi-admin` | `mybackoffice.gcfi-rca.com` | `admin` (backoffice only) |
+
+The Vercel Git integration is **not connected** to this repository, so `git push` does not trigger a deployment. Deploy from the CLI instead:
+
+```bash
+npm run deploy:admin    # gcfi-admin  → mybackoffice.gcfi-rca.com
+npm run deploy:public   # gcfi-telecom → www.gcfi-rca.com
+npm run deploy          # both, admin then public
+npm run verify:deploy   # check both domains without deploying
+```
+
+Each deploy script runs `vercel deploy --prod --project <project> --scope team_rYYkCIBsa1nD8cSRQb2dyHWn --yes`, then verifies its own domain through `scripts/verify-deploy.mjs` (non-zero exit on any mismatch, so a deploy without a working middleware fails loudly). Run the commands on separate lines: pasting both onto one line merges the arguments and `vercel` rejects `--project`.
+
+Set `APP_MODE` explicitly on each project rather than relying on the production default: unset resolves to `public`, which redirects `/admin` **and** `/admin-login` to `/` and makes the backoffice login unreachable. After deploying, check that `/admin` returns `307 → /admin-login` on the admin domain, and on the public domain that `/admin` and `/admin-login` return `307 → /` while `/api/admin/*` returns `404`.
+
 ## Conventions
 
 - Use the `@/*` alias for imports from `src/*`.
