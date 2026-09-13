@@ -204,7 +204,6 @@ export default function AnnouncementsTab() {
           <div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">
               {ap.ann_title}
-              {items.length > 0 && <span className="ml-2 text-sm font-normal text-slate-400">({items.length})</span>}
             </h3>
           </div>
           <div className="flex gap-2">

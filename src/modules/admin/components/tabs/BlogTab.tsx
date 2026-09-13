@@ -255,7 +255,7 @@ export default function BlogTab() {
 
       {/* Header liste */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">{ap.blog_list_title} ({posts.length})</h3>
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">{ap.blog_list_title}</h3>
         <div className="flex gap-2">
           <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors"><RefreshCw className="w-4 h-4" /></button>
           <button onClick={() => { resetForm(); setShowForm(true); }}

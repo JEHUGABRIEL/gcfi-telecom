@@ -363,9 +363,6 @@ export default function ServicesTab() {
         <div>
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">
             {ap.service_list_title}
-            {services.length > 0 && (
-              <span className="ml-2 text-sm font-normal text-slate-400">({services.length})</span>
-            )}
           </h3>
         </div>
         <div className="flex gap-2">

@@ -214,7 +214,6 @@ export default function PromoTab() {
           <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
             <Tag className="w-5 h-5 text-[#C1272D]" /> {ap.promo_title}
           </h3>
-          <p className="text-sm text-slate-500 mt-0.5">{ap.promo_count.replace('{count}', String(promoCount))}</p>
         </div>
         <div className="flex gap-2">
           <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors">

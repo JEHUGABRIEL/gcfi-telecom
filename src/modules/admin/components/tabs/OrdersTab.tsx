@@ -56,9 +56,6 @@ export default function OrdersTab() {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">
           {ap.order_title}
-          {totalItems > 0 && (
-            <span className="ml-2 text-sm font-normal text-slate-400">({totalItems} {ap.order_total})</span>
-          )}
         </h3>
         <button
           onClick={() => queryClient.invalidateQueries({ queryKey: ['admin', 'orders', page] })}
