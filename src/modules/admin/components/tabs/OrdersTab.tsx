@@ -53,10 +53,7 @@ export default function OrdersTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-          {ap.order_title}
-        </h3>
+      <div className="flex items-center justify-end">
         <button
           onClick={() => queryClient.invalidateQueries({ queryKey: ['admin', 'orders', page] })}
           className="text-xs text-slate-500 hover:text-[#C1272D] flex items-center gap-1 transition-colors"

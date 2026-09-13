@@ -209,12 +209,7 @@ export default function PromoTab() {
       </AnimatePresence>
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <Tag className="w-5 h-5 text-[#C1272D]" /> {ap.promo_title}
-          </h3>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
         <div className="flex gap-2">
           <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors">
             <RefreshCw className="w-4 h-4" />
