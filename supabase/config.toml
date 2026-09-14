@@ -42,6 +42,17 @@ additional_redirect_urls = [
 [auth.email]
 enable_confirmations = true
 
+# Verrouillage par compte après 5 échecs de connexion — voir la migration
+# 20260913000100_password_signin_lockout.sql.
+#
+# Cette section ne vaut que pour l'environnement local : le hook
+# « Password Verification Attempt » n'est proposé que sur les offres Teams et
+# Enterprise, donc sur Free/Pro la fonction reste inerte en production tant que
+# le hook n'est pas enregistré dans le dashboard (Authentication → Hooks).
+[auth.hook.password_verification_attempt]
+enabled = true
+uri = "pg-functions://postgres/public/hook_password_verification_attempt"
+
 # SMTP local : `supabase start` route tout vers Inbucket (port 54324), donc
 # aucun email ne part vraiment en développement. La configuration SMTP de
 # production se fait dans le dashboard, pas ici — voir supabase/EMAIL_SETUP.md.
