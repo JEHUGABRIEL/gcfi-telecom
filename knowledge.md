@@ -32,6 +32,33 @@ npm start            # serve the production build
 
 There is no lint script configured. Use `npm run type-check`, the relevant Vitest tests, and `npm run build` for validation.
 
+## Database and local Supabase
+
+Schema changes live in `supabase/migrations/`. The remote project `tivlllahuykbfnawwhba` is linked (see `supabase/.temp/linked-project.json`).
+
+```bash
+supabase start                    # local stack (API 54321, DB 54322, Studio 54323)
+supabase start -x studio          # same without Studio, if its health check fails
+supabase db reset                 # drop and replay every migration from scratch
+supabase stop
+supabase migration list --linked  # local vs remote applied versions
+```
+
+`supabase/migrations/20240601000000_baseline_schema.sql` is the **baseline**: a `pg_dump --schema-only` of the production `public` schema, taken from the point before the first versioned migration. It is required because the base tables (`profiles`, `products`, `trainings`, `orders`, `quotes`, …) were created from the Supabase dashboard, so no migration ever created them and `db reset` failed on the first migration with `relation "public.products" does not exist`. Every later migration replays on top of it, which is what makes a fresh local environment possible.
+
+This version is not in the remote migration history, so `supabase db push` would try to replay the dump against production and fail on its non-idempotent `CREATE POLICY` / `CREATE INDEX` statements. Mark it as applied once before any push:
+
+```bash
+supabase migration repair --status applied 20240601000000
+```
+
+Two dashboard-only objects are handled explicitly:
+
+- `on_auth_user_created` (trigger on `auth.users` → `public.handle_new_user()`) is **added to the baseline**; without it, signups in a rebuilt environment create no `profiles` row.
+- the `trigger-send-emails` webhook on `emails_queue` is **omitted**: its argument embeds a `service_role` token and its URL targets the production edge function, so a local insert would send real emails to real customers.
+
+Observed quirks of the local stack: `supabase start` can exit non-zero on the Studio health check (`container is not ready: starting`) even though the database came up and every migration applied — `-x studio` or `--ignore-health-check` gets past it. A container-start race can also make the first `db reset` fail with `error running container: exit 1`; rerunning succeeds.
+
 ## Deployment
 
 Two Vercel projects are built from this single repository, both in the `jehubins-projects` team (`team_rYYkCIBsa1nD8cSRQb2dyHWn`):
