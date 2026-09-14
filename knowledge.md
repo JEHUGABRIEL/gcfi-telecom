@@ -57,7 +57,9 @@ Two dashboard-only objects are handled explicitly:
 - `on_auth_user_created` (trigger on `auth.users` → `public.handle_new_user()`) is **added to the baseline**; without it, signups in a rebuilt environment create no `profiles` row.
 - the `trigger-send-emails` webhook on `emails_queue` is **omitted**: its argument embeds a `service_role` token and its URL targets the production edge function, so a local insert would send real emails to real customers.
 
-Observed quirks of the local stack: `supabase start` can exit non-zero on the Studio health check (`container is not ready: starting`) even though the database came up and every migration applied — `-x studio` or `--ignore-health-check` gets past it. A container-start race can also make the first `db reset` fail with `error running container: exit 1`; rerunning succeeds.
+Observed quirks of the local stack: `supabase start` can exit non-zero on the Studio health check (`container is not ready: starting`) even though the database came up and every migration applied — `-x studio` or `--ignore-health-check` gets past it. A container-start race can also make the first `db reset` fail with `error running container: exit 1`; rerunning succeeds. `supabase config.toml` changes only apply after `supabase stop` then `supabase start`.
+
+The per-account sign-in lockout (`20260913000100_password_signin_lockout.sql`) is enabled locally by `[auth.hook.password_verification_attempt]` in `supabase/config.toml`. Supabase Auth returns the hook's message with `error_code: invalid_credentials`, so the client recognises a lockout only by its text — see `src/shared/lib/login-lockout.ts`. `AuthModal` then shows the remaining delay and disables the submit button until it elapses; the raw message alone would leave the user retrying a password the server will refuse.
 
 ## Deployment
 

@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, LogIn, UserPlus, Shield, Mail, Lock, User, ArrowLeft, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/shared/lib/supabase';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useLang } from '@/shared/context/LanguageContext';
 import { verifyPublicLoginRole } from '@/shared/lib/auth-role';
+import { lockoutMinutesFrom, remainingLockMs, splitRemaining } from '@/shared/lib/login-lockout';
 
 type AuthMode = 'login' | 'signup' | 'forgot';
 
@@ -22,6 +23,28 @@ export default function AuthModal() {
   const [loading, setLoading]     = useState(false);
   const [showPwd, setShowPwd]     = useState(false);
   const [confirm, setConfirm]     = useState('');
+  // Verrouillage décidé par le serveur après trop d'échecs : on retient
+  // l'instant de fin pour afficher le délai restant et bloquer le bouton.
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const [lockRemaining, setLockRemaining] = useState(0);
+
+  useEffect(() => {
+    if (lockedUntil === null) { setLockRemaining(0); return; }
+    const tick = () => {
+      const left = remainingLockMs(lockedUntil);
+      setLockRemaining(left);
+      if (left === 0) setLockedUntil(null);
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [lockedUntil]);
+
+  const locked = lockedUntil !== null;
+  const { minutes: lockMinutes, seconds: lockSeconds } = splitRemaining(lockRemaining);
+  const lockLabel = lockMinutes > 0
+    ? `${lockMinutes} min ${String(lockSeconds).padStart(2, '0')} s`
+    : `${lockSeconds} s`;
 
   const reset = () => {
     setError(null); setSuccess(null);
@@ -49,6 +72,9 @@ export default function AuthModal() {
   /* ── Email / Mot de passe ─────────────────────────────────── */
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Le serveur refuse toute tentative pendant le verrou, bon mot de passe
+    // compris : inutile d'appeler Supabase, on laisse le décompte s'écouler.
+    if (mode === 'login' && lockedUntil !== null) return;
     setError(null); setLoading(true);
     try {
       if (mode === 'signup') {
@@ -78,7 +104,17 @@ export default function AuthModal() {
         close();
       }
     } catch (err: unknown) {
-      setError(translateError(err instanceof Error ? err.message : String(err)));
+      const message = err instanceof Error ? err.message : String(err);
+      const lockMinutes = lockoutMinutesFrom(message);
+      if (lockMinutes !== null) {
+        // Trop d'échecs : le compte est verrouillé côté serveur. On l'annonce
+        // avec le délai restant au lieu du message d'origine, qui ne dit pas
+        // combien de temps l'utilisateur doit attendre.
+        setError(null);
+        setLockedUntil(Date.now() + lockMinutes * 60_000);
+      } else {
+        setError(translateError(message));
+      }
     } finally {
       setPublicLoginInProgress(false);
       setLoading(false);
@@ -171,6 +207,16 @@ export default function AuthModal() {
                 </div>
               )}
 
+              {/* ── Compte verrouillé ─────────────────────────── */}
+              {locked && (
+                <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl flex items-start gap-3">
+                  <Lock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
+                    Trop de tentatives de connexion. Nouvel essai possible dans {lockLabel}.
+                  </p>
+                </div>
+              )}
+
               {/* ── Erreur ───────────────────────────────────── */}
               {error && (
                 <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-2xl flex items-center gap-3">
@@ -243,7 +289,7 @@ export default function AuthModal() {
                       </div>
                     )}
 
-                    <button type="submit" disabled={loading}
+                    <button type="submit" disabled={loading || (mode === 'login' && locked)}
                       className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-[color-mix(in_srgb,var(--accent)_15%,transparent)] disabled:opacity-50 mt-2">
                       {loading ? t.auth.loading_text : mode === 'login' ? t.auth.login_btn : t.auth.signup_btn}
                     </button>
