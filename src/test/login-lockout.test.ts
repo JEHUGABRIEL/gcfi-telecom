@@ -1,9 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
 import {
   FALLBACK_LOCK_MINUTES,
+  fillLockoutNotice,
   lockoutMinutesFrom,
   remainingLockMs,
   splitRemaining,
+  useLoginLockout,
 } from '@/shared/lib/login-lockout';
 
 // Message exact renvoyé par Supabase Auth, mesuré sur la stack locale avec le
@@ -57,5 +60,53 @@ describe('splitRemaining', () => {
   it('affiche une durée nulle à la fin du verrou', () => {
     expect(splitRemaining(0)).toEqual({ minutes: 0, seconds: 0 });
     expect(splitRemaining(-5_000)).toEqual({ minutes: 0, seconds: 0 });
+  });
+});
+
+describe('fillLockoutNotice', () => {
+  it('remplit le gabarit localisé avec le délai, dans les deux langues', () => {
+    expect(fillLockoutNotice('Nouvel essai possible dans {time}.', '14 min 32 s'))
+      .toBe('Nouvel essai possible dans 14 min 32 s.');
+    expect(fillLockoutNotice('Try again in {time}.', '14 min 32 s'))
+      .toBe('Try again in 14 min 32 s.');
+  });
+
+  it('laisse le gabarit intact quand il ne contient pas de jeton', () => {
+    expect(fillLockoutNotice('Reessayez plus tard.', '1 min 00 s')).toBe('Reessayez plus tard.');
+  });
+});
+
+// Hook partagé par les formulaires de connexion publique, profil et backoffice.
+describe('useLoginLockout', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('arme le décompte sur le message du hook et le libère à la fin', () => {
+    const { result } = renderHook(() => useLoginLockout());
+    expect(result.current.locked).toBe(false);
+
+    act(() => { expect(result.current.registerError(LOCKED_15)).toBe(true); });
+    expect(result.current.locked).toBe(true);
+    expect(result.current.label).toBe('15 min 00 s');
+
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(result.current.label).toBe('14 min 59 s');
+
+    act(() => { vi.advanceTimersByTime(15 * 60_000); });
+    expect(result.current.locked).toBe(false);
+  });
+
+  it('remplit le gabarit reçu avec le délai et la langue courante', () => {
+    const { result } = renderHook(() => useLoginLockout());
+
+    act(() => { result.current.registerError(LOCKED_15); });
+    expect(result.current.notice('Try again in {time}.')).toBe('Try again in 15 min 00 s.');
+  });
+
+  it('reste inactif sur les autres erreurs de connexion', () => {
+    const { result } = renderHook(() => useLoginLockout());
+
+    act(() => { expect(result.current.registerError('Invalid login credentials')).toBe(false); });
+    expect(result.current.locked).toBe(false);
   });
 });

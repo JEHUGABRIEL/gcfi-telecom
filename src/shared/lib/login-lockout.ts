@@ -15,6 +15,8 @@
  * de passe.
  */
 
+import { useCallback, useEffect, useState } from 'react';
+
 const LOCKOUT_MARKER = /trop de tentatives de connexion/i;
 const LOCKOUT_MINUTES = /(\d+)\s*minute/i;
 
@@ -41,4 +43,65 @@ export function remainingLockMs(lockedUntil: number, now: number = Date.now()): 
 export function splitRemaining(remainingMs: number): { minutes: number; seconds: number } {
   const totalSeconds = Math.ceil(Math.max(0, remainingMs) / 1000);
   return { minutes: Math.floor(totalSeconds / 60), seconds: totalSeconds % 60 };
+}
+
+/**
+ * Remplit le gabarit localisé (`t.auth.error_account_locked`) avec le délai
+ * restant : le texte est traduit côté LanguageContext, seul le délai vient d'ici.
+ */
+export function fillLockoutNotice(template: string, label: string): string {
+  return template.replace('{time}', label);
+}
+
+export type LoginLockout = {
+  /** Un verrou est en cours : les tentatives ne partiront pas. */
+  locked: boolean;
+  /** Délai restant, prêt à afficher : « 14 min 32 s ». */
+  label: string;
+  /** Message localisé à afficher, gabarit `{time}` déjà rempli. */
+  notice: (template: string) => string;
+  /**
+   * À appeler avec le message d'erreur d'une tentative de connexion. Arme le
+   * décompte si le serveur a verrouillé le compte, et indique alors à
+   * l'appelant de ne pas afficher ce message brut.
+   */
+  registerError: (message: string) => boolean;
+};
+
+/**
+ * État du verrouillage par compte, partagé par les formulaires de connexion
+ * (publique, profil, backoffice) : il fournit le décompte et empêche de rejouer
+ * une tentative pendant l'attente.
+ */
+export function useLoginLockout(): LoginLockout {
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const [remainingMs, setRemainingMs] = useState(0);
+
+  useEffect(() => {
+    if (lockedUntil === null) { setRemainingMs(0); return; }
+    const tick = () => {
+      const left = remainingLockMs(lockedUntil);
+      setRemainingMs(left);
+      if (left === 0) setLockedUntil(null);
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [lockedUntil]);
+
+  const registerError = useCallback((message: string): boolean => {
+    const minutes = lockoutMinutesFrom(message);
+    if (minutes === null) return false;
+    setLockedUntil(Date.now() + minutes * 60_000);
+    return true;
+  }, []);
+
+  const { minutes, seconds } = splitRemaining(remainingMs);
+  const label = minutes > 0 ? `${minutes} min ${String(seconds).padStart(2, '0')} s` : `${seconds} s`;
+  const notice = useCallback(
+    (template: string) => fillLockoutNotice(template, label),
+    [label],
+  );
+
+  return { locked: lockedUntil !== null, label, notice, registerError };
 }

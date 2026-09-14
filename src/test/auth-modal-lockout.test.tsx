@@ -45,7 +45,7 @@ function renderLoginForm() {
     await act(async () => {});
   };
 
-  return { email, password, form, submit, send };
+  return { email, password, form, submit, send, unmount: utils.unmount };
 }
 
 beforeEach(() => {
@@ -66,6 +66,40 @@ describe('AuthModal — verrouillage après trop d’échecs', () => {
 
     expect(await screen.findByText(/Nouvel essai possible dans 15 min 00 s/)).toBeInTheDocument();
     expect(submit).toBeDisabled();
+  });
+
+  it('traduit les erreurs de Supabase selon la langue courante', async () => {
+    localStorage.setItem('gcfi-lang', 'en');
+    signInWithPassword.mockResolvedValue({
+      data: { user: null },
+      error: authError('Invalid login credentials'),
+    });
+    const first = renderLoginForm();
+
+    await first.send();
+
+    // Supabase répond en anglais : c'est la traduction qui décide de la langue.
+    expect(await screen.findByText('Invalid email or password.')).toBeInTheDocument();
+    expect(screen.queryByText('Email ou mot de passe incorrect.')).not.toBeInTheDocument();
+    first.unmount();
+
+    localStorage.setItem('gcfi-lang', 'fr');
+    const second = renderLoginForm();
+    await second.send();
+    expect(await screen.findByText('Email ou mot de passe incorrect.')).toBeInTheDocument();
+  });
+
+  it('affiche le message dans la langue courante', async () => {
+    localStorage.setItem('gcfi-lang', 'en');
+    signInWithPassword.mockResolvedValue({ data: { user: null }, error: authError(LOCKED) });
+    const { send } = renderLoginForm();
+
+    await send();
+
+    expect(
+      await screen.findByText('Too many sign-in attempts. Try again in 15 min 00 s.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Trop de tentatives/)).not.toBeInTheDocument();
   });
 
   it("n'affiche pas le verrou pour un simple mot de passe erroné", async () => {

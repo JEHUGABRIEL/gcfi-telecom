@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ShieldCheck, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/shared/lib/supabase';
 import { isMFAEnabled } from '@/shared/lib/mfa-service';
+import { useLoginLockout } from '@/shared/lib/login-lockout';
 import { useLang } from '@/shared/context/LanguageContext';
 import MFAVerification from '@/shared/components/MFAVerification';
 
@@ -16,6 +17,10 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [requiresMFA, setRequiresMFA] = useState(false);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  // Verrouillage décidé par le serveur après trop d'échecs (y compris pendant
+  // la reconnexion MFA) : on affiche le délai restant et on laisse le
+  // formulaire inactif tant qu'il court.
+  const { locked, notice, registerError } = useLoginLockout();
   const publicSiteUrl = process.env.NEXT_PUBLIC_PUBLIC_SITE_URL ?? '/';
 
   // Si une session admin valide existe déjà (retour après inactivité),
@@ -36,6 +41,9 @@ export default function AdminLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Pendant le verrou, le serveur refuse même le bon mot de passe : on
+    // n'envoie aucune requête et on laisse le décompte s'écouler.
+    if (locked) return;
     setError(null);
     setLoading(true);
     try {
@@ -66,7 +74,7 @@ export default function AdminLoginPage() {
       }
       // Effect 2 d'AuthContext gère la redirection vers /admin
     } catch (err: any) {
-      setError(err.message || t.admin_login.error_general);
+      setError(registerError(err?.message ?? '') ? null : err.message || t.admin_login.error_general);
       setLoading(false);
     }
   };
@@ -81,7 +89,9 @@ export default function AdminLoginPage() {
       setPendingUserId(null);
       // onAuthStateChange handles navigation to /admin
     } catch (err: any) {
-      setError(err.message || t.admin_login.error_reconnect);
+      // Compte verrouillé pendant la reconnexion : on revient au formulaire, où
+      // le délai restant s'affiche, plutôt que de laisser réessayer à l'aveugle.
+      setError(registerError(err?.message ?? '') ? null : err.message || t.admin_login.error_reconnect);
       setRequiresMFA(false);
       setPendingUserId(null);
       setLoading(false);
@@ -126,6 +136,13 @@ export default function AdminLoginPage() {
             <p className="text-sm text-slate-500 mt-1">{t.admin_login.subtitle}</p>
           </div>
 
+          {locked && (
+            <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl text-sm text-amber-700 dark:text-amber-400 font-medium flex items-start gap-3">
+              <Lock className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{notice(t.auth.error_account_locked)}</span>
+            </div>
+          )}
+
           {error && (
             <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 rounded-2xl text-sm text-red-600 font-medium">
               {error}
@@ -147,7 +164,7 @@ export default function AdminLoginPage() {
                 {showPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
-            <button type="submit" disabled={loading}
+            <button type="submit" disabled={loading || locked}
               className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg disabled:opacity-50">
               {loading ? t.admin_login.loading_text : t.admin_login.login_btn}
             </button>

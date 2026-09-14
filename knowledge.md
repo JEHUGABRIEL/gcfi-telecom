@@ -59,7 +59,7 @@ Two dashboard-only objects are handled explicitly:
 
 Observed quirks of the local stack: `supabase start` can exit non-zero on the Studio health check (`container is not ready: starting`) even though the database came up and every migration applied — `-x studio` or `--ignore-health-check` gets past it. A container-start race can also make the first `db reset` fail with `error running container: exit 1`; rerunning succeeds. `supabase config.toml` changes only apply after `supabase stop` then `supabase start`.
 
-The per-account sign-in lockout (`20260913000100_password_signin_lockout.sql`) is enabled locally by `[auth.hook.password_verification_attempt]` in `supabase/config.toml`. Supabase Auth returns the hook's message with `error_code: invalid_credentials`, so the client recognises a lockout only by its text — see `src/shared/lib/login-lockout.ts`. `AuthModal` then shows the remaining delay and disables the submit button until it elapses; the raw message alone would leave the user retrying a password the server will refuse.
+The per-account sign-in lockout (`20260913000100_password_signin_lockout.sql`) is enabled locally by `[auth.hook.password_verification_attempt]` in `supabase/config.toml`. Supabase Auth returns the hook's message with `error_code: invalid_credentials`, so the client recognises a lockout only by its text — see `src/shared/lib/login-lockout.ts`. `useLoginLockout()` in that module is shared by `AuthModal` (public), `ProfileModule` and `AdminLoginPage` (backoffice), which each show the remaining delay and keep their submit button disabled until it elapses; the raw message alone would leave the user retrying a password the server will refuse. The notice text is the shared `t.auth.error_account_locked` translation, with `{time}` filled by `fillLockoutNotice()` — the UI language drives the wording, while the message coming from the database hook stays French and is always replaced.
 
 ## Deployment
 
@@ -91,7 +91,7 @@ Set `APP_MODE` explicitly on each project rather than relying on the production 
 - Prefer feature services and TanStack Query hooks from `src/shared/lib/queries.ts` for data access. Use exported query-key constants when invalidating cache; avoid raw `useEffect` fetching.
 - Services generally use plain-object singletons, shared domain types, error logging, and safe empty results on failure.
 - TypeScript is strict. Shared types in `src/shared/types/` must stay synchronized with Supabase migrations.
-- `LanguageContext` defaults to French, persists as `gcfi-lang`, and localized database queries use the active `lang` value.
+- `LanguageContext` defaults to French, persists as `gcfi-lang`, and localized database queries use the active `lang` value. Supabase Auth replies in English whatever the UI language: translate the errors it returns through the `t.auth.error_*` keys (`translateError()` in `AuthModal`) instead of displaying the raw message, and use a `{time}`-style template when a value has to be injected.
 - Roles are stored in `profiles.role` as `client`, `admin`, or `superadmin`. Admin routes require the appropriate role; enabled TOTP MFA also requires a valid signed `mfa_verified` cookie.
 
 ## Gotchas and constraints

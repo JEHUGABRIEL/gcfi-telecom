@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, LogIn, UserPlus, Shield, Mail, Lock, User, ArrowLeft, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/shared/lib/supabase';
 import { useAuth } from '@/shared/context/AuthContext';
-import { useLang } from '@/shared/context/LanguageContext';
+import { useLang, type Translations } from '@/shared/context/LanguageContext';
 import { verifyPublicLoginRole } from '@/shared/lib/auth-role';
-import { lockoutMinutesFrom, remainingLockMs, splitRemaining } from '@/shared/lib/login-lockout';
+import { useLoginLockout } from '@/shared/lib/login-lockout';
 
 type AuthMode = 'login' | 'signup' | 'forgot';
 
@@ -25,26 +25,7 @@ export default function AuthModal() {
   const [confirm, setConfirm]     = useState('');
   // Verrouillage décidé par le serveur après trop d'échecs : on retient
   // l'instant de fin pour afficher le délai restant et bloquer le bouton.
-  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
-  const [lockRemaining, setLockRemaining] = useState(0);
-
-  useEffect(() => {
-    if (lockedUntil === null) { setLockRemaining(0); return; }
-    const tick = () => {
-      const left = remainingLockMs(lockedUntil);
-      setLockRemaining(left);
-      if (left === 0) setLockedUntil(null);
-    };
-    tick();
-    const id = window.setInterval(tick, 1000);
-    return () => window.clearInterval(id);
-  }, [lockedUntil]);
-
-  const locked = lockedUntil !== null;
-  const { minutes: lockMinutes, seconds: lockSeconds } = splitRemaining(lockRemaining);
-  const lockLabel = lockMinutes > 0
-    ? `${lockMinutes} min ${String(lockSeconds).padStart(2, '0')} s`
-    : `${lockSeconds} s`;
+  const { locked, notice, registerError } = useLoginLockout();
 
   const reset = () => {
     setError(null); setSuccess(null);
@@ -74,7 +55,7 @@ export default function AuthModal() {
     e.preventDefault();
     // Le serveur refuse toute tentative pendant le verrou, bon mot de passe
     // compris : inutile d'appeler Supabase, on laisse le décompte s'écouler.
-    if (mode === 'login' && lockedUntil !== null) return;
+    if (mode === 'login' && locked) return;
     setError(null); setLoading(true);
     try {
       if (mode === 'signup') {
@@ -105,16 +86,10 @@ export default function AuthModal() {
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      const lockMinutes = lockoutMinutesFrom(message);
-      if (lockMinutes !== null) {
-        // Trop d'échecs : le compte est verrouillé côté serveur. On l'annonce
-        // avec le délai restant au lieu du message d'origine, qui ne dit pas
-        // combien de temps l'utilisateur doit attendre.
-        setError(null);
-        setLockedUntil(Date.now() + lockMinutes * 60_000);
-      } else {
-        setError(translateError(message));
-      }
+      // Trop d'échecs : le compte est verrouillé côté serveur. On l'annonce avec
+      // le délai restant au lieu du message d'origine, qui ne dit pas combien de
+      // temps l'utilisateur doit attendre.
+      setError(registerError(message) ? null : translateError(message, t.auth));
     } finally {
       setPublicLoginInProgress(false);
       setLoading(false);
@@ -137,7 +112,7 @@ export default function AuthModal() {
       if (!res.ok) throw new Error(data.error || t.common.error);
       setSuccess(t.auth.success_forgot);
     } catch (err: unknown) {
-      setError(translateError(err instanceof Error ? err.message : String(err)));
+      setError(translateError(err instanceof Error ? err.message : String(err), t.auth));
     } finally {
       setLoading(false);
     }
@@ -212,7 +187,7 @@ export default function AuthModal() {
                 <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl flex items-start gap-3">
                   <Lock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                   <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
-                    Trop de tentatives de connexion. Nouvel essai possible dans {lockLabel}.
+                    {notice(t.auth.error_account_locked)}
                   </p>
                 </div>
               )}
@@ -346,11 +321,17 @@ export default function AuthModal() {
 }
 
 /* ── Traduction des erreurs Supabase ──────────────────────────── */
-function translateError(msg: string): string {
-  if (msg.includes('Invalid login credentials'))  return 'Email ou mot de passe incorrect.';
-  if (msg.includes('Email not confirmed'))         return 'Confirmez votre email avant de vous connecter.';
-  if (msg.includes('User already registered'))     return 'Un compte existe déjà avec cet email.';
-  if (msg.includes('Password should be at least')) return 'Le mot de passe doit contenir au moins 6 caractères.';
-  if (msg.includes('rate limit'))                  return 'Trop de tentatives. Réessayez dans quelques minutes.';
+// Les messages de Supabase Auth sont en anglais quelle que soit la langue de
+// l'interface : on les remplace par les traductions de `t.auth`, et on laisse
+// passer tel quel ce qu'on ne sait pas traduire (message inattendu, message
+// d'un hook, etc.).
+type AuthTexts = Translations['auth'];
+
+function translateError(msg: string, texts: AuthTexts): string {
+  if (msg.includes('Invalid login credentials'))  return texts.error_email_pwd;
+  if (msg.includes('Email not confirmed'))         return texts.error_email_not_confirmed;
+  if (msg.includes('User already registered'))     return texts.error_user_exists;
+  if (msg.includes('Password should be at least')) return texts.error_pwd_short;
+  if (msg.includes('rate limit'))                  return texts.error_rate_limit;
   return msg;
 }

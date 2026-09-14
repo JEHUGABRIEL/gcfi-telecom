@@ -167,6 +167,7 @@ export const TRANSLATIONS = {
       error_user_exists: 'Un compte existe déjà avec cet email.',
       error_pwd_short: 'Le mot de passe doit contenir au moins 6 caractères.',
       error_rate_limit: 'Trop de tentatives. Réessayez dans quelques minutes.',
+      error_account_locked: 'Trop de tentatives de connexion. Nouvel essai possible dans {time}.',
       error_pwd_mismatch: 'Les mots de passe ne correspondent pas.',
     },
     contact: {
@@ -1509,6 +1510,7 @@ export const TRANSLATIONS = {
       error_user_exists: 'An account already exists with this email.',
       error_pwd_short: 'Password must be at least 6 characters.',
       error_rate_limit: 'Too many attempts. Please try again in a few minutes.',
+      error_account_locked: 'Too many sign-in attempts. Try again in {time}.',
       error_pwd_mismatch: 'Passwords do not match.',
     },
     contact: {

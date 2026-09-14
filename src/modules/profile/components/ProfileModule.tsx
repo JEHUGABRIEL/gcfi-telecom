@@ -14,6 +14,7 @@ import { Order } from '@/shared/types';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useLang } from '@/shared/context/LanguageContext';
 import { verifyPublicLoginRole } from '@/shared/lib/auth-role';
+import { useLoginLockout } from '@/shared/lib/login-lockout';
 
 type ProfileTab = 'dashboard' | 'settings' | 'orders' | 'investments' | 'wishlist';
 
@@ -36,6 +37,9 @@ export default function ProfileModule() {
   const [ordersError, setOrdersError] = React.useState(false);
   const [storeProducts, setStoreProducts] = React.useState<{ id: string; name: string; price: number; image: string; category: string }[]>([]);
   const [productsLoading, setProductsLoading] = React.useState(false);
+  // Verrouillage décidé par le serveur après trop d'échecs : délai restant
+  // affiché et formulaire inactif tant qu'il court.
+  const { locked, notice, registerError } = useLoginLockout();
 
   React.useEffect(() => {
     if (user && activeTab === 'orders') {
@@ -103,6 +107,9 @@ export default function ProfileModule() {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Pendant le verrou, le serveur refuse même le bon mot de passe : inutile
+    // d'envoyer une requête, on laisse le décompte s'écouler.
+    if (authMode === 'login' && locked) return;
     setAuthError(null);
     setIsSubmitting(true);
     try {
@@ -127,7 +134,10 @@ export default function ProfileModule() {
         await verifyPublicLoginRole(data.user.id);
       }
     } catch (error: unknown) {
-      setAuthError(error instanceof Error ? error.message : t.common.error);
+      const message = error instanceof Error ? error.message : t.common.error;
+      // Trop d'échecs : le compte est verrouillé côté serveur. On affiche le
+      // délai restant au lieu du message d'origine, qui ne le précise pas.
+      setAuthError(registerError(message) ? null : message);
     } finally {
       setPublicLoginInProgress(false);
       setIsSubmitting(false);
@@ -186,6 +196,12 @@ export default function ProfileModule() {
             </p>
           </div>
 
+          {locked && (
+            <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl text-amber-700 dark:text-amber-400 text-sm font-bold flex items-center gap-3">
+              <Lock className="w-4 h-4 shrink-0" />
+              <span>{notice(t.auth.error_account_locked)}</span>
+            </div>
+          )}
           {authError && (
             <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-2xl text-red-600 dark:text-red-400 text-sm font-bold flex items-center gap-3">
               <Shield className="w-4 h-4 shrink-0" />
@@ -237,7 +253,7 @@ export default function ProfileModule() {
             </div>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (authMode === 'login' && locked)}
               className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50"
             >
               {isSubmitting ? t.common.loading : authMode === 'login' ? t.auth.login_btn : t.auth.signup_btn}
