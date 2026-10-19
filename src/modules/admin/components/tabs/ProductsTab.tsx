@@ -189,7 +189,7 @@ export default function ProductsTab() {
       <AnimatePresence>
         {deleteTarget && (
           <ConfirmModal
-            message={`${ap.product_confirm_delete} "${deleteTarget.name}" ? ${ap.product_irreversible}`}
+            message={`${ap.product_confirm_delete} "${deleteTarget.name}" ? ${ap.product_delete_hint}`}
             onConfirm={confirmDelete}
             onCancel={() => setDeleteTarget(null)}
           />
