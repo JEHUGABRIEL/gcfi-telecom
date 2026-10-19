@@ -18,6 +18,7 @@ import { useNotifications } from '@/shared/context/NotificationContext';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
 import { useProducts, useSaveCart } from '@/shared/lib/queries';
+import { computeCatalogMaxPrice, computePriceStep, isPriceInRange } from '@/modules/store/lib/catalog';
 import { trackAddToCart, trackRemoveFromCart, trackBeginCheckout } from '@/shared/lib/ga-events';
 
 const needsUnoptimized = (src: string | undefined | null) =>
@@ -118,6 +119,17 @@ export default function StoreModule() {
     [dedupedProducts]
   );
 
+  // Prix le plus élevé du catalogue : borne le curseur sans jamais masquer un produit.
+  const catalogMaxPrice = React.useMemo(
+    () => computeCatalogMaxPrice(dedupedProducts.map(p => p.price)),
+    [dedupedProducts]
+  );
+
+  const priceStep = React.useMemo(
+    () => computePriceStep(catalogMaxPrice),
+    [catalogMaxPrice]
+  );
+
   const [visibleCount, setVisibleCount] = React.useState(8);
   const [heroSlide, setHeroSlide] = React.useState(0);
 
@@ -170,8 +182,9 @@ export default function StoreModule() {
     return fuse.search(searchQuery).map(r => r.item).slice(0, 5);
   }, [searchQuery, fuse]);
 
-  const [minPrice, setMinPrice] = React.useState(0);
-  const [maxPrice, setMaxPrice] = React.useState(500000);
+  // `null` = aucun plafond de prix : le catalogue ne doit jamais être borné
+  // par une constante arbitraire (des produits peuvent dépasser 500 000 FCFA).
+  const [maxPrice, setMaxPrice] = React.useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = React.useState('Tous');
   const [sortBy, setSortBy] = React.useState('popularity');
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
@@ -221,7 +234,7 @@ export default function StoreModule() {
     let result = dedupedProducts;
     if (searchQuery.trim()) result = fuse.search(searchQuery).map(r => r.item);
     result = result.filter(p =>
-      p.price >= minPrice && p.price <= maxPrice &&
+      isPriceInRange(p.price, maxPrice) &&
       (selectedCategory === 'Tous' || p.category === selectedCategory)
     );
     return [...result].sort((a, b) => {
@@ -230,7 +243,7 @@ export default function StoreModule() {
       if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
       return (b.popularity || 0) - (a.popularity || 0);
     });
-  }, [dedupedProducts, searchQuery, minPrice, maxPrice, selectedCategory, sortBy, fuse]);
+  }, [dedupedProducts, searchQuery, maxPrice, selectedCategory, sortBy, fuse]);
 
   const hasMore = visibleCount < filteredProducts.length;
 
@@ -499,8 +512,23 @@ export default function StoreModule() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">{t.boutique.filter_price} {maxPrice.toLocaleString()} FCFA</label>
-                  <input type="range" min="0" max="500000" step="5000" value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))} className="w-full accent-[var(--accent)]" />
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">
+                    {t.boutique.filter_price}{' '}
+                    {maxPrice === null
+                      ? t.boutique.filter_price_all
+                      : `${maxPrice.toLocaleString()} FCFA`}
+                  </label>
+                  <input type="range" min="0" max={catalogMaxPrice} step={priceStep}
+                    value={maxPrice ?? catalogMaxPrice}
+                    onChange={e => setMaxPrice(Number(e.target.value))}
+                    className="w-full accent-[var(--accent)]" />
+                  {(maxPrice !== null || selectedCategory !== 'Tous') && (
+                    <button
+                      onClick={() => { setMaxPrice(null); setSelectedCategory('Tous'); }}
+                      className="mt-3 text-xs font-bold text-[var(--accent)] hover:underline">
+                      {t.boutique.reset_filters}
+                    </button>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">{t.boutique.sort}</label>

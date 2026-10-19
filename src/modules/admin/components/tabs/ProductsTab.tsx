@@ -4,7 +4,7 @@ import { useAdminToast, AdminToast } from '@/shared/components/AdminToast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { logError } from '@/shared/lib/supabase-helpers';
-import { Plus, Trash2, RefreshCw, ShoppingBag, AlertTriangle, Edit, X } from 'lucide-react';
+import { Plus, Trash2, RefreshCw, ShoppingBag, AlertTriangle, Edit, X, RotateCcw } from 'lucide-react';
 import ImageUpload from '@/shared/components/ImageUpload';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/shared/lib/utils';
@@ -62,6 +62,7 @@ export default function ProductsTab() {
   const [editingProduct, setEditing]    = React.useState<any>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<{ id: string; name: string } | null>(null);
   const [form, setForm]                 = React.useState(EMPTY_FORM);
+  const [showDeleted, setShowDeleted]   = React.useState(false);
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
@@ -75,6 +76,17 @@ export default function ProductsTab() {
     },
     staleTime: 2 * 60 * 1000,
   });
+
+  // Le BO charge aussi les lignes supprimées pour pouvoir les restaurer ;
+  // on les isole pour ne pas les présenter comme des produits en ligne.
+  const activeProducts = React.useMemo(
+    () => products.filter((p: any) => !p.deleted_at),
+    [products]
+  );
+  const deletedProducts = React.useMemo(
+    () => products.filter((p: any) => !!p.deleted_at),
+    [products]
+  );
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
 
@@ -138,7 +150,8 @@ export default function ProductsTab() {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await supabase.from('products').update({ deleted_at: new Date().toISOString() }).eq('id', deleteTarget.id);
+      const { error } = await supabase.from('products').update({ deleted_at: new Date().toISOString() }).eq('id', deleteTarget.id);
+      if (error) throw error;
       logActivity({ action: 'deleted', entity: 'products', entity_id: deleteTarget.id, label: `${ap.product_deleted}: ${deleteTarget.name}` });
       setDeleteTarget(null);
       invalidate();
@@ -146,6 +159,19 @@ export default function ProductsTab() {
     } catch (err) {
       logError('ProductsTab/delete', err);
       showToast(ap.delete_error, 'error');
+    }
+  };
+
+  const restoreProduct = async (p: any) => {
+    try {
+      const { error } = await supabase.from('products').update({ deleted_at: null }).eq('id', p.id);
+      if (error) throw error;
+      logActivity({ action: 'restored', entity: 'products', entity_id: p.id, label: `${ap.product_restored}: ${p.name}` });
+      invalidate();
+      showToast(ap.product_restored);
+    } catch (err) {
+      logError('ProductsTab/restore', err);
+      showToast(ap.product_restore_error, 'error');
     }
   };
 
@@ -284,6 +310,18 @@ export default function ProductsTab() {
       {/* Header */}
       <div className="flex items-center justify-end">
         <div className="flex gap-2">
+          {deletedProducts.length > 0 && (
+            <button onClick={() => setShowDeleted(v => !v)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors",
+                showDeleted
+                  ? "bg-slate-800 text-white hover:bg-slate-700"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200"
+              )}>
+              <RotateCcw className="w-4 h-4" />
+              {showDeleted ? ap.product_hide_deleted : `${ap.product_show_deleted} (${deletedProducts.length})`}
+            </button>
+          )}
           <button onClick={invalidate} className="p-2 text-slate-400 hover:text-[#C1272D] transition-colors">
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -295,7 +333,7 @@ export default function ProductsTab() {
       </div>
 
       {/* Liste */}
-      {products.length === 0 ? (
+      {activeProducts.length === 0 ? (
         <div className="text-center py-12 text-slate-400">
           <ShoppingBag className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p>{ap.product_empty}</p>
@@ -333,18 +371,58 @@ export default function ProductsTab() {
                 ),
               },
             ]}
-            data={products.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
+            data={activeProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
             getKey={(p) => p.id}
             minWidth="720px"
           />
           <Pagination
             page={page}
-            totalPages={Math.ceil(products.length / PAGE_SIZE)}
-            totalItems={products.length}
+            totalPages={Math.ceil(activeProducts.length / PAGE_SIZE)}
+            totalItems={activeProducts.length}
             pageSize={PAGE_SIZE}
             onPageChange={setPage}
           />
         </>
+      )}
+
+      {/* Corbeille : produits supprimés, invisibles sur le site public */}
+      {showDeleted && deletedProducts.length > 0 && (
+        <div className="mt-8 rounded-2xl border border-amber-200 dark:border-amber-800 overflow-hidden">
+          <div className="px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800">
+            <p className="font-black text-amber-700 dark:text-amber-400">{ap.product_deleted_section}</p>
+            <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">{ap.product_deleted_hint}</p>
+          </div>
+          <AdminTable
+            columns={[
+              {
+                header: ap.table_item,
+                cell: (p) => (
+                  <div className="flex items-center gap-3">
+                    {p.image && <Image src={p.image} alt={p.name} width={40} height={40} className="rounded-lg object-cover shrink-0 opacity-60" />}
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-500 dark:text-slate-400 truncate">{p.name}</p>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-red-500">{ap.product_deleted_badge}</span>
+                    </div>
+                  </div>
+                ),
+              },
+              { header: ap.product_price, align: 'right' as const, cell: (p) => <span className="text-slate-500 whitespace-nowrap">{p.price?.toLocaleString()} FCFA</span> },
+              {
+                header: ap.table_actions,
+                align: 'right' as const,
+                cell: (p) => (
+                  <button onClick={() => restoreProduct(p)}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
+                    <RotateCcw className="w-3.5 h-3.5" /> {ap.product_restore}
+                  </button>
+                ),
+              },
+            ]}
+            data={deletedProducts}
+            getKey={(p) => p.id}
+            minWidth="560px"
+          />
+        </div>
       )}
     </div>
     </>

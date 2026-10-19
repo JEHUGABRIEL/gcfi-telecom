@@ -62,6 +62,8 @@ describe('useProducts', () => {
 
     // Vérification clé : .eq() n'a jamais été appelé
     expect(mockEq).not.toHaveBeenCalled();
+    // Les produits soft-deleted sont exclus de la boutique publique
+    expect(mockIs).toHaveBeenCalledWith('deleted_at', null);
     // Tous les produits (FR + EN) sont retournés
     expect(result.current.data).toHaveLength(3);
     expect(result.current.data).toEqual(products);
